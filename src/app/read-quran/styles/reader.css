@@ -3,6 +3,17 @@
    Warm, Eye-Friendly Theme for Comfortable Reading
    ===================================================== */
 
+/* Uthmanic Hafs from Quran Foundation */
+@font-face {
+  font-family: "UthmanicHafs";
+  src:
+    url("https://verses.quran.foundation/fonts/quran/hafs/uthmanic_hafs/UthmanicHafs1Ver18.woff2") format("woff2"),
+    url("https://verses.quran.foundation/fonts/quran/hafs/uthmanic_hafs/UthmanicHafs1Ver18.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* ============ READER THEME TOKENS ============ */
 /* Inherits from design system - warm amber/cream palette */
 
@@ -36,7 +47,7 @@
   --reader-border-light: var(--border-strong);
 
   /* Typography */
-  --font-arabic: 'Naskh IndoPak', 'Scheherazade New', 'Noto Naskh Arabic', 'KFGQPC', 'Amiri', 'Traditional Arabic', serif;
+  --font-arabic: 'UthmanicHafs', 'KFGQPC', 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif;
   --font-ui: var(--font-sans);
 
   /* Spacing */
@@ -822,7 +833,7 @@
   color: white;
 }
 
-/* Arabic Text - Optimized for Naskh IndoPak */
+/* Arabic Text - Optimized for Uthmanic Hafs */
 .reader-verse-arabic {
   font-family: var(--font-arabic);
   font-size: var(--arabic-font-size, 32px);
@@ -2212,7 +2223,7 @@
 }
 
 /* ============ FONT ENFORCEMENT ============ */
-/* High-specificity rules to ensure Naskh IndoPak is always used for Arabic */
+/* High-specificity rules to ensure Uthmanic Hafs is always used for Arabic */
 .quran-reader .reader-verse-arabic,
 .quran-reader .reader-bismillah-text,
 .quran-reader .reader-mushaf-text,
@@ -2226,7 +2237,7 @@
 .nq-shell .reader-bismillah-text,
 .nq-shell .nq-arabic-text,
 .nq-shell .nq-bismillah-text {
-  font-family: 'Naskh IndoPak', 'Scheherazade New', 'Noto Naskh Arabic', 'KFGQPC', 'Amiri', 'Traditional Arabic', serif !important;
+  font-family: 'UthmanicHafs', 'KFGQPC', 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
 }
 
 /* ============ ENHANCED WORD-BY-WORD CARDS ============ */
@@ -2391,7 +2402,7 @@
 
 .wdm-arabic {
   display: block;
-  font-family: 'Naskh IndoPak', 'Scheherazade New', 'Noto Naskh Arabic', 'KFGQPC', 'Amiri', 'Traditional Arabic', serif !important;
+  font-family: 'UthmanicHafs', 'KFGQPC', 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
   font-size: clamp(38px, 8vw, 56px);
   color: var(--reader-text-arabic, #1e293b);
   line-height: 1.5;
@@ -2462,7 +2473,7 @@
 }
 
 .wdm-context-text {
-  font-family: 'Naskh IndoPak', 'Scheherazade New', 'Noto Naskh Arabic', 'KFGQPC', 'Amiri', serif !important;
+  font-family: 'UthmanicHafs', 'KFGQPC', 'Scheherazade New', 'Amiri', serif !important;
   font-size: 18px;
   line-height: 1.9;
   color: var(--reader-text-secondary, #475569);
@@ -2564,4 +2575,4 @@
 }
 
 .reader-toast.success { border-left: 4px solid var(--brand-primary, #f59e0b); }
-.reader-toast.warning { border-left: 4px solid #ef4444; }
+.reader-toast.warning { border-left: 4px solid #ef4444; }

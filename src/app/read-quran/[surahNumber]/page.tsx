@@ -34,8 +34,8 @@ import TafseerModal from '../components/TafseerModal';
 import '../styles/reader.css';
 import '../styles/tafseer-modal.css';
 
-// Same Indo-Pak cleaner used in tafseer route.
-const normalizeIndopakText = (text: string): string => {
+// Normalize Arabic Uthmani text for display.
+const normalizeArabicText = (text: string): string => {
     if (!text) return '';
     return text
         .replace(/[\n\r\t]+/g, ' ')
@@ -45,8 +45,8 @@ const normalizeIndopakText = (text: string): string => {
         .trim();
 };
 
-const cleanIndopakText = (text: string): string => {
-    return normalizeIndopakText(text)
+const cleanArabicText = (text: string): string => {
+    return normalizeArabicText(text)
         .replace(/\s{2,}/g, ' ')
         .trim();
 };
@@ -95,13 +95,27 @@ const toArabicNumeral = (num: number): string => {
 const isBismillahVerse = (verseNumber: number, verseText: string): boolean => {
     if (verseNumber === 0) return true; // Explicitly marked as Bismillah
     // Also check for Bismillah text pattern (as safeguard)
-    const normalizedText = normalizeIndopakText(verseText).toLowerCase();
+    const normalizedText = normalizeArabicText(verseText).toLowerCase();
     return /^بسم\s*الله\s*الرحمن\s*الرحيم\s*$/.test(normalizedText);
 };
 
+// Mushaf-style tashkeel coloring: wraps Arabic diacritics in blue spans
+const TASHKEEL_REGEX = /([\u064B-\u065F\u0670\u06D6-\u06ED]+)/g;
+const colorTashkeel = (text: string): React.ReactNode[] => {
+    const parts = text.split(TASHKEEL_REGEX);
+    return parts.map((part, i) => {
+        if (TASHKEEL_REGEX.test(part)) {
+            TASHKEEL_REGEX.lastIndex = 0; // reset regex state
+            return <span key={i} style={{ color: '#2563eb' }}>{part}</span>;
+        }
+        TASHKEEL_REGEX.lastIndex = 0;
+        return <span key={i}>{part}</span>;
+    });
+};
+
 const AyahEnding = memo(({ number, size = 28 }: { number: number; size?: number }) => {
-    const circleSize = Math.max(32, Math.round(size * 1.1));
-    const numSize = Math.max(14, Math.round(size * 0.6));
+    const circleSize = Math.max(34, Math.round(size * 1.15));
+    const numSize = Math.max(13, Math.round(size * 0.5));
     
     return (
         <svg
@@ -111,27 +125,27 @@ const AyahEnding = memo(({ number, size = 28 }: { number: number; size?: number 
             viewBox="0 0 36 36"
             style={{
                 display: 'inline-block',
-                marginLeft: 4,
-                marginRight: 2,
+                marginLeft: 6,
+                marginRight: 4,
                 whiteSpace: 'nowrap',
                 verticalAlign: 'middle',
                 flexShrink: 0,
             }}
             aria-hidden="false"
         >
-            {/* Outer circle border */}
-            <circle cx="18" cy="18" r="17" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.3" />
-            {/* Inner decorative circle */}
-            <circle cx="18" cy="18" r="14" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.2" />
-            {/* Center number text */}
+            {/* Filled dark circle background */}
+            <circle cx="18" cy="18" r="17" fill="#1e293b" stroke="#1e293b" strokeWidth="0.5" />
+            {/* Inner decorative ring */}
+            <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="0.8" />
+            {/* Center number text — white on dark */}
             <text
                 x="18"
                 y="18"
                 textAnchor="middle"
-                dy="0.35em"
+                dy="0.38em"
                 fontSize={numSize}
-                fontWeight="600"
-                fill="currentColor"
+                fontWeight="700"
+                fill="#ffffff"
                 fontFamily="'Noto Sans Arabic', 'Traditional Arabic', serif"
                 style={{ direction: 'ltr', unicodeBidi: 'isolate' }}
             >
@@ -144,7 +158,7 @@ AyahEnding.displayName = 'AyahEnding';
 
 // Hollow circle marker for Bismillah (no verse number)
 const BismillahMarker = memo(({ size = 28 }: { size?: number }) => {
-    const circleSize = Math.max(28, Math.round(size * 1.0));
+    const circleSize = Math.max(30, Math.round(size * 1.05));
     return (
         <svg
             className="nq-bismillah-marker"
@@ -153,17 +167,16 @@ const BismillahMarker = memo(({ size = 28 }: { size?: number }) => {
             viewBox="0 0 36 36"
             style={{
                 display: 'inline-block',
-                marginLeft: 4,
-                marginRight: 2,
+                marginLeft: 6,
+                marginRight: 4,
                 whiteSpace: 'nowrap',
                 verticalAlign: 'middle',
                 flexShrink: 0,
-                opacity: 0.45,
             }}
             aria-hidden="true"
         >
-            <circle cx="18" cy="18" r="16" fill="none" stroke="currentColor" strokeWidth="1.5" />
-            <circle cx="18" cy="18" r="11" fill="none" stroke="currentColor" strokeWidth="0.8" />
+            <circle cx="18" cy="18" r="16" fill="none" stroke="#1e293b" strokeWidth="1.8" opacity="0.6" />
+            <circle cx="18" cy="18" r="11" fill="none" stroke="#1e293b" strokeWidth="0.8" opacity="0.35" />
         </svg>
     );
 });
@@ -328,7 +341,7 @@ const WordItem = memo(({
             className={`word-item ${isSelected ? 'word-selected' : ''}`}
             onClick={() => onClick(word, verseKey, verseWords)}
         >
-            <span className="word-arabic">{cleanIndopakText(word.text_indopak ?? word.text_uthmani)}</span>
+            <span className="word-arabic">{cleanArabicText(word.text_uthmani)}</span>
             {word.translation?.text && <span className="word-translation">{word.translation.text}</span>}
         </div>
     );
@@ -494,13 +507,6 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
         return () => window.removeEventListener('resize', check);
     }, []);
 
-    useEffect(() => {
-        if (surahNumber === 2 && readingMode === 'reading' && !fontAlertShownRef.current) {
-            fontAlertShownRef.current = true;
-            window.alert('PDMS Saleem AC Quran font is active on this page.');
-        }
-    }, [surahNumber, readingMode]);
-
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentVerse, setCurrentVerse] = useState<number | null>(null);
     const [audioProgress, setAudioProgress] = useState(0);
@@ -511,7 +517,6 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const playbackIdRef = useRef(0);
     const isMountedRef = useRef(true);
-    const fontAlertShownRef = useRef(false);
     const surahBtnRef = useRef<HTMLButtonElement | null>(null);
     const verseBtnRef = useRef<HTMLButtonElement | null>(null);
 
@@ -534,7 +539,7 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
     // ── Word Detail Modal state ──
     interface SelectedWordInfo {
         text_uthmani: string;
-        text_indopak?: string;
+        text_qpc_hafs?: string;
         translation: string;
         transliteration: string;
         location: string; // e.g. "1:2:1"
@@ -575,7 +580,7 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
 
         setSelectedWord({
             text_uthmani: word.text_uthmani,
-            text_indopak: word.text_indopak,
+            text_qpc_hafs: (word as any).text_qpc_hafs,
             translation: word.translation?.text || '',
             transliteration: word.transliteration?.text || '',
             location: word.location || `${verseKey}:${word.position}`,
@@ -649,7 +654,7 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
                 // We attach 'verseContext' to each verse so we don't join strings on every click
                 const processedVerses = versesData.map(v => {
                     const context = v.words 
-                        ? v.words.filter((w: any) => w.char_type_name !== 'end').map((w: any) => cleanIndopakText(w.text_indopak ?? w.text_uthmani)).join(' ')
+                        ? v.words.filter((w: any) => w.char_type_name !== 'end').map((w: any) => cleanArabicText(w.text_uthmani)).join(' ')
                         : '';
                     return { ...v, verseContext: context };
                 });
@@ -665,7 +670,7 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
                         if (!isCancelled) {
                             const processed = wordData.map(v => ({
                                 ...v,
-                                verseContext: v.words?.filter((w: any) => w.char_type_name !== 'end').map((w: any) => cleanIndopakText(w.text_indopak ?? w.text_uthmani)).join(' ') || ''
+                                verseContext: v.words?.filter((w: any) => w.char_type_name !== 'end').map((w: any) => cleanArabicText(w.text_uthmani)).join(' ') || ''
                             }));
                             setVersesWithWords(processed);
                         }
@@ -772,14 +777,14 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
     }, [bookmarks]);
 
     const copyVerse = useCallback((verse: VerseWithTranslation) => {
-        const arabicText = verse.text_indopak ?? verse.text_uthmani;
+        const arabicText = verse.text_uthmani;
         const text = `${arabicText}\n\n${verse.translations?.[0]?.text || ''}\n\n— Quran ${verse.verse_key}`;
         navigator.clipboard.writeText(text);
         showToast('Copied to clipboard!');
     }, []);
 
     const shareVerse = useCallback(async (verse: VerseWithTranslation) => {
-        const arabicText = verse.text_indopak ?? verse.text_uthmani;
+        const arabicText = verse.text_uthmani;
         const text = `${arabicText}\n\n${verse.translations?.[0]?.text || ''}\n\n— Quran ${verse.verse_key}`;
         const url = `${window.location.origin}/read-quran/${surahNumber}#verse-${verse.verse_number}`;
         if (navigator.share) {
@@ -914,7 +919,7 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
                 .nq-arabic-text{font-family:var(--rq-font-arabic);font-size:var(--nq-fs,26px);line-height:2;text-align:right;flex:1;color:#1e293b;direction:rtl}
                 @media(min-width:640px){.nq-arabic-text{font-size:var(--nq-fs,36px)}}
                 .dark .nq-arabic-text{color:#e2e8f0}
-                .nq-shell .word-arabic,.nq-shell .reader-verse-arabic,.nq-shell .reader-bismillah-text,.nq-shell .nq-bismillah-text,.nq-shell .nq-arabic-text{font-family:'PDMS Saleem AC Quran','KFGQPC','Naskh IndoPak','Scheherazade New','Noto Naskh Arabic','Amiri','Traditional Arabic',serif!important;font-feature-settings:'liga' 1,'calt' 1,'mark' 1,'mkmk' 1}
+                .nq-shell .word-arabic,.nq-shell .reader-verse-arabic,.nq-shell .reader-bismillah-text,.nq-shell .nq-bismillah-text,.nq-shell .nq-arabic-text{font-family:'UthmanicHafs','KFGQPC','Scheherazade New','Amiri','Traditional Arabic',serif!important;font-feature-settings:'liga' 1,'calt' 1,'mark' 1,'mkmk' 1}
                 .nq-verse-badge{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;border:1px solid rgba(245,158,11,0.4);font-size:12px;font-weight:700;color:#f59e0b;margin-right:6px;font-family:'Lexend',sans-serif;cursor:pointer;vertical-align:middle;transition:background 0.15s}
                 @media(min-width:640px){.nq-verse-badge{width:40px;height:40px;font-size:14px;margin-right:8px}}
                 .nq-verse-badge:hover{background:rgba(245,158,11,0.1)}
@@ -985,7 +990,7 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
                   background:linear-gradient(135deg,#f59e0b,#d97706);
                   display:flex;align-items:center;justify-content:center;
                   box-shadow:0 4px 12px rgba(245,158,11,0.25);
-                  font-family:'Naskh IndoPak','Scheherazade New','Noto Naskh Arabic','KFGQPC','Amiri',serif;font-size:20px;color:white;font-weight:700;
+                  font-family:'UthmanicHafs','KFGQPC','Scheherazade New','Amiri',serif;font-size:20px;color:white;font-weight:700;
                 }
                 .nq-ab-art-num{font-family:'Figtree','Inter',sans-serif;font-size:14px;font-weight:700;color:rgba(255,255,255,0.9)}
                 .nq-ab-track{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
@@ -1380,7 +1385,7 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
                                                     }}>
                                                         {/* Left: Large Arabic Calligraphy */}
                                                         <div style={{
-                                                            fontFamily: "'Naskh IndoPak','KFGQPC Uthmanic Script HAFS Regular','Scheherazade New','Amiri','Traditional Arabic',serif",
+                                                            fontFamily: "'UthmanicHafs','KFGQPC','Scheherazade New','Amiri','Traditional Arabic',serif",
                                                             fontSize: isMobile ? 44 : 72,
                                                             fontWeight: 700,
                                                             color: 'var(--text-primary)',
@@ -1479,7 +1484,7 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
                                                                             fontSize: arabic ? 18 : 14,
                                                                             fontWeight: 700,
                                                                             color: 'var(--text-primary)',
-                                                                            fontFamily: arabic ? "'Naskh IndoPak','Traditional Arabic',serif" : "'Lexend','Inter',sans-serif",
+                                                                            fontFamily: arabic ? "'UthmanicHafs','KFGQPC','Traditional Arabic',serif" : "'Lexend','Inter',sans-serif",
                                                                             lineHeight: arabic ? 1.8 : 1.3,
                                                                         }}>{value}</span>
                                                                     </div>
@@ -1510,48 +1515,52 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
                                                         </div>
                                                     )}
 
-                                                    {/* ===== VERSE CONTENT AREA ===== */}
+                                                    {/* ===== VERSE CONTENT AREA — MUSHAF STYLE ===== */}
                                                     <div style={{
-                                                        padding: isMobile ? '24px 20px' : '32px 40px',
+                                                        padding: isMobile ? '28px 16px 20px' : '40px 48px 28px',
                                                     }}>
                                                         <div style={{
-                                                            fontFamily: "'PDMS Saleem AC Quran', 'KFGQPC', 'Naskh IndoPak', 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif",
-                                                            fontSize: isMobile ? `${Math.round(fontSize * 0.72)}px` : `${fontSize}px`,
-                                                            lineHeight: isMobile ? 2.0 : 2.4,
+                                                            fontFamily: "'UthmanicHafs', 'KFGQPC', 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif",
+                                                            fontSize: isMobile ? `${Math.round(fontSize * 0.78)}px` : `${Math.max(38, fontSize)}px`,
+                                                            lineHeight: isMobile ? 2.2 : 2.6,
                                                             textAlign: 'center',
                                                             direction: 'rtl' as const,
-                                                            color: 'var(--text-primary)',
+                                                            color: '#1e293b',
                                                             margin: 0,
                                                             fontFeatureSettings: '"liga" 1, "calt" 1, "mark" 1, "mkmk" 1',
                                                             textRendering: 'optimizeLegibility',
-                                                            wordSpacing: '0.1em',
+                                                            wordSpacing: '0.12em',
                                                             letterSpacing: 'normal',
                                                             WebkitFontSmoothing: 'antialiased',
                                                         }}>
-                                                            {/* Bismillah line without number */}
+                                                            {/* Bismillah line — centered, with colored tashkeel + hollow marker */}
                                                             {chapter.bismillah_pre && surahNumber !== 1 && surahNumber !== 9 && (
-                                                                <>
+                                                                <div style={{
+                                                                    display: 'block',
+                                                                    textAlign: 'center',
+                                                                    marginBottom: '1.2em',
+                                                                    paddingBottom: '0.6em',
+                                                                }}>
                                                                     <span style={{
-                                                                        fontFamily: "'PDMS Saleem AC Quran', 'KFGQPC', 'Naskh IndoPak', 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif",
-                                                                        fontSize: isMobile ? Math.round(fontSize * 0.82) : Math.round(fontSize * 1.05),
-                                                                        color: 'var(--text-primary)',
-                                                                        lineHeight: 1.8,
+                                                                        fontFamily: "'UthmanicHafs', 'KFGQPC', 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif",
+                                                                        fontSize: isMobile ? Math.round(fontSize * 0.85) : Math.round(Math.max(38, fontSize) * 1.0),
+                                                                        color: '#1e293b',
+                                                                        lineHeight: 2.0,
                                                                         fontFeatureSettings: '"liga" 1, "calt" 1, "mark" 1, "mkmk" 1',
                                                                         textRendering: 'optimizeLegibility',
-                                                                        display: 'block',
-                                                                        marginBottom: '1.5em',
                                                                     }}>
-                                                                        بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
+                                                                        {colorTashkeel('بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ')}
                                                                     </span>
-                                                                </>
+                                                                    <BismillahMarker size={Math.round(Math.max(38, fontSize) * 0.85)} />
+                                                                </div>
                                                             )}
                                                             {visibleVerses.map((verse) => {
-                                                                const rawText = verse.text_indopak || verse.text_uthmani || '';
+                                                                const rawText = verse.text_uthmani || '';
                                                                 const sourceText =
                                                                     verse.verse_number === 1 && chapter.bismillah_pre && surahNumber !== 1
                                                                         ? removeBismillah(rawText)
                                                                         : rawText;
-                                                                const displayText = cleanIndopakText(sourceText);
+                                                                const displayText = cleanArabicText(sourceText);
                                                                 if (!displayText.trim()) return null;
                                                                 
                                                                 // Bismillah detection
@@ -1574,20 +1583,19 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
                                                                         id={`verse-${verse.verse_number}`}
                                                                         style={{
                                                                             cursor: 'pointer',
-                                                                            borderRadius: 4,
-                                                                            padding: '0 4px',
-                                                                            transition: 'background 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                                                                            background: isActive ? 'var(--brand-primary-light)' : 'transparent',
-                                                                            color: isActive ? 'var(--brand-primary)' : 'inherit',
+                                                                            borderRadius: 6,
+                                                                            padding: '2px 4px',
+                                                                            transition: 'background 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                                            background: isActive ? 'rgba(37, 99, 235, 0.08)' : 'transparent',
                                                                         }}
                                                                         onClick={() => playVerse(verse.verse_number)}
                                                                     >
-                                                                        {displayText}
+                                                                        {colorTashkeel(displayText)}
                                                                         {' '}
-                                                                        {/* Bismillah: hollow circle ○. Other verses: numbered circle */}
+                                                                        {/* Bismillah: hollow circle. Other verses: filled numbered circle */}
                                                                         {isThisBismillah
-                                                                            ? <BismillahMarker size={Math.round(fontSize * 0.9)} />
-                                                                            : <AyahEnding number={displayNumber} size={Math.round(fontSize * 0.9)} />
+                                                                            ? <BismillahMarker size={Math.round(Math.max(38, fontSize) * 0.85)} />
+                                                                            : <AyahEnding number={displayNumber} size={Math.round(Math.max(38, fontSize) * 0.85)} />
                                                                         }
                                                                     </span>
                                                                 );
@@ -1601,7 +1609,7 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
                                                                     onClick={() => setVisibleVersesCount(v => v + 50)}
                                                                     style={{
                                                                         padding: '12px 32px',
-                                                                        background: 'var(--brand-primary)',
+                                                                        background: '#1e293b',
                                                                         color: 'white',
                                                                         border: 'none',
                                                                         borderRadius: 30,
@@ -1609,7 +1617,7 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
                                                                         fontWeight: 600,
                                                                         fontFamily: "'Inter', sans-serif",
                                                                         cursor: 'pointer',
-                                                                        boxShadow: '0 4px 12px var(--brand-primary-light)',
+                                                                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                                                                         transition: 'transform 0.2s',
                                                                     }}
                                                                     onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
@@ -1621,18 +1629,17 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
                                                         )}
                                                     </div>
 
-                                                    {/* ===== PAGE FOOTER ===== */}
+                                                    {/* ===== PAGE NUMBER FOOTER — Mushaf style ===== */}
                                                     <div style={{
                                                         textAlign: 'center',
-                                                        padding: isMobile ? '10px 8px' : '14px 16px',
-                                                        borderTop: '1.5px solid var(--border-subtle)',
-                                                        background: 'var(--bg-muted)',
+                                                        padding: isMobile ? '12px 8px' : '16px 16px',
+                                                        borderTop: '1px solid #e2e8f0',
                                                         fontFamily: "'Inter', 'Lexend', sans-serif",
-                                                        fontSize: isMobile ? 11 : 13,
-                                                        color: 'var(--text-muted)',
+                                                        fontSize: isMobile ? 12 : 14,
+                                                        color: '#94a3b8',
                                                         fontWeight: 500,
                                                     }}>
-                                                        Surah {surahNumber}. {surahInfo?.name || chapter.name_simple} &bull; {chapter.verses_count} Verses
+                                                        {surahNumber}
                                                     </div>
                                                 </div>
 
@@ -1687,7 +1694,7 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
                                                             );
                                                         })
                                                     ) : (
-                                                        <div className="reader-verse-arabic">{verse.verse_number === 1 && chapter.bismillah_pre ? cleanIndopakText(removeBismillah(verse.text_indopak ?? verse.text_uthmani)) : cleanIndopakText(verse.text_indopak ?? verse.text_uthmani)}</div>
+                                                        <div className="reader-verse-arabic">{verse.verse_number === 1 && chapter.bismillah_pre ? cleanArabicText(removeBismillah(verse.text_uthmani)) : cleanArabicText(verse.text_uthmani)}</div>
                                                     )}
                                                 </div>
                                                 {/* Translation */}
@@ -1718,7 +1725,7 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
                                             }}>
                                                 <span className="nq-arabic-text" style={{
                                                     fontSize: isMobile ? 22 : 32,
-                                                    fontFamily: "'KFGQPC', 'Naskh IndoPak', 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif",
+                                                    fontFamily: "'UthmanicHafs', 'KFGQPC', 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif",
                                                     lineHeight: 1.8,
                                                     color: 'var(--text-primary)',
                                                     fontFeatureSettings: '"liga" 1, "calt" 1, "mark" 1, "mkmk" 1',
@@ -1731,7 +1738,7 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
                                         {verses.map((verse, idx) => (
                                             <div key={verse.id}>
                                                 {/* Skip rendering Bismillah verses (they are shown separately without numbering) */}
-                                                {!isBismillahVerse(verse.verse_number, verse.text_indopak ?? verse.text_uthmani) && (
+                                                {!isBismillahVerse(verse.verse_number, verse.text_uthmani) && (
                                                 <div id={`verse-${verse.verse_number}`} className={`nq-ayah-card ${currentVerse === verse.verse_number ? 'nq-playing' : ''}`}>
                                                     {currentVerse === verse.verse_number && <div className="nq-active-accent" />}
                                                     {/* Verse meta row: reference pill + play button */}
@@ -1747,9 +1754,9 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
                                                         <span className="nq-arabic-text">
                                                             {(() => {
                                                                 const sourceText = verse.verse_number === 1 && chapter.bismillah_pre
-                                                                    ? removeBismillah(verse.text_indopak ?? verse.text_uthmani)
-                                                                    : (verse.text_indopak ?? verse.text_uthmani);
-                                                                const dt = cleanIndopakText(sourceText);
+                                                                    ? removeBismillah(verse.text_uthmani)
+                                                                    : (verse.text_uthmani);
+                                                                const dt = cleanArabicText(sourceText);
                                                                 return (
                                                                     <span onClick={() => playVerse(verse.verse_number)} style={{ cursor: 'pointer' }}>
                                                                         {dt}
@@ -1776,7 +1783,7 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
                                                 </div>
                                                 )}
                                                 {/* After the card: simple decorative separator */}
-                                                {idx < verses.length - 1 && !isBismillahVerse(verses[idx + 1].verse_number, verses[idx + 1].text_indopak ?? verses[idx + 1].text_uthmani) && (
+                                                {idx < verses.length - 1 && !isBismillahVerse(verses[idx + 1].verse_number, verses[idx + 1].text_uthmani) && (
                                                     <div className="nq-ayah-sep">
                                                         <div className="nq-sep-line" />
                                                         <span className="nq-sep-icon">۞</span>
@@ -1940,7 +1947,7 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
                         </div>
                         {/* Word display */}
                         <div className="wdm-word-display">
-                            <span className="wdm-arabic">{cleanIndopakText(selectedWord.text_indopak ?? selectedWord.text_uthmani)}</span>
+                            <span className="wdm-arabic">{cleanArabicText(selectedWord.text_uthmani)}</span>
                             <span className="wdm-meaning">{selectedWord.translation}</span>
                         </div>
                         {/* Transliteration + Location */}
@@ -1958,7 +1965,7 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
                         {selectedWord.verseText && (
                             <div className="wdm-context">
                                 <span className="wdm-context-label">Verse Context</span>
-                                <p className="wdm-context-text" dir="rtl">{cleanIndopakText(selectedWord.verseText)}</p>
+                                <p className="wdm-context-text" dir="rtl">{cleanArabicText(selectedWord.verseText)}</p>
                             </div>
                         )}
                         {/* Actions */}
@@ -2267,7 +2274,7 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
                 allVerses={verses}
                 onNavigate={(verseNumber) => setTafseerModalVerse(verseNumber)}
                 surahNumber={surahNumber}
-                cleanArabicText={cleanIndopakText}
+                cleanArabicText={cleanArabicText}
                 removeBismillah={removeBismillah}
             />
         </>

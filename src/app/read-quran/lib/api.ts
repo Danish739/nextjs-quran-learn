@@ -32,7 +32,7 @@ export interface Verse {
     page_number: number;
     juz_number: number;
     text_uthmani: string;
-    text_indopak?: string;   // Indo-Pak Nastaliq script
+    text_qpc_hafs?: string;
     text_imlaei?: string;
     words?: Word[];
 }
@@ -42,7 +42,6 @@ export interface Word {
     position: number;
     char_type_name?: string;
     text_uthmani: string;
-    text_indopak?: string;   // Indo-Pak Nastaliq script per word
     text_imlaei: string;
     translation: {
         text: string;
@@ -173,9 +172,7 @@ export async function getChapter(chapterId: number): Promise<Chapter> {
 }
 
 /**
- * Get verses for a chapter with translations.
- * Fetches Indo-Pak text from QuranCDN (full diacritics incl. sukun) and
- * translation from api.quran.com in parallel. Maps via verse_key directly.
+ * Get verses for a chapter with translations from api.quran.com (Uthmani / QPC Hafs).
  */
 export async function getVerses(
     chapterId: number,
@@ -183,32 +180,20 @@ export async function getVerses(
     page: number = 1,
     perPage: number = 300
 ): Promise<VersesResponse> {
-    const cacheKey = `verses-${chapterId}-${resourceId}-${page}`;
+    const cacheKey = `verses-uthmani-${chapterId}-${resourceId}-${page}`;
     if (clientCache.has(cacheKey)) return clientCache.get(cacheKey);
     try {
-        // Parallel: Indo-Pak text (QuranCDN) + Arabic+translation (quran.com)
-        const [indopakRes, translationRes] = await Promise.all([
-            fetchWithRetry(`https://api.qurancdn.com/api/v4/quran/verses/indopak?chapter_number=${chapterId}&per_page=${perPage}`),
-            fetchWithRetry(`${API_BASE}/verses/by_chapter/${chapterId}?language=en&translations=${resourceId}&fields=text_uthmani&per_page=${perPage}`),
-        ]);
-
-        const [indopakJson, translationJson] = await Promise.all([
-            indopakRes.json(),
-            translationRes.json(),
-        ]);
+        const response = await fetchWithRetry(
+            `${API_BASE}/verses/by_chapter/${chapterId}?language=en&translations=${resourceId}&fields=text_uthmani,text_qpc_hafs&per_page=${perPage}`
+        );
+        const translationJson = await response.json();
 
         if (!translationJson.verses) {
             throw new Error('Failed to fetch verses');
         }
 
-        // Build verse_key → indopak text map
-        const indopakMap = new Map<string, string>();
-        (indopakJson?.verses || []).forEach((v: { verse_key: string; text_indopak: string }) => {
-            indopakMap.set(v.verse_key, v.text_indopak);
-        });
-
         const verses: VerseWithTranslation[] = translationJson.verses.map((verse: any) => {
-            const indopakText = indopakMap.get(verse.verse_key) || verse.text_uthmani;
+            const uthmani = verse.text_uthmani || verse.text_qpc_hafs;
             return {
                 id: verse.id,
                 verse_key: verse.verse_key,
@@ -220,8 +205,8 @@ export async function getVerses(
                 sajdah_number: verse.sajdah_number || null,
                 page_number: verse.page_number || 1,
                 juz_number: verse.juz_number || 1,
-                text_uthmani: indopakText,   // use Indo-Pak as primary text
-                text_indopak: indopakText,
+                text_uthmani: uthmani,
+                text_qpc_hafs: verse.text_qpc_hafs,
                 translations: verse.translations || []
             };
         });
@@ -256,47 +241,32 @@ export async function getAllVerses(
 }
 
 /**
- * Get verses with word-by-word data (translations and transliterations)
- * Uses Quran.com API v4 with words parameter
+ * Get verses with word-by-word data from api.quran.com (Uthmani / QPC Hafs).
  */
 export async function getVersesWithWords(
     chapterId: number,
     translationId: string = '131', // Sahih International (English)
     wordLanguage: string = 'en' // Default to English for word translations/transliterations
 ): Promise<VerseWithTranslation[]> {
-    const cacheKey = `verses-words-${chapterId}-${translationId}-${wordLanguage}`;
+    const cacheKey = `verses-words-uthmani-${chapterId}-${translationId}-${wordLanguage}`;
     if (clientCache.has(cacheKey)) return clientCache.get(cacheKey);
     try {
-        // Fetch Quran.com words data AND QuranCDN IndoPak text in parallel.
-        // Quran.com's text_indopak omits sukun (U+0652); QuranCDN has the full diacritics.
-        const url = `${API_BASE}/verses/by_chapter/${chapterId}?language=${wordLanguage}&words=true&translations=${translationId}&fields=text_uthmani,text_indopak&word_fields=text_uthmani,text_indopak,text_imlaei,translation,transliteration&translation_fields=text,resource_name&per_page=300`;
+        const url =
+            `${API_BASE}/verses/by_chapter/${chapterId}?language=${wordLanguage}` +
+            `&words=true&translations=${translationId}` +
+            `&fields=text_uthmani,text_qpc_hafs` +
+            `&word_fields=text_uthmani,text_qpc_hafs,text_imlaei,translation,transliteration` +
+            `&translation_fields=text,resource_name&per_page=300`;
 
-        const [response, indopakRes] = await Promise.all([
-            fetchWithRetry(url),
-            fetchWithRetry(`https://api.qurancdn.com/api/v4/quran/verses/indopak?chapter_number=${chapterId}&per_page=300`),
-        ]);
-
-        const [data, indopakJson] = await Promise.all([
-            response.json(),
-            indopakRes.json(),
-        ]);
+        const response = await fetchWithRetry(url);
+        const data = await response.json();
 
         if (!data.verses) {
             throw new Error('Failed to fetch verses with words');
         }
 
-        // Build verse_key → full indopak text map (with sukun) from QuranCDN
-        const indopakMap = new Map<string, string>();
-        (indopakJson?.verses || []).forEach((v: { verse_key: string; text_indopak: string }) => {
-            indopakMap.set(v.verse_key, v.text_indopak);
-        });
-
-        // Map the response to our VerseWithTranslation type
         const verses: VerseWithTranslation[] = data.verses.map((verse: any) => {
-            // Prefer QuranCDN indopak (has sukun) over Quran.com indopak (missing sukun)
-            const fullIndopak = indopakMap.get(verse.verse_key)
-                || verse.text_indopak
-                || verse.text_uthmani;
+            const uthmani = verse.text_uthmani || verse.text_qpc_hafs;
             return {
                 id: verse.id,
                 verse_key: verse.verse_key,
@@ -308,16 +278,15 @@ export async function getVersesWithWords(
                 sajdah_number: verse.sajdah_number || null,
                 page_number: verse.page_number || 1,
                 juz_number: verse.juz_number || 1,
-                text_uthmani: fullIndopak,   // use full indopak as primary text
-                text_indopak: fullIndopak,   // explicit alias
+                text_uthmani: uthmani,
+                text_qpc_hafs: verse.text_qpc_hafs,
                 text_imlaei: verse.text_imlaei,
                 translations: verse.translations || [],
                 words: verse.words?.map((word: any) => ({
                     id: word.id,
                     position: word.position,
                     char_type_name: word.char_type_name,
-                    text_uthmani: word.text_uthmani,
-                    text_indopak: word.text_indopak || word.text_uthmani,
+                    text_uthmani: word.text_uthmani || word.text_qpc_hafs,
                     text_imlaei: word.text_imlaei || word.text_uthmani,
                     translation: word.translation || { text: '', language_name: 'english' },
                     transliteration: word.transliteration || { text: '', language_name: 'english' },

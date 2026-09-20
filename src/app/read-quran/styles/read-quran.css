@@ -4,7 +4,16 @@
 /* ============ FONTS ============ */
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
 
-/* Note: Naskh IndoPak is declared in globals.css */
+/* Uthmanic Hafs from Quran Foundation */
+@font-face {
+  font-family: "UthmanicHafs";
+  src:
+    url("https://verses.quran.foundation/fonts/quran/hafs/uthmanic_hafs/UthmanicHafs1Ver18.woff2") format("woff2"),
+    url("https://verses.quran.foundation/fonts/quran/hafs/uthmanic_hafs/UthmanicHafs1Ver18.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
 
 /* ============ VARIABLES ============ */
 :root {
@@ -45,7 +54,7 @@
 
   /* Typography */
   --rq-font-sans: "Outfit", "Inter", system-ui, sans-serif;
-  --rq-font-arabic: "PDMS Saleem AC Quran", "KFGQPC", "Naskh IndoPak", "Scheherazade New", "Noto Naskh Arabic", "Amiri", "Traditional Arabic", serif;
+  --rq-font-arabic: "UthmanicHafs", "KFGQPC", "Scheherazade New", "Amiri", "Traditional Arabic", serif;
 
   /* Layout */
   --rq-radius-lg: 20px;

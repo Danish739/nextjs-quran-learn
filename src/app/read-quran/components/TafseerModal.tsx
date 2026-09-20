@@ -13,7 +13,7 @@ interface Verse {
     verse_number: number;
     verse_key: string;
     text_uthmani?: string;
-    text_indopak?: string;
+    text_qpc_hafs?: string;
     translations?: { text: string }[];
 }
 
@@ -234,8 +234,8 @@ export default function TafseerModal({
 
     const arabicText = cleanArabicText(
         verse.verse_number === 1 && removeBismillah
-            ? removeBismillah(verse.text_indopak ?? verse.text_uthmani ?? '')
-            : (verse.text_indopak ?? verse.text_uthmani ?? '')
+            ? removeBismillah(verse.text_uthmani ?? '')
+            : (verse.text_uthmani ?? '')
     );
     const translation = verse.translations?.[0]?.text ?? 'Translation not available.';
 
