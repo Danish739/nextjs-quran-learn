@@ -143,11 +143,6 @@ export default function TafseerSurahPage({ params }: PageProps) {
     const toArabicNumeral = (num: number): string => {
         const d = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
         return num.toString().split('').map(c => d[parseInt(c)]).join('');
-    };
-
-    // Same text cleaner as read-quran — strips annotation marks unsupported by Naskh IndoPak font
-    const cleanIndopakText = (text: string): string => {
-        if (!text) return '';
         return text
             .replace(/[\n\r\t]+/g, ' ')
             .replace(/\u06E1/g, '\u0652')
@@ -248,12 +243,12 @@ export default function TafseerSurahPage({ params }: PageProps) {
         .ts-hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.14);border-radius:20px;padding:4px 12px;font-size:10.5px;font-weight:700;color:rgba(255,255,255,0.95);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:14px}
         .ts-hero-title{font-size:clamp(22px,5vw,34px);font-weight: 800;color:white;line-height:1.15;margin-bottom:4px}
         .ts-hero-meaning{font-size:14px;color:rgba(255,255,255,0.8);margin-bottom:16px}
-        .ts-hero-arabic{font-family:'Naskh IndoPak','Scheherazade New',serif!important;font-size:clamp(24px,4vw,36px);color:white;direction:rtl;margin-bottom:18px;line-height:1.6;text-shadow:0 1px 3px rgba(0,0,0,0.15)}
+        .ts-hero-arabic{font-family: "UthmanicHafs", serif;font-size:clamp(24px,4vw,36px);color:white;direction:rtl;margin-bottom:18px;line-height:1.6;text-shadow:0 1px 3px rgba(0,0,0,0.15)}
         .ts-hero-chips{display:flex;gap:8px;flex-wrap:wrap}
         .ts-hero-chip{background:rgba(255,255,255,0.13);border:1px solid rgba(255,255,255,0.18);border-radius:8px;padding:5px 12px;font-size:12px;color:white;font-weight:500}
 
         /* ── BISMILLAH ── */
-        .ts-bismillah{text-align:center;padding:22px 16px 26px;font-family:'Naskh IndoPak','Scheherazade New',serif!important;font-size:28px;color:var(--text-primary);border-bottom:1px solid var(--border-subtle);margin-bottom:20px;line-height:1.7}
+        .ts-bismillah{text-align:center;padding:22px 16px 26px;font-family: "UthmanicHafs", serif;font-size:28px;color:var(--text-primary);border-bottom:1px solid var(--border-subtle);margin-bottom:20px;line-height:1.7}
 
         /* ── VERSE CARD ── */
         .ts-verse-card{background:var(--bg-card);border:1px solid var(--border-default);border-radius:18px;margin-bottom:14px;overflow:hidden;transition:border-color 0.22s,box-shadow 0.22s,transform 0.15s}
@@ -264,7 +259,7 @@ export default function TafseerSurahPage({ params }: PageProps) {
         .ts-verse-top{padding:20px 20px 0 20px;display:flex;align-items:flex-start;gap:14px}
         .ts-verse-num{width:38px;height:38px;border-radius:50%;border:1.5px solid var(--brand-primary);background:var(--brand-primary-soft);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--brand-primary);flex-shrink:0;margin-top:6px;font-family:'Lexend',sans-serif}
         .ts-arabic-block{flex:1;direction:rtl;text-align:right}
-        .ts-arabic{font-family:'Naskh IndoPak','Scheherazade New','Traditional Arabic',serif!important;font-size:26px;line-height:2;color:var(--text-arabic)}
+        .ts-arabic{font-family: "UthmanicHafs", serif;font-size:26px;line-height:2;color:var(--text-arabic)}
         @media(max-width:640px){.ts-arabic{font-size:21px}}
 
         /* ── TRANSLATION ── */
@@ -524,7 +519,7 @@ export default function TafseerSurahPage({ params }: PageProps) {
                                         <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: s.num === surahNum ? '#f59e0b' : '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</p>
                                         <p style={{ margin: 0, fontSize: 11, color: '#94a3b8' }}>{s.meaning} · {s.v} verses</p>
                                     </div>
-                                    <span style={{ fontFamily: "'Naskh IndoPak','Scheherazade New','Noto Naskh Arabic','KFGQPC','Amiri',serif", fontSize: 16, color: '#475569', direction: 'rtl', flexShrink: 0 }}>{s.ar}</span>
+                                    <span style={{ fontFamily: "'UthmanicHafs', 'Amiri', serif", fontSize: 16, color: '#475569', direction: 'rtl', flexShrink: 0 }}>{s.ar}</span>
                                 </Link>
                             ))}
                         </div>

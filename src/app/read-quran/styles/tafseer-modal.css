@@ -114,7 +114,7 @@
     font-family: 'Lexend', sans-serif;
 }
 .tsm-header-arabic {
-    font-family: var(--rq-font-arabic, 'Scheherazade New', serif);
+    font-family: "UthmanicHafs", serif;
     font-size: 18px;
     color: #1e293b;
     line-height: 1;
@@ -223,7 +223,7 @@
     letter-spacing: 0.04em;
 }
 .tsm-arabic-text {
-    font-family: var(--rq-font-arabic, 'KFGQPC Uthmanic Script HAFS Regular', 'Scheherazade New', 'Amiri', serif);
+    font-family: "UthmanicHafs", serif;
     font-size: 28px;
     line-height: 2.0;
     color: #0f172a;

@@ -126,7 +126,7 @@
 }
 
 .arabic-text {
-  font-family: 'Naskh IndoPak', 'Scheherazade New', 'Noto Naskh Arabic', 'KFGQPC', 'Amiri', 'Traditional Arabic', serif;
+  font-family: "UthmanicHafs", serif;
   direction: rtl;
   font-size: 5rem;
   font-weight: bold;

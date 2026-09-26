@@ -24,7 +24,7 @@ interface Collection {
 }
 
 /* ─── Constants ──────────────────────────────────────────────── */
-const ARABIC_FONT = "'Naskh IndoPak', 'Scheherazade New', 'Noto Naskh Arabic', 'KFGQPC', 'Amiri', 'Traditional Arabic', serif";
+const ARABIC_FONT = "'UthmanicHafs', 'Amiri', serif";
 
 const COLLECTIONS: Collection[] = [
   { id: 'bukhari',   name: 'Sahih Bukhari',  ar: 'صحيح البخاري',    description: 'Most Authentic Collection',  color: '#f59e0b', icon: 'verified'       },
@@ -220,7 +220,7 @@ export default function HadeesPage() {
                 onClick={() => openCollection(col)}
               >
                 <div className="hadees-landing-card-icon" style={{ color: CARD_COLORS[idx]?.accent || '#333' }}>
-                  <span style={{ fontFamily: "'Naskh IndoPak', 'Amiri', serif", fontSize: 28, lineHeight: 1 }}>{col.ar.split(' ').slice(0, 2).join(' ')}</span>
+                  <span style={{ fontFamily: "'UthmanicHafs', 'Amiri', serif", fontSize: 28, lineHeight: 1 }}>{col.ar.split(' ').slice(0, 2).join(' ')}</span>
                 </div>
                 <span className="hadees-landing-card-name">{col.name}</span>
               </button>

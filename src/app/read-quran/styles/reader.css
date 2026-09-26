@@ -3,16 +3,7 @@
    Warm, Eye-Friendly Theme for Comfortable Reading
    ===================================================== */
 
-/* Uthmanic Hafs from Quran Foundation */
-@font-face {
-  font-family: "UthmanicHafs";
-  src:
-    url("https://verses.quran.foundation/fonts/quran/hafs/uthmanic_hafs/UthmanicHafs1Ver18.woff2") format("woff2"),
-    url("https://verses.quran.foundation/fonts/quran/hafs/uthmanic_hafs/UthmanicHafs1Ver18.ttf") format("truetype");
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
+/* UthmanicHafs is loaded once in globals.css from the local woff2. */
 
 /* ============ READER THEME TOKENS ============ */
 /* Inherits from design system - warm amber/cream palette */
@@ -47,7 +38,7 @@
   --reader-border-light: var(--border-strong);
 
   /* Typography */
-  --font-arabic: 'UthmanicHafs', 'KFGQPC', 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif;
+  --font-arabic: 'UthmanicHafs', "UthmanicHafs", serif, "UthmanicHafs", serif, 'Amiri', "UthmanicHafs", serif, serif;
   --font-ui: var(--font-sans);
 
   /* Spacing */
@@ -1304,7 +1295,7 @@
   border-radius: 6px;
   background: rgba(245, 158, 11, 0.18);
   border: 1.5px solid rgba(245, 158, 11, 0.4);
-  font-family: 'Scheherazade New', 'Amiri', serif;
+  font-family: "UthmanicHafs", serif;
   font-size: 15px;
   font-weight: 700;
   color: #92400e;
@@ -2237,7 +2228,7 @@
 .nq-shell .reader-bismillah-text,
 .nq-shell .nq-arabic-text,
 .nq-shell .nq-bismillah-text {
-  font-family: 'UthmanicHafs', 'KFGQPC', 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
+  font-family: "UthmanicHafs", serif;
 }
 
 /* ============ ENHANCED WORD-BY-WORD CARDS ============ */
@@ -2402,7 +2393,7 @@
 
 .wdm-arabic {
   display: block;
-  font-family: 'UthmanicHafs', 'KFGQPC', 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif !important;
+  font-family: "UthmanicHafs", serif;
   font-size: clamp(38px, 8vw, 56px);
   color: var(--reader-text-arabic, #1e293b);
   line-height: 1.5;
@@ -2473,7 +2464,7 @@
 }
 
 .wdm-context-text {
-  font-family: 'UthmanicHafs', 'KFGQPC', 'Scheherazade New', 'Amiri', serif !important;
+  font-family: "UthmanicHafs", serif;
   font-size: 18px;
   line-height: 1.9;
   color: var(--reader-text-secondary, #475569);

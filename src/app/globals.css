@@ -9,29 +9,12 @@
 /* ============ DESIGN SYSTEM IMPORT ============ */
 @import "../styles/design-system.css";
 
-/* Arabic Font - Naskh Nastaleeq IndoPak QWBW */
+/* Uthmanic Hafs — the only Quran text face (same file as /uthmani) */
 @font-face {
-  font-family: "Naskh IndoPak";
-  src: url("/fonts/Naskh-Nastaleeq-IndoPak-QWBW.woff2") format("woff2");
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
-/* PDMS Saleem AC Quran - Quran reading font from attached asset */
-@font-face {
-  font-family: "PDMS Saleem AC Quran";
-  src: url("/fonts/PDMS_Saleem_ACQuranFont_shipped.ttf") format("truetype");
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
-/* KFGQPC Uthmanic - Saudi official Quran font, proper sukun/jazam rendering */
-@font-face {
-  font-family: "KFGQPC";
-  src: url("/fonts/kfgqpc-uthmanic.otf") format("opentype"),
-       url("/fonts/uthmanic.otf") format("opentype");
+  font-family: "UthmanicHafs";
+  src:
+    url("/fonts/quran/hafs/uthmanic_hafs/UthmanicHafs1Ver18.woff2") format("woff2"),
+    url("/fonts/quran/hafs/uthmanic_hafs/UthmanicHafs1Ver18.ttf") format("truetype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;

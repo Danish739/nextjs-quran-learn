@@ -147,7 +147,7 @@ const AyahEnding = memo(({ number, size = 28 }: { number: number; size?: number 
                 fontSize={numSize}
                 fontWeight="700"
                 fill="#ffffff"
-                fontFamily="'Noto Sans Arabic', 'Traditional Arabic', serif"
+                fontFamily="'Noto Sans Arabic', 'UthmanicHafs', serif"
                 style={{ direction: 'ltr', unicodeBidi: 'isolate' }}
             >
                 {toArabicNumeral(number)}
@@ -920,7 +920,7 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
                 .nq-arabic-text{font-family:var(--rq-font-arabic);font-size:var(--nq-fs,26px);line-height:2;text-align:right;flex:1;color:#1e293b;direction:rtl}
                 @media(min-width:640px){.nq-arabic-text{font-size:var(--nq-fs,36px)}}
                 .dark .nq-arabic-text{color:#e2e8f0}
-                .nq-shell .word-arabic,.nq-shell .reader-verse-arabic,.nq-shell .reader-bismillah-text,.nq-shell .nq-bismillah-text,.nq-shell .nq-arabic-text{font-family:'UthmanicHafs','KFGQPC','Scheherazade New','Amiri','Traditional Arabic',serif!important;font-feature-settings:'liga' 1,'calt' 1,'mark' 1,'mkmk' 1}
+                .nq-shell .word-arabic,.nq-shell .reader-verse-arabic,.nq-shell .reader-bismillah-text,.nq-shell .nq-bismillah-text,.nq-shell .nq-arabic-text{font-family: "UthmanicHafs", serif;font-feature-settings:'liga' 1,'calt' 1,'mark' 1,'mkmk' 1}
                 .nq-verse-badge{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;border:1px solid rgba(245,158,11,0.4);font-size:12px;font-weight:700;color:#f59e0b;margin-right:6px;font-family:'Lexend',sans-serif;cursor:pointer;vertical-align:middle;transition:background 0.15s}
                 @media(min-width:640px){.nq-verse-badge{width:40px;height:40px;font-size:14px;margin-right:8px}}
                 .nq-verse-badge:hover{background:rgba(245,158,11,0.1)}
@@ -991,7 +991,7 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
                   background:linear-gradient(135deg,#f59e0b,#d97706);
                   display:flex;align-items:center;justify-content:center;
                   box-shadow:0 4px 12px rgba(245,158,11,0.25);
-                  font-family:'UthmanicHafs','KFGQPC','Scheherazade New','Amiri',serif;font-size:20px;color:white;font-weight:700;
+                  font-family: "UthmanicHafs", serif;font-size:20px;color:white;font-weight:700;
                 }
                 .nq-ab-art-num{font-family:'Figtree','Inter',sans-serif;font-size:14px;font-weight:700;color:rgba(255,255,255,0.9)}
                 .nq-ab-track{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
@@ -1180,7 +1180,7 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
                     }
                     .nq-ayah-sep{display:flex;align-items:center;gap:16px;padding:6px 0}
                     .nq-sep-line{flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(100,116,139,0.15) 20%,rgba(100,116,139,0.2) 50%,rgba(100,116,139,0.15) 80%,transparent)}
-                    .nq-sep-icon{font-size:14px;color:rgba(245,158,11,0.45);flex-shrink:0;line-height:1;font-family:'Traditional Arabic','Scheherazade New','Amiri',serif;user-select:none}
+                    .nq-sep-icon{font-size:14px;color:rgba(245,158,11,0.45);flex-shrink:0;line-height:1;font-family: "UthmanicHafs", serif;user-select:none}
                     .nq-surah-header{text-align:center;margin-bottom:32px;padding:24px 16px 20px;border-bottom:1px solid rgba(245,158,11,0.1)}
                     .nq-surah-header-arabic{font-family:var(--rq-font-arabic);color:#1e293b;font-weight:700;line-height:1.6;display:block}
                     .dark .nq-surah-header-arabic{color:#e2e8f0}
@@ -1404,7 +1404,7 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
                                             }}>
                                                 <span className="nq-arabic-text" style={{
                                                     fontSize: isMobile ? 22 : 32,
-                                                    fontFamily: "'UthmanicHafs', 'KFGQPC', 'Scheherazade New', 'Amiri', 'Traditional Arabic', serif",
+                                                    fontFamily: "'UthmanicHafs', 'Amiri', serif",
                                                     lineHeight: 1.8,
                                                     color: 'var(--text-primary)',
                                                     fontFeatureSettings: '"liga" 1, "calt" 1, "mark" 1, "mkmk" 1',

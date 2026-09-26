@@ -72,7 +72,7 @@
 }
 
 .verse-text.arabic {
-  font-family: 'Naskh IndoPak', serif;
+  font-family: "UthmanicHafs", serif;
   font-size: 1.75rem;
   line-height: 2.5;
   text-align: right;
@@ -161,7 +161,7 @@
 }
 
 .verse-text.arabic {
-  font-family: 'Naskh IndoPak', serif;
+  font-family: "UthmanicHafs", serif;
   font-size: 1.9rem;
   line-height: 2.5;
   text-align: right;

@@ -59,7 +59,7 @@
 }
 
 .qc-surah-glyph {
-  font-family: "UthmanicHafs", "KFGQPC", serif;
+  font-family: "UthmanicHafs", serif;
   font-size: clamp(2rem, 6vw, 3.5rem);
   line-height: 1.2;
   color: var(--text-primary, #0f172a);

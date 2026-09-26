@@ -2,32 +2,7 @@
 /* Clean, Light, Focus-Driven */
 
 /* ===== FONT IMPORTS ===== */
-@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap');
-
-/* Note: KFGQPC Uthmanic Script HAFS is declared in globals.css */
-
-/* ===== VARIABLES ===== */
-:root {
-    --mq-bg: #f8fafc;
-    --mq-primary: #f59e0b;
-    --mq-primary-dim: rgba(245, 158, 11, 0.1);
-    --mq-primary-hover: rgba(245, 158, 11, 0.2);
-    --mq-text: #1e293b;
-    --mq-text-dim: #64748b;
-    --mq-border: #e2e8f0;
-    --mq-card-bg: #ffffff;
-    --mq-card-radius: 16px;
-    --mq-accent: #0ea5e9;
-    --mq-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-    --mq-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.10);
-}
-
-/* ===== GLOBAL PAGE ===== */
-.memorize-page {
-    min-height: 100vh;
-    background: var(--mq-bg);
-    color: var(--mq-text);
-    font-family: 'Lexend', 'Inter', sans-serif;
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap"UthmanicHafs", serifLexend', 'Inter', sans-serif;
     padding-top: 80px;
     padding-bottom: 180px;
     /* extra space so last verse isn't hidden under player */
@@ -61,7 +36,7 @@
 }
 
 .memorize-title-arabic {
-    font-family: 'Naskh IndoPak', 'Scheherazade New', 'Noto Naskh Arabic', 'KFGQPC', 'Amiri', 'Traditional Arabic', serif;
+    font-family: "UthmanicHafs", serif;
     color: var(--mq-primary);
     font-weight: 400;
 }
@@ -273,7 +248,7 @@
 }
 
 .mq-surah-name-ar {
-    font-family: 'Naskh IndoPak', 'Scheherazade New', 'Noto Naskh Arabic', 'KFGQPC', 'Amiri', 'Traditional Arabic', serif;
+    font-family: "UthmanicHafs", serif;
     font-size: 1.3rem;
     color: var(--mq-primary);
     flex-shrink: 0;
@@ -609,7 +584,7 @@
 }
 
 .verse-arabic {
-    font-family: 'Naskh IndoPak', 'Scheherazade New', 'Noto Naskh Arabic', 'KFGQPC', 'Amiri', 'Traditional Arabic', serif;
+    font-family: "UthmanicHafs", serif;
     font-size: 2.2rem;
     text-align: right;
     direction: rtl;
@@ -1179,7 +1154,7 @@
 }
 
 .focus-mode-verse {
-    font-family: 'Naskh IndoPak', 'Scheherazade New', 'Noto Naskh Arabic', 'KFGQPC', 'Amiri', 'Traditional Arabic', serif;
+    font-family: "UthmanicHafs", serif;
     font-size: clamp(2rem, 5vw, 3.5rem);
     line-height: 2.2;
     text-align: center;

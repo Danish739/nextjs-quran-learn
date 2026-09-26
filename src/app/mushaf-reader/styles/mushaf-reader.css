@@ -34,7 +34,7 @@
  * (including ی dots + pause PUA). Use it for the full Arabic range.
  */
 @font-face {
-  font-family: "IndoPak Composite";
+  font-family: "UthmanicHafs", serif;
   src:
     url("/fonts/indopak-nastaleeq-waqf-lazim.woff2") format("woff2"),
     url("https://verses.quran.foundation/fonts/quran/hafs/nastaleeq/indopak/indopak-nastaleeq-waqf-lazim-v4.2.1.woff2") format("woff2"),
@@ -46,7 +46,7 @@
 
 /* Fallback body face if waqf-lazim misses a glyph */
 @font-face {
-  font-family: "IndoPak Composite";
+  font-family: "UthmanicHafs", serif;
   src: url("/fonts/Naskh-Nastaleeq-IndoPak-QWBW.woff2") format("woff2");
   font-weight: normal;
   font-style: normal;
@@ -76,7 +76,7 @@
 }
 
 .mr-toolbar-ar {
-  font-family: "KFGQPC", "Naskh IndoPak", serif;
+  font-family: "UthmanicHafs", serif;
   font-size: 1.35rem;
   color: var(--mr-text);
 }
@@ -289,7 +289,7 @@
   border: 1.25px solid #374151;
   border-radius: 50%;
   font-size: 0.48em;
-  font-family: "IndoPak Composite", "PDMS Saleem AC Quran", "UthmanicHafs", serif;
+  font-family: "UthmanicHafs", serif;
   font-weight: 600;
   color: #111;
   line-height: 1;
@@ -310,7 +310,7 @@
   line-height: 1.15;
   z-index: 2;
   pointer-events: none;
-  font-family: "IndoPak Composite", "PDMS Saleem AC Quran", "UthmanicHafs", serif;
+  font-family: "UthmanicHafs", serif;
   color: #1f2937;
 }
 
@@ -337,11 +337,11 @@
 
 .mr-script-uthmani .mr-ayah-text,
 .mr-script-tajweed .mr-ayah-text {
-  font-family: "UthmanicHafs", "KFGQPC", "Scheherazade New", "Amiri", serif;
+  font-family: "UthmanicHafs", serif;
 }
 
 .mr-script-indopak .mr-ayah-text {
-  font-family: "IndoPak Composite", "Naskh IndoPak", serif;
+  font-family: "UthmanicHafs", serif;
   word-spacing: 0.08em;
   line-height: 2.55;
 }

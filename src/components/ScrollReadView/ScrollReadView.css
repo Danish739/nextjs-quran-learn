@@ -2488,7 +2488,7 @@
 
     font-size: 0.95rem;
 
-    line-height: 1.6;    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.1);    font-size: 1rem;  font-family: 'Naskh IndoPak', 'Scheherazade New', 'Noto Naskh Arabic', 'KFGQPC', 'Amiri', 'Traditional Arabic', serif;
+    line-height: 1.6;    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.1);    font-size: 1rem;  font-family: "UthmanicHafs", serif;
 
   }
 
@@ -2926,7 +2926,7 @@
 
     }
 
-    transform-style: preserve-3d;  font-family: 'Naskh IndoPak', 'Scheherazade New', 'Noto Naskh Arabic', 'KFGQPC', 'Amiri', 'Traditional Arabic', serif;
+    transform-style: preserve-3d;  font-family: "UthmanicHafs", serif;
 
     .navigationControls {
 

@@ -4,7 +4,7 @@
 @font-face {
   font-family: "UthmanicHafs";
   src:
-    local("KFGQPC HAFS Uthmanic Script"),
+    local("UthmanicHafs", serif),
     url("/fonts/quran/hafs/uthmanic_hafs/UthmanicHafs1Ver18.woff2") format("woff2"),
     url("/fonts/quran/hafs/uthmanic_hafs/UthmanicHafs1Ver18.ttf") format("truetype");
   font-display: swap;
@@ -142,7 +142,7 @@
   padding: 0 20px;
   color: var(--text);
   font-weight: 400;
-  font-family: UthmanicHafs, "KFGQPC HAFS Uthmanic Script", "Noto Naskh Arabic", serif !important;
+  font-family: "UthmanicHafs", serif;
 }
 
 .uthmaniVerse span {
@@ -289,7 +289,7 @@
   padding: 0;
   color: var(--text);
   font-weight: 400;
-  font-family: UthmanicHafs, "KFGQPC HAFS Uthmanic Script", "Noto Naskh Arabic", serif !important;
+  font-family: "UthmanicHafs", serif;
 }
 
 .uth-ar-words.is-center {
