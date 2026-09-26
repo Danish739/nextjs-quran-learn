@@ -43,6 +43,9 @@ export interface Word {
     char_type_name?: string;
     text_uthmani: string;
     text_imlaei: string;
+    code_v2?: string;
+    line_number?: number;
+    page_number?: number;
     translation: {
         text: string;
         language_name: string;
@@ -248,14 +251,14 @@ export async function getVersesWithWords(
     translationId: string = '131', // Sahih International (English)
     wordLanguage: string = 'en' // Default to English for word translations/transliterations
 ): Promise<VerseWithTranslation[]> {
-    const cacheKey = `verses-words-uthmani-${chapterId}-${translationId}-${wordLanguage}`;
+    const cacheKey = `verses-words-qcf-v2-${chapterId}-${translationId}-${wordLanguage}`;
     if (clientCache.has(cacheKey)) return clientCache.get(cacheKey);
     try {
         const url =
             `${API_BASE}/verses/by_chapter/${chapterId}?language=${wordLanguage}` +
-            `&words=true&translations=${translationId}` +
-            `&fields=text_uthmani,text_qpc_hafs` +
-            `&word_fields=text_uthmani,text_qpc_hafs,text_imlaei,translation,transliteration` +
+            `&words=true&mushaf=1&translations=${translationId}` +
+            `&fields=text_uthmani,text_qpc_hafs,code_v2` +
+            `&word_fields=text_uthmani,text_qpc_hafs,text_imlaei,code_v2,line_number,page_number,char_type_name,translation,transliteration` +
             `&translation_fields=text,resource_name&per_page=300`;
 
         const response = await fetchWithRetry(url);
@@ -288,6 +291,9 @@ export async function getVersesWithWords(
                     char_type_name: word.char_type_name,
                     text_uthmani: word.text_uthmani || word.text_qpc_hafs,
                     text_imlaei: word.text_imlaei || word.text_uthmani,
+                    code_v2: word.code_v2,
+                    line_number: word.line_number,
+                    page_number: word.page_number || verse.page_number || 1,
                     translation: word.translation || { text: '', language_name: 'english' },
                     transliteration: word.transliteration || { text: '', language_name: 'english' },
                     audio_url: word.audio_url || null

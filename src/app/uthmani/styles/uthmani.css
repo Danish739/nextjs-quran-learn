@@ -1,0 +1,424 @@
+/* UthmanicHafs verse view — measured from quran.com (step 4, light theme).
+   Same CSS for every surah. */
+
+@font-face {
+  font-family: "UthmanicHafs";
+  src:
+    local("KFGQPC HAFS Uthmanic Script"),
+    url("/fonts/quran/hafs/uthmanic_hafs/UthmanicHafs1Ver18.woff2") format("woff2"),
+    url("/fonts/quran/hafs/uthmanic_hafs/UthmanicHafs1Ver18.ttf") format("truetype");
+  font-display: swap;
+}
+
+.uth-page {
+  --text: #272727;
+  --faded: #868e96;
+  --card: #f8f9fa;
+  --page: #ffffff;
+  --hover: #2ca4ab;
+  --line: #e9ecef;
+  --font-ui: Figtree, "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+  background: var(--page);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 16px;
+  line-height: 1.354;
+  min-height: 100vh;
+}
+
+.uth-reader {
+  max-width: 1230px;
+  margin: 0 auto;
+  padding: 24px 20px 48px;
+}
+
+.uth-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.uth-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.uth-title span {
+  color: var(--faded);
+  font-weight: 400;
+}
+
+.uth-steps {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--faded);
+  font-size: 14px;
+}
+
+.uth-steps button {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.uth-steps button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.uth-surah-label {
+  margin: 28px 20px 8px;
+  font-size: 14px;
+  color: var(--faded);
+}
+
+.uth-bismillah {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+  margin: 12px 0 4px;
+}
+
+.uth-bismillah img {
+  width: 220px;
+  height: auto;
+}
+
+@media (max-width: 767px) {
+  .uth-bismillah img {
+    width: 148px;
+  }
+}
+
+.uth-verse {
+  background: transparent;
+  padding: 0 0 30px;
+  margin-bottom: 8px;
+}
+
+.uth-verse.is-starting {
+  background: var(--card);
+}
+
+.uth-verse-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 20px;
+  padding: 0 20px;
+  color: var(--faded);
+  font-size: 14px;
+}
+
+.uth-arabic-block {
+  margin-top: 40px;
+  margin-bottom: 16px;
+}
+
+.uthmaniVerse {
+  direction: rtl;
+  text-align: center;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0;
+  margin: 0;
+  padding: 0 20px;
+  color: var(--text);
+  font-weight: 400;
+  font-family: UthmanicHafs, "KFGQPC HAFS Uthmanic Script", "Noto Naskh Arabic", serif !important;
+}
+
+.uthmaniVerse span {
+  display: inline-block;
+  white-space: nowrap;
+  margin-inline-end: 0.375rem;
+  line-height: inherit;
+  cursor: pointer;
+}
+
+.uthmaniVerse span:hover {
+  color: var(--hover);
+}
+
+.uthmaniVerse span.stop {
+  margin-inline-end: 0.8125rem;
+}
+
+.uth-translation {
+  margin: 0 0 50px;
+  padding: 0 20px;
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: 0;
+  text-align: left;
+}
+
+.uth-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+  padding: 0 20px;
+}
+
+.uth-nav a {
+  color: var(--text);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.uth-nav a:hover {
+  color: var(--hover);
+}
+
+.uth-status {
+  padding: 48px 20px;
+  text-align: center;
+  color: var(--faded);
+}
+
+/* Arabic size steps — qpc_uthmani_hafs */
+.uth-step-1 .uthmaniVerse { font-size: 3.2vh; line-height: 6vh; }
+.uth-step-2 .uthmaniVerse { font-size: 3.5vh; line-height: 6vh; }
+.uth-step-3 .uthmaniVerse { font-size: 4vh; line-height: 6.1vh; }
+.uth-step-4 .uthmaniVerse { font-size: 4vh; line-height: 6vh; }
+.uth-step-5 .uthmaniVerse { font-size: 4.4vh; line-height: 5.68vh; }
+.uth-step-6 .uthmaniVerse { font-size: 5.56vh; line-height: 8.14vh; }
+.uth-step-7 .uthmaniVerse { font-size: 6.72vh; line-height: 10.61vh; }
+.uth-step-8 .uthmaniVerse { font-size: 7.88vh; line-height: 13.07vh; }
+.uth-step-9 .uthmaniVerse { font-size: 9.04vh; line-height: 15.54vh; }
+.uth-step-10 .uthmaniVerse { font-size: 10.27vh; line-height: 18vh; }
+
+.uth-step-1 .uth-translation { font-size: 0.85rem; }
+.uth-step-2 .uth-translation { font-size: 1rem; }
+.uth-step-3 .uth-translation,
+.uth-step-4 .uth-translation { font-size: 1.25rem; }
+.uth-step-5 .uth-translation { font-size: 2rem; }
+.uth-step-6 .uth-translation { font-size: 2.3rem; }
+.uth-step-7 .uth-translation { font-size: 2.7rem; }
+.uth-step-8 .uth-translation { font-size: 3rem; }
+.uth-step-9 .uth-translation { font-size: 3.5rem; }
+.uth-step-10 .uth-translation { font-size: 4rem; }
+
+@media (max-width: 767px) {
+  .uth-step-1 .uthmaniVerse { font-size: 4vw; line-height: normal; }
+  .uth-step-2 .uthmaniVerse { font-size: 4.5vw; line-height: normal; }
+  .uth-step-3 .uthmaniVerse { font-size: 4.6vw; line-height: normal; }
+  .uth-step-4 .uthmaniVerse { font-size: 8.9vw; line-height: normal; }
+  .uth-step-5 .uthmaniVerse { font-size: 11vw; line-height: normal; }
+  .uth-step-6 .uthmaniVerse { font-size: 12vw; line-height: normal; }
+  .uth-step-7 .uthmaniVerse { font-size: 13vw; line-height: normal; }
+  .uth-step-8 .uthmaniVerse { font-size: 14vw; line-height: normal; }
+  .uth-step-9 .uthmaniVerse { font-size: 15vw; line-height: normal; }
+  .uth-step-10 .uthmaniVerse { font-size: 16vw; line-height: normal; }
+
+  .uth-step-1 .uth-translation { font-size: 0.85rem; }
+  .uth-step-2 .uth-translation { font-size: 0.95rem; }
+  .uth-step-3 .uth-translation,
+  .uth-step-4 .uth-translation { font-size: 1.05rem; }
+  .uth-step-5 .uth-translation { font-size: 1.5rem; }
+  .uth-step-6 .uth-translation { font-size: 1.8rem; }
+  .uth-step-7 .uth-translation { font-size: 2.1rem; }
+  .uth-step-8 .uth-translation { font-size: 2.4rem; }
+  .uth-step-9 .uth-translation { font-size: 2.75rem; }
+  .uth-step-10 .uth-translation { font-size: 3rem; }
+
+  .uth-translation {
+    margin-bottom: 30px;
+  }
+
+  .uth-arabic-block {
+    margin-top: 30px;
+  }
+}
+
+/* Arabic reading mode — quran.com ?readingMode=arabic
+   Fixed mushaf line width, no extra word gap, starting-verse wash. */
+.uth-ar .uth-reader {
+  max-width: none;
+}
+
+.uth-ar-page {
+  inline-size: fit-content;
+  max-inline-size: 100%;
+  margin-inline: auto;
+  position: relative;
+  padding-block-end: 24px;
+}
+
+.uth-ar-page::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: 12px;
+  height: 1px;
+  background: var(--line);
+}
+
+.uth-ar-line {
+  direction: rtl;
+  text-align: center;
+  margin-inline: auto;
+}
+
+.uth-ar-words {
+  display: flex;
+  direction: rtl;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  color: var(--text);
+  font-weight: 400;
+  font-family: UthmanicHafs, "KFGQPC HAFS Uthmanic Script", "Noto Naskh Arabic", serif !important;
+}
+
+.uth-ar-words.is-center {
+  justify-content: center;
+}
+
+.uth-ar-words.is-spread {
+  justify-content: space-between;
+}
+
+.uth-ar-word {
+  display: inline-block;
+  white-space: nowrap;
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+  position: relative;
+  z-index: 0;
+}
+
+.uth-ar-word:hover {
+  color: var(--hover);
+}
+
+.uth-ar-word.is-starting::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline: -2px;
+  background: #ebf9fa;
+  z-index: -1;
+}
+
+.uth-ar-footer {
+  margin: 6px auto 16px;
+  text-align: center;
+  font-size: 1.6vh;
+  color: var(--faded);
+}
+
+.uth-step-1.uth-ar .uth-ar-words { font-size: 3.2vh; line-height: 6vh; }
+.uth-step-2.uth-ar .uth-ar-words { font-size: 3.5vh; line-height: 6vh; }
+.uth-step-3.uth-ar .uth-ar-words { font-size: 4vh; line-height: 6.1vh; }
+.uth-step-4.uth-ar .uth-ar-words { font-size: 4vh; line-height: 6vh; }
+.uth-step-5.uth-ar .uth-ar-words { font-size: 4.4vh; line-height: 5.68vh; }
+.uth-step-6.uth-ar .uth-ar-words { font-size: 5.56vh; line-height: 8.14vh; }
+.uth-step-7.uth-ar .uth-ar-words { font-size: 6.72vh; line-height: 10.61vh; }
+.uth-step-8.uth-ar .uth-ar-words { font-size: 7.88vh; line-height: 13.07vh; }
+.uth-step-9.uth-ar .uth-ar-words { font-size: 9.04vh; line-height: 15.54vh; }
+.uth-step-10.uth-ar .uth-ar-words { font-size: 10.27vh; line-height: 18vh; }
+
+@media (min-width: 768px) {
+  .uth-step-1.uth-ar .uth-ar-line { width: 55vh; }
+  .uth-step-2.uth-ar .uth-ar-line { width: 59vh; }
+  .uth-step-3.uth-ar .uth-ar-line { width: 63.8vh; }
+  .uth-step-4.uth-ar .uth-ar-line { width: 65vh; }
+  .uth-step-5.uth-ar .uth-ar-line { width: 66vh; }
+}
+
+@media (min-width: 1024px) {
+  .uth-step-1.uth-ar .uth-ar-line { width: 60vh; }
+  .uth-step-2.uth-ar .uth-ar-line { width: 65vh; }
+  .uth-step-3.uth-ar .uth-ar-line { width: 73.5vh; }
+  .uth-step-4.uth-ar .uth-ar-line { width: 74vh; }
+  .uth-step-5.uth-ar .uth-ar-line { width: 81vh; }
+  .uth-step-6.uth-ar .uth-ar-line { width: 102.8vh; }
+  .uth-step-7.uth-ar .uth-ar-line { width: 124.6vh; }
+  .uth-step-8.uth-ar .uth-ar-line { width: 146.4vh; }
+  .uth-step-9.uth-ar .uth-ar-line { width: 168.2vh; }
+  .uth-step-10.uth-ar .uth-ar-line { width: 190vh; }
+}
+
+@media (max-width: 767px) {
+  .uth-big.uth-ar {
+    text-align: center;
+    direction: rtl;
+  }
+
+  .uth-big.uth-ar .uth-ar-line {
+    display: inline;
+    width: auto;
+  }
+
+  .uth-step-4.uth-ar .uth-ar-words { font-size: 8.9vw; line-height: normal; }
+}
+
+.uth-qcf .uth-ar-page::after {
+  display: none;
+}
+
+.uth-step-1.uth-qcf .uth-ar-words,
+.uth-step-2.uth-qcf .uth-ar-words,
+.uth-step-3.uth-qcf .uth-ar-words,
+.uth-step-4.uth-qcf .uth-ar-words,
+.uth-step-5.uth-qcf .uth-ar-words {
+  line-height: 6.1vh;
+}
+
+.uth-step-1.uth-qcf .uth-ar-words { font-size: 2.9vh; }
+.uth-step-2.uth-qcf .uth-ar-words { font-size: 3vh; }
+.uth-step-3.uth-qcf .uth-ar-words { font-size: 3.2vh; }
+.uth-step-4.uth-qcf .uth-ar-words { font-size: 3.5vh; }
+.uth-step-5.uth-qcf .uth-ar-words { font-size: 3.7vh; }
+
+.uth-qcf .uth-ar-footer {
+  margin: 22px auto 8px;
+  font-size: 15px;
+  color: #3a3a3a;
+  font-weight: 500;
+}
+
+.uth-qcf .uth-nav {
+  justify-content: center;
+  gap: 28px;
+  margin-top: 4px;
+}
+
+@media (min-width: 768px) {
+  .uth-step-1.uth-qcf .uth-ar-line { width: 52vh; }
+  .uth-step-2.uth-qcf .uth-ar-line { width: 54vh; }
+  .uth-step-3.uth-qcf .uth-ar-line { width: 56vh; }
+  .uth-step-4.uth-qcf .uth-ar-line { width: 61vh; }
+  .uth-step-5.uth-qcf .uth-ar-line { width: 64.5vh; }
+}
+
+@media (min-width: 1024px) {
+  .uth-step-1.uth-qcf .uth-ar-line { width: 52vh; }
+  .uth-step-2.uth-qcf .uth-ar-line { width: 54vh; }
+  .uth-step-3.uth-qcf .uth-ar-line { width: 56vh; }
+  .uth-step-4.uth-qcf .uth-ar-line { width: 61vh; }
+  .uth-step-5.uth-qcf .uth-ar-line { width: 64.5vh; }
+}

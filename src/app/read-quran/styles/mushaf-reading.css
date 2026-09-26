@@ -1,0 +1,288 @@
+/* Quran.com-style Mushaf reading layout (QCF V2 glyphs + line grouping) */
+
+.qc-page {
+  --qc-line-width: min(100%, 680px);
+  --qc-glyph-size: 42px;
+  --qc-gap: 0;
+
+  inline-size: fit-content;
+  max-inline-size: 100%;
+  margin-inline: auto;
+  position: relative;
+  padding-block-end: 24px;
+  width: 100%;
+}
+
+.qc-page--center {
+  text-align: center;
+  direction: rtl;
+}
+
+@media (min-width: 768px) {
+  .qc-page--center {
+    text-align: start;
+  }
+
+  .qc-page {
+    --qc-line-width: min(100%, 760px);
+  }
+}
+
+/* ── Chapter header ── */
+.qc-header {
+  margin-inline: auto;
+  margin-bottom: 20px;
+  max-width: var(--qc-line-width);
+  width: 100%;
+}
+
+.qc-header-card {
+  background: var(--bg-surface, #fff);
+  border: 1px solid var(--border-subtle, #e2e8f0);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.qc-title-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--border-subtle, #e2e8f0);
+}
+
+@media (min-width: 640px) {
+  .qc-title-row {
+    gap: 24px;
+    padding: 24px 28px 18px;
+  }
+}
+
+.qc-surah-glyph {
+  font-family: "UthmanicHafs", "KFGQPC", serif;
+  font-size: clamp(2rem, 6vw, 3.5rem);
+  line-height: 1.2;
+  color: var(--text-primary, #0f172a);
+  flex-shrink: 0;
+}
+
+.qc-title-divider {
+  width: 1px;
+  align-self: stretch;
+  background: var(--border-subtle, #e2e8f0);
+  flex-shrink: 0;
+}
+
+.qc-title-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  text-align: start;
+  direction: ltr;
+}
+
+.qc-transliterated {
+  margin: 0;
+  font-size: clamp(1rem, 2.5vw, 1.35rem);
+  font-weight: 700;
+  color: var(--text-primary, #0f172a);
+  font-family: Lexend, Inter, system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+.qc-translated {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--text-muted, #64748b);
+  font-family: Lexend, Inter, system-ui, sans-serif;
+}
+
+.qc-seo-intro {
+  margin: 6px 0 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--text-muted, #94a3b8);
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.qc-top-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 16px 14px;
+}
+
+.qc-primary-actions,
+.qc-secondary-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.qc-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle, #e2e8f0);
+  background: var(--bg-muted, #f8fafc);
+  color: var(--text-secondary, #475569);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: Lexend, Inter, system-ui, sans-serif;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.qc-pill:hover {
+  border-color: #f59e0b;
+  color: #b45309;
+}
+
+.qc-pill.is-selected {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.45);
+  color: #b45309;
+}
+
+.qc-pill:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* ── Lines ── */
+.qc-lines {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  width: 100%;
+  padding-block: 8px;
+}
+
+.qc-line {
+  direction: rtl;
+  display: block;
+  width: var(--qc-line-width);
+  max-width: 100%;
+  margin-inline: auto;
+}
+
+.qc-line-inner {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: baseline;
+  gap: 0;
+  column-gap: 0;
+  width: 100%;
+  min-height: calc(var(--qc-glyph-size) * 1.45);
+  padding: 4px 0;
+  letter-spacing: 0;
+  word-spacing: 0;
+}
+
+.qc-word {
+  display: inline-flex;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.15s;
+  line-height: 1;
+  padding: 0;
+  margin: 0;
+  letter-spacing: 0;
+}
+
+.qc-word:hover,
+.qc-word.is-active {
+  background: rgba(245, 158, 11, 0.14);
+}
+
+.qc-word.is-starting {
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.qc-glyph {
+  font-size: var(--qc-glyph-size);
+  line-height: 1.55;
+  color: #1e293b;
+  -webkit-font-smoothing: antialiased;
+  speak: none;
+  letter-spacing: 0;
+  word-spacing: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.qc-seo-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.qc-page-footer {
+  text-align: center;
+  margin-top: 18px;
+  padding-top: 12px;
+}
+
+.qc-page-link {
+  display: inline-block;
+  font-family: Lexend, Inter, system-ui, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-muted, #94a3b8);
+  text-decoration: none;
+}
+
+.qc-page-link:hover {
+  color: #f59e0b;
+}
+
+.qc-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 20px;
+  max-width: var(--qc-line-width);
+  margin-inline: auto;
+  width: 100%;
+}
+
+.qc-nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border-subtle, #e2e8f0);
+  background: var(--bg-surface, #fff);
+  color: var(--text-primary, #0f172a);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.qc-nav a.primary {
+  background: var(--brand-primary, #f59e0b);
+  border-color: transparent;
+  color: #fff;
+}
+
+.qc-loading,
+.qc-empty {
+  text-align: center;
+  padding: 40px 16px;
+  color: var(--text-muted, #94a3b8);
+  font-family: Lexend, Inter, system-ui, sans-serif;
+}
