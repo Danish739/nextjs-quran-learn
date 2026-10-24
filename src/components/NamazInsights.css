@@ -1,0 +1,109 @@
+/* Namaz insights — dialog over the tracker, same light palette */
+
+/* above the site navbar and mobile bottom bar (they go up to 10001) */
+.ni-overlay { position: fixed; inset: 0; z-index: 10050; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(10, 25, 18, 0.45); }
+.ni {
+  --ink: #16231c; --muted: #5a6760; --muted-2: #4b5650; --line: #e1e5de; --line-soft: #eef0ec;
+  --brand: #0b5d43; --red: #8e2a20; --amber: #a86e12;
+  --text-primary: var(--ink); --text-secondary: var(--muted);
+  width: 100%; max-width: 760px; max-height: 100%; overflow-y: auto; box-sizing: border-box;
+  background: #f3f5f0; color: var(--ink); border-radius: 20px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  font-family: var(--nt-font, 'Manrope'), system-ui, sans-serif;
+}
+.ni h2, .ni h3, .ni p { margin: 0; }
+.ni button { font-family: inherit; }
+
+.ni-head { position: sticky; top: 0; z-index: 1; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 20px 24px 12px; background: #f3f5f0; }
+.ni-head h2 { font-size: 24px; font-weight: 800; color: var(--ink); }
+.ni-head p { margin-top: 2px; font-size: 14px; color: var(--muted); }
+.ni-close { width: 44px; height: 44px; flex: none; display: flex; align-items: center; justify-content: center; border-radius: 12px; border: 1px solid #d3d8d0; background: #ffffff; color: var(--ink); cursor: pointer; }
+
+.ni-periods { display: flex; gap: 6px; margin: 0 24px; padding: 4px; border-radius: 12px; background: #e6eae3; width: fit-content; }
+.ni-periods button { min-height: 40px; padding: 0 16px; border-radius: 9px; border: none; background: transparent; color: var(--muted-2); font-size: 14px; font-weight: 700; cursor: pointer; }
+.ni-periods button.is-on { background: #ffffff; color: var(--brand); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08); }
+
+.ni-body { display: flex; flex-direction: column; gap: 14px; padding: 16px 24px 24px; }
+.ni-empty { padding: 24px; display: flex; flex-direction: column; align-items: flex-start; gap: 12px; color: var(--muted-2); }
+
+.ni-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.ni-tiles > div { display: flex; flex-direction: column; gap: 2px; padding: 14px; border-radius: 14px; background: #ffffff; border: 1px solid var(--line); }
+.ni-tiles span { font-size: 12px; font-weight: 700; color: var(--muted); }
+.ni-tiles b { font-size: 28px; line-height: 1.15; font-weight: 800; color: var(--ink); }
+.ni-tiles em { font-style: normal; font-size: 12px; color: var(--muted); }
+.ni .ni-brand { color: var(--brand); }
+.ni .ni-red { color: var(--red); }
+.ni-delta { margin-top: 4px; font-size: 12px; font-weight: 700; color: var(--muted-2); }
+.ni-delta.is-good { color: var(--brand); }
+.ni-delta.is-bad { color: var(--red); }
+.ni .ni-note { font-size: 12px; color: var(--muted); }
+
+.ni-card { padding: 18px; border-radius: 16px; background: #ffffff; border: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; }
+.ni-card h3 { font-size: 17px; font-weight: 800; color: var(--ink); }
+.ni .ni-sub { margin-top: -6px; font-size: 13px; color: var(--muted); }
+.ni-kicker { font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--amber); }
+
+.ni-worst { background: #fff7e6; border-color: #f1dcae; }
+.ni-worst.is-clear { background: #e6f2ea; border-color: #b9d9c6; }
+.ni-worst.is-clear .ni-kicker { color: var(--brand); }
+.ni-worst-name { display: flex; align-items: baseline; gap: 12px; }
+.ni-worst-name b { font-size: 28px; font-weight: 800; }
+.ni-worst-name [lang='ar'] { font-family: var(--nt-font-ar, 'Amiri'), serif; font-size: 26px; line-height: 1; color: var(--brand); }
+.ni-worst p { font-size: 14px; color: #5c3d00; }
+.ni-worst .ni-clear { color: var(--brand); font-weight: 700; }
+
+.ni-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.ni-table th, .ni-table td { padding: 8px 4px; text-align: left; border-top: 1px solid var(--line-soft); }
+.ni-table thead th { border-top: none; padding-top: 0; font-size: 12px; font-weight: 700; color: var(--muted); }
+.ni-table tbody th { width: 80px; font-weight: 700; }
+.ni-table td:nth-child(3), .ni-table td:nth-child(4), .ni-table thead th:nth-child(3), .ni-table thead th:nth-child(4) { width: 64px; text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
+.ni-of { color: var(--muted); font-weight: 600; }
+.ni-bar-cell { padding-right: 12px !important; }
+.ni-bar { display: block; height: 10px; border-radius: 5px; background: #eaede7; overflow: hidden; }
+.ni-bar i { display: block; height: 100%; border-radius: 0 4px 4px 0; background: #d9908a; }
+.ni-table tr.is-worst .ni-bar i { background: #b3362b; }
+.ni-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+.ni-chart-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.ni-chart-head .ni-sub { margin-top: 2px; }
+.ni .ni-readout { min-height: 20px; font-size: 13px; color: var(--muted-2); }
+.ni-readout b { color: var(--ink); }
+.ni-chart { position: relative; display: flex; gap: 8px; height: 160px; }
+.ni-grid { display: flex; flex-direction: column; justify-content: space-between; padding-bottom: 20px; font-size: 11px; color: var(--muted); text-align: right; width: 32px; flex: none; }
+.ni-bars { position: relative; flex: 1; display: flex; align-items: stretch; gap: 2px; min-width: 0; }
+.ni-bars::before, .ni-bars::after { content: ''; position: absolute; left: 0; right: 0; border-top: 1px dashed #e1e5de; pointer-events: none; }
+.ni-bars::before { top: 0; }
+.ni-bars::after { top: calc((100% - 20px) / 2); }
+.ni-col { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 0; border: none; background: transparent; cursor: default; }
+.ni-col-track { flex: 1; display: flex; align-items: flex-end; border-bottom: 1px solid #c9d0c9; }
+.ni-col-track i { display: block; width: 100%; max-width: 28px; margin: 0 auto; border-radius: 4px 4px 0 0; background: #3e9e73; }
+.ni-col.is-hover .ni-col-track i, .ni-col:focus-visible .ni-col-track i { background: #0b5d43; }
+.ni-col:focus-visible { outline: 2px solid #0b5d43; outline-offset: 1px; border-radius: 4px; }
+.ni-col-label { height: 20px; display: flex; align-items: flex-end; justify-content: center; font-size: 11px; color: var(--muted); white-space: nowrap; overflow: visible; }
+
+.ni-list { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; line-height: 1.5; color: var(--muted-2); }
+
+.ni-tips { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.ni-tips li { display: flex; gap: 12px; padding: 12px 14px; border-radius: 12px; background: #fff7e6; }
+.ni-tips li.is-good { background: #e6f2ea; }
+.ni-tip-icon { flex: none; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; background: #ffffff; color: var(--amber); }
+.ni-tips li.is-good .ni-tip-icon { color: var(--brand); }
+.ni-tips p { font-size: 14px; line-height: 1.5; color: #3d2a00; }
+.ni-tips li.is-good p { color: #0b3d2c; }
+.ni .ni-action { margin-top: 8px; min-height: 40px; padding: 0 14px; border-radius: 10px; border: none; background: var(--brand); color: #ffffff; font-size: 14px; font-weight: 800; cursor: pointer; }
+
+/* entry button used on the tracker */
+.ni-open { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 16px; border-radius: 12px; border: 1px solid #0b5d43; background: #ffffff; color: #0b5d43 !important; font-family: inherit; font-size: 14px; font-weight: 800; cursor: pointer; }
+.ni-open:hover { background: #e6f2ea; }
+
+@media (max-width: 767px) {
+  .ni-overlay { padding: 0; align-items: stretch; }
+  .ni { max-width: none; border-radius: 0; }
+  .ni-head { padding: 16px 16px 10px; }
+  .ni-head h2 { font-size: 21px; }
+  .ni-periods { margin: 0 16px; width: auto; }
+  .ni-periods button { flex: 1; }
+  .ni-body { padding: 14px 16px 24px; }
+  .ni-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ni-tiles b { font-size: 24px; }
+  .ni-chart { height: 140px; }
+}

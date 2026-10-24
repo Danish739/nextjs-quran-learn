@@ -1,21 +1,12 @@
 'use client';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import NextPrayerCard, { useReminders } from './NextPrayerCard';
+import NamazInsights from './NamazInsights';
+import {
+  PRAYERS, WD, WD_LONG, fromKey, onDay, prayed, toKey,
+  type Code, type DayLog, type Log, type PrayerKey,
+} from '@/lib/namaz';
 import './NamazTracker.css';
-
-const PRAYERS = [
-  { key: 'fajr', label: 'Fajr', ar: 'الفجر' },
-  { key: 'dhuhr', label: 'Dhuhr', ar: 'الظهر' },
-  { key: 'asr', label: 'Asr', ar: 'العصر' },
-  { key: 'maghrib', label: 'Maghrib', ar: 'المغرب' },
-  { key: 'isha', label: 'Isha', ar: 'العشاء' },
-] as const;
-
-type PrayerKey = (typeof PRAYERS)[number]['key'];
-/** J = in jamaat · O = on time · L = late · Q = missed, made up later · M = missed, qaza owed */
-type Code = 'J' | 'O' | 'L' | 'Q' | 'M';
-type DayLog = Partial<Record<PrayerKey, Code>>;
-type Log = Record<string, DayLog>;
 
 const STORAGE_KEY = 'namaz-tracker-v2';
 const LEGACY_KEY = 'namaz-tracker-v1';
@@ -38,14 +29,6 @@ const LEGEND: { code: Code | 'none'; label: string }[] = [
   { code: 'M', label: 'Missed' },
   { code: 'none', label: 'Not marked' },
 ];
-const WD = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const WD_LONG = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-
-const pad = (n: number) => String(n).padStart(2, '0');
-const toKey = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-const fromKey = (k: string) => new Date(k + 'T00:00:00');
-const onDay = (c?: Code) => c === 'J' || c === 'O' || c === 'L';
-const prayed = (c?: Code) => !!c && c !== 'M';
 const longDate = (d: Date) => `${WD_LONG[d.getDay()]}, ${d.getDate()} ${d.toLocaleDateString('en', { month: 'long' })}`;
 
 const HIJRI_MONTHS = ['Muharram', 'Safar', 'Rabi al-Awwal', 'Rabi al-Thani', 'Jumada al-Ula', 'Jumada al-Akhirah', 'Rajab', 'Shaban', 'Ramadan', 'Shawwal', 'Dhu al-Qadah', 'Dhu al-Hijjah'];
@@ -128,7 +111,14 @@ function PrayerRow({ name, ar, code, onPick, onMakeUp, card }: {
   );
 }
 
-const Chevron = ({ dir }: { dir: 'left' | 'right' }) => (
+const InsightsButton = ({ onClick }: { onClick: () => void }) => (
+  <button type="button" className="ni-open" onClick={onClick}>
+    <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20V10" /><path d="M10 20V4" /><path d="M16 20v-7" /><path d="M22 20H2" /></svg>
+    Namaz insights
+  </button>
+);
+
+const Chevron =({ dir }: { dir: 'left' | 'right' }) => (
   <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
     <path d={dir === 'left' ? 'M15 18l-6-6 6-6' : 'M9 18l6-6-6-6'} />
   </svg>
@@ -144,6 +134,8 @@ export default function NamazTracker() {
   const [mobileView, setMobileView] = useState<'today' | 'month'>('month');
   const dateInput = useRef<HTMLInputElement>(null);
   const reminders = useReminders();
+  const [insightsOpen, setInsightsOpen] = useState(false);
+  const closeInsights = useCallback(() => setInsightsOpen(false), []);
 
   useEffect(() => {
     const now = new Date();
@@ -434,6 +426,7 @@ export default function NamazTracker() {
                 </div>
               ))}
               <p className="nt-tip">{tip}</p>
+              <InsightsButton onClick={() => setInsightsOpen(true)} />
             </section>
           </div>
         </div>
@@ -553,6 +546,8 @@ export default function NamazTracker() {
 
               {monthSummary}
 
+              <InsightsButton onClick={() => setInsightsOpen(true)} />
+
               <section className="nt-card nt-qaza" aria-labelledby="nt-mqaza-title">
                 <div className="nt-qaza-head">
                   <h2 id="nt-mqaza-title">Qaza to make up</h2>
@@ -566,6 +561,14 @@ export default function NamazTracker() {
           </>
         )}
       </div>
+
+      <NamazInsights
+        log={log}
+        today={today}
+        open={insightsOpen}
+        onClose={closeInsights}
+        onMarkToday={() => { goToday(); setMobileView('today'); }}
+      />
     </main>
   );
 }
