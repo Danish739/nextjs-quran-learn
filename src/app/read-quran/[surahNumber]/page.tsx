@@ -472,6 +472,23 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
         loadQcfFontsForPages(pages);
     }, [versesWithWords]);
 
+    // Reader theme: light (day) by default, independent of the site theme; remembered per browser
+    const [readerDark, setReaderDark] = useState(false);
+    useEffect(() => {
+        try { setReaderDark(localStorage.getItem('reader-theme') === 'dark'); } catch { /* ignore */ }
+    }, []);
+    useEffect(() => {
+        const root = document.documentElement;
+        root.classList.toggle('rr-dark', readerDark);
+        return () => root.classList.remove('rr-dark');
+    }, [readerDark]);
+    const toggleReaderTheme = () => {
+        setReaderDark(d => {
+            try { localStorage.setItem('reader-theme', d ? 'light' : 'dark'); } catch { /* ignore */ }
+            return !d;
+        });
+    };
+
     // The reader is a full-screen layer: lock the page behind it so only one scrollbar exists
     useEffect(() => {
         const root = document.documentElement;
@@ -851,6 +868,9 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
                         >
                             <span className="material-symbols-outlined">headphones</span>
                             <span className="rr-btn-label">Listen</span>
+                        </button>
+                        <button className="rr-icon-btn rr-theme-btn" onClick={toggleReaderTheme} title={readerDark ? 'Day mode' : 'Night mode'} aria-label={readerDark ? 'Switch to day mode' : 'Switch to night mode'}>
+                            <span className="material-symbols-outlined">{readerDark ? 'light_mode' : 'dark_mode'}</span>
                         </button>
                         <button className="rr-icon-btn" onClick={() => setShowSettings(true)} title="Reading settings (Ctrl+S)">
                             <span className="material-symbols-outlined">tune</span>

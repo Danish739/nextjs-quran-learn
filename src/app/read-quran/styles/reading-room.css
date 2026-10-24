@@ -32,14 +32,14 @@
   font-family: 'Figtree', 'Lexend', system-ui, sans-serif;
 }
 
-.dark .rr,
-.dark .rr-pop,
-.dark .rr-drawer,
-.dark .rr-word-sheet,
-[data-theme='dark'] .rr,
-[data-theme='dark'] .rr-pop,
-[data-theme='dark'] .rr-drawer,
-[data-theme='dark'] .rr-word-sheet {
+html.rr-dark .rr,
+html.rr-dark .rr-pop,
+html.rr-dark .rr-drawer,
+html.rr-dark .rr-word-sheet,
+html.rr-dark .rr,
+html.rr-dark .rr-pop,
+html.rr-dark .rr-drawer,
+html.rr-dark .rr-word-sheet {
   --rr-paper: #0f1714;
   --rr-card: #15201b;
   --rr-line: rgba(255, 255, 255, 0.08);
@@ -414,8 +414,8 @@ html.rr-lock body {
   opacity: 0.9;
 }
 
-.dark .rr-bismillah img,
-[data-theme='dark'] .rr-bismillah img {
+html.rr-dark .rr-bismillah img,
+html.rr-dark .rr-bismillah img {
   filter: invert(1);
 }
 
@@ -1831,4 +1831,33 @@ html.rr-lock body {
 }
 .rr .rr-hero-meaning {
   color: rgba(255, 255, 255, 0.82);
+}
+
+
+/* ── Reader dark mode: Mushaf page colours ──
+   uthmani.css hard-codes dark text (#272727) for the page, which vanished on the
+   dark background. Give the Mushaf page the reader's own ink colours instead. */
+.mp-page.uth-page {
+  --text: var(--rr-arabic);
+  --faded: var(--rr-muted);
+  --line: var(--rr-line);
+  color: var(--rr-arabic);
+}
+
+html.rr-dark .mp-page .uth-ar-word:hover {
+  color: var(--rr-cream);
+}
+
+html.rr-dark .mp-page .uth-ar-footer,
+html.rr-dark .uth-qcf .uth-ar-footer {
+  color: var(--brand-primary);
+}
+
+/* theme toggle in the top bar */
+.rr-theme-btn .material-symbols-outlined {
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.rr-theme-btn:hover .material-symbols-outlined {
+  transform: rotate(-25deg);
 }

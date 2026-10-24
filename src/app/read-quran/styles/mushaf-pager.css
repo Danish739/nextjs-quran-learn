@@ -184,8 +184,8 @@
   opacity: 0.88;
 }
 
-.dark .mp-bismillah img,
-[data-theme='dark'] .mp-bismillah img {
+html.rr-dark .mp-bismillah img,
+html.rr-dark .mp-bismillah img {
   filter: invert(1);
 }
 
@@ -305,8 +305,8 @@
   overflow: hidden;
 }
 
-.dark .mp-loader-page,
-[data-theme='dark'] .mp-loader-page {
+html.rr-dark .mp-loader-page,
+html.rr-dark .mp-loader-page {
   background: linear-gradient(180deg, #2a2318, #1f1a12);
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.3), inset 0 0 0 8px #2a2318, inset 0 0 0 9px rgba(217, 181, 107, 0.3);
 }
