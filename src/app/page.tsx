@@ -11,6 +11,7 @@ import QuickAccessGrid from '@/components/QuickAccessGrid';
 import TasbeehCounter from '@/components/TasbeehCounter';
 import GetStarted from '@/components/GetStarted';
 import FollowUs from '@/components/FollowUs';
+import NavigatePanel from '@/components/NavigatePanel';
 import PrayerStrip from '@/components/PrayerStrip';
 
 // ── Prayer Times Types ──
@@ -433,11 +434,7 @@ export default function HomePage() {
 
   // ── Navigate Quran panel ──
   const [showNav, setShowNav] = useState(false);
-  const [navLoading, setNavLoading] = useState(false);
-  const [navTab, setNavTab] = useState<'surah' | 'page'>('surah');
-  const [navSearch, setNavSearch] = useState('');
-  const navRef = useRef<HTMLDivElement>(null);
-  const openNav = () => { setShowNav(true); setNavLoading(true); setTimeout(() => setNavLoading(false), 600); };
+  const openNav = () => setShowNav(true);
 
 
   useEffect(() => {
@@ -504,14 +501,6 @@ export default function HomePage() {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
-
-  // Close nav on Escape
-  useEffect(() => {
-    if (!showNav) return;
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setShowNav(false); };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, [showNav]);
 
   const dropdownResults = query.trim()
     ? SURAHS.filter(s => {
@@ -604,136 +593,8 @@ export default function HomePage() {
 
   return (
     <>
-      {/* ── NAVIGATE QURAN OVERLAY ── */}
-      {showNav && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex' }}>
-          {/* Backdrop */}
-          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }} onClick={() => setShowNav(false)} />
-          {/* Panel */}
-          <div ref={navRef} style={{
-            position: 'relative', zIndex: 1, width: '100%', maxWidth: 420,
-            background: 'var(--bg-base)', borderRight: '1px solid var(--border-default)',
-            display: 'flex', flexDirection: 'column', animation: 'navSlideIn 0.25s ease',
-            boxShadow: '8px 0 40px rgba(0,0,0,0.15)',
-          }}>
-            {/* Panel Header */}
-            <div style={{ padding: '18px 20px 14px', borderBottom: `1px solid ${'var(--bg-elevated)'}`, flexShrink: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-                <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, ...S.text, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 22, color: 'var(--brand-primary)' }}>menu_book</span>
-                  Navigate Quran
-                </h2>
-                <button onClick={() => setShowNav(false)} style={{ background: 'var(--bg-elevated)', border: 'none', borderRadius: 8, width: 32, height: 32, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 18 }}>close</span>
-                </button>
-              </div>
-              {/* Tabs */}
-              <div style={{ display: 'flex', background: 'var(--bg-surface)', borderRadius: 10, padding: 3, gap: 2 }}>
-                {(['surah', 'page'] as const).map(tab => (
-                  <button key={tab} onClick={() => { setNavTab(tab); setNavSearch(''); }} style={{
-                    flex: 1, padding: '8px 12px', borderRadius: 8, border: 'none', cursor: 'pointer',
-                    fontSize: 13, fontWeight: 600, transition: 'all 0.15s',
-                    background: navTab === tab ? 'var(--brand-primary)' : 'transparent',
-                    color: navTab === tab ? 'white' : '#94a3b8',
-                  }}>{tab.charAt(0).toUpperCase() + tab.slice(1)}</button>
-                ))}
-              </div>
-              {/* Search within panel */}
-              {navTab === 'surah' && (
-                <div style={{ position: 'relative', marginTop: 12 }}>
-                  <span className="material-symbols-outlined" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 18, color: '#94a3b8', pointerEvents: 'none' }}>search</span>
-                  <input
-                    type="text" value={navSearch} onChange={e => setNavSearch(e.target.value)}
-                    placeholder="Search Surah…"
-                    style={{ width: '100%', padding: '9px 12px 9px 36px', borderRadius: 10, border: '1px solid var(--border-default)', background: 'var(--bg-surface)', fontSize: 13, color: 'var(--text-secondary)', outline: 'none', boxSizing: 'border-box' }}
-                    onFocus={e => e.target.style.boxShadow = '0 0 0 2px rgba(var(--brand-rgb),0.3)'}
-                    onBlur={e => e.target.style.boxShadow = 'none'}
-                    autoFocus
-                  />
-                </div>
-              )}
-            </div>
-            {/* Panel Body */}
-            <div className="hp-scroll" style={{ flex: 1, overflowY: 'auto', padding: 0 }}>
-              {navLoading ? (
-                <div style={{ padding: '8px 0' }}>
-                  {Array.from({ length: 10 }).map((_, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px', borderBottom: '1px solid var(--border-subtle)' }}>
-                      <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--bg-elevated)', flexShrink: 0, animation: 'navSkel 1.2s ease-in-out infinite', animationDelay: `${i * 0.07}s` }} />
-                      <div style={{ flex: 1 }}>
-                        <div style={{ height: 12, borderRadius: 6, background: 'var(--bg-elevated)', marginBottom: 8, width: `${55 + (i % 4) * 10}%`, animation: 'navSkel 1.2s ease-in-out infinite', animationDelay: `${i * 0.07 + 0.1}s` }} />
-                        <div style={{ height: 10, borderRadius: 5, background: 'var(--bg-elevated)', width: `${35 + (i % 3) * 8}%`, animation: 'navSkel 1.2s ease-in-out infinite', animationDelay: `${i * 0.07 + 0.2}s` }} />
-                      </div>
-                      <div style={{ width: 32, textAlign: 'right' }}>
-                        <div style={{ height: 18, width: 32, borderRadius: 5, background: 'var(--bg-elevated)', marginBottom: 5, animation: 'navSkel 1.2s ease-in-out infinite', animationDelay: `${i * 0.07 + 0.15}s` }} />
-                        <div style={{ height: 8, width: 28, borderRadius: 4, background: 'var(--bg-elevated)', marginLeft: 'auto', animation: 'navSkel 1.2s ease-in-out infinite', animationDelay: `${i * 0.07 + 0.25}s` }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : navTab === 'surah' ? (() => {
-                const q = navSearch.toLowerCase();
-                const list = q ? SURAHS.filter(s => s.name.toLowerCase().includes(q) || s.ar.includes(q) || s.meaning.toLowerCase().includes(q) || String(s.num) === q) : SURAHS;
-                return list.length === 0 ? (
-                  <div style={{ padding: 32, textAlign: 'center', ...S.muted, fontSize: 13 }}>No surahs found</div>
-                ) : <>{list.map((s) => (
-                  <Link key={s.num} href={`/read-quran/${s.num}?mode=reading`} onClick={() => { trackVisit(s); setShowNav(false); }} style={{ textDecoration: 'none', display: 'block' }}>
-                    <div style={{
-                      display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px',
-                      borderBottom: '1px solid var(--border-subtle)',
-                      transition: 'background 0.12s', cursor: 'pointer',
-                    }}
-                      onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-card-hover)'}
-                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                    >
-                      <div style={{ width: 36, height: 36, borderRadius: 8, background: 'rgba(var(--brand-rgb),0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, color: 'var(--brand-primary)', flexShrink: 0 }}>
-                        {s.num}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ margin: 0, fontWeight: 600, fontSize: 13.5, ...S.text }}>{s.name}</p>
-                        <p style={{ margin: 0, fontSize: 11, ...S.muted }}>{s.meaning} · {s.v} verses</p>
-                      </div>
-                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                        <span className="font-arabic" style={{ fontSize: 18, fontWeight: 700, ...S.text, display: 'block' }}>{s.ar}</span>
-                        <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.1em', color: s.t === 'Meccan' ? 'var(--brand-primary)' : '#94a3b8' }}>{s.t}</span>
-                      </div>
-                    </div>
-                  </Link>
-                ))}</>;
-              })() : (
-                <div style={{ padding: '16px 16px' }}>
-                  <p style={{ margin: '0 0 12px', fontSize: 12, ...S.muted }}>Go to a specific page (1–604)</p>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 6 }}>
-                    {Array.from({ length: 604 }, (_, i) => i + 1).map(p => (
-                      <Link key={p} href={`/page/${p}`} onClick={() => setShowNav(false)} style={{ textDecoration: 'none' }}>
-                        <div style={{
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          padding: '9px 4px', borderRadius: 8, fontSize: 12, fontWeight: 600,
-                          color: '#64748b', cursor: 'pointer', transition: 'all 0.12s',
-                          background: 'var(--bg-surface)',
-                          border: `1px solid ${'var(--bg-elevated)'}`,
-                        }}
-                          onMouseEnter={e => { e.currentTarget.style.background = 'var(--brand-primary)'; e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = 'var(--brand-primary)'; }}
-                          onMouseLeave={e => { e.currentTarget.style.background = 'var(--bg-surface)'; e.currentTarget.style.color = '#64748b'; e.currentTarget.style.borderColor = 'var(--bg-elevated)'; }}
-                        >
-                          {p}
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-            {/* Panel Footer */}
-            <div style={{ padding: '12px 20px', borderTop: `1px solid ${'var(--bg-elevated)'}`, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 11, ...S.muted }}>
-                {navTab === 'surah' ? '114 Surahs' : '604 Pages'}
-              </span>
-              <span style={{ fontSize: 11, ...S.muted }}>ESC to close</span>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* ── NAVIGATE QURAN PANEL ── */}
+      {showNav && <NavigatePanel surahs={SURAHS} onClose={() => setShowNav(false)} onVisit={trackVisit} />}
 
       <style>{`
         html{scrollbar-width:none;-ms-overflow-style:none}html::-webkit-scrollbar{display:none}

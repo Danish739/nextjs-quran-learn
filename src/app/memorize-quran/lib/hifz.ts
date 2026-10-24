@@ -13,6 +13,8 @@ export interface Card {
   last: number;
   /** ratings given while the ayah wasn't due: extra practice that doesn't move the schedule */
   extra?: number;
+  /** the button you pressed last for this ayah; shown as selected when you come back */
+  rating?: Rating;
 }
 
 export interface HifzSettings {
@@ -162,7 +164,7 @@ export function rateWithOutcome(s: HifzStore, verseKey: string, r: Rating): Rate
   const prev = s.cards[verseKey];
 
   if (prev && !isDue(prev) && r !== 'again') {
-    const card: Card = { ...prev, last: now, extra: (prev.extra ?? 0) + 1 };
+    const card: Card = { ...prev, last: now, extra: (prev.extra ?? 0) + 1, rating: r };
     return { store: touchStreak({ ...s, cards: { ...s.cards, [verseKey]: card } }), kind: 'practice', interval: prev.interval };
   }
 
@@ -175,6 +177,7 @@ export function rateWithOutcome(s: HifzStore, verseKey: string, r: Rating): Rate
     lapses: (prev?.lapses ?? 0) + (r === 'again' ? 1 : 0),
     last: now,
     extra: prev?.extra,
+    rating: r,
   };
   let next: HifzStore = { ...s, cards: { ...s.cards, [verseKey]: card } };
   if (!prev) {

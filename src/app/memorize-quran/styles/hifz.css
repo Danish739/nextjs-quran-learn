@@ -1783,3 +1783,11 @@
 .hz-goal-opts { display: inline-flex; gap: 4px; padding: 3px; border-radius: 999px; background: color-mix(in srgb, var(--brand-primary) 8%, transparent); }
 .hz-goal-opts button { padding: 6px 12px; border: 0; border-radius: 999px; background: none; color: inherit; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; }
 .hz-goal-opts button.on { background: var(--brand-primary); color: #fff; }
+
+/* the rating you chose last time stays selected */
+.hz-rate-btn.is-selected { color: #fff; border-color: transparent; opacity: 1 !important; border-style: solid !important; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); }
+.hz-rate-btn.is-selected small { opacity: 0.9; }
+.hz-rate-btn.again.is-selected { background: #dc2626; }
+.hz-rate-btn.hard.is-selected { background: #d97706; }
+.hz-rate-btn.good.is-selected { background: var(--brand-primary); }
+.hz-rate-btn.easy.is-selected { background: #0e7490; }

@@ -1,0 +1,84 @@
+.nvp { position: fixed; inset: 0; z-index: 9999; display: flex; }
+.nvp-backdrop { position: absolute; inset: 0; background: rgba(8, 20, 16, 0.5); backdrop-filter: blur(4px); animation: nvp-fade 0.2s ease; }
+@keyframes nvp-fade { from { opacity: 0; } }
+
+.nvp-panel {
+  position: relative; z-index: 1; display: flex; flex-direction: column;
+  width: 100%; max-width: 440px; height: 100%;
+  background: var(--bg-base, #f6f8f7); color: var(--text-primary, #10261f);
+  border-right: 1px solid var(--border-default, #e3ebe7);
+  box-shadow: 10px 0 50px rgba(0, 0, 0, 0.18);
+  animation: nvp-in 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes nvp-in { from { transform: translateX(-24px); opacity: 0; } }
+
+.nvp-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px 6px; }
+.nvp-kicker { display: block; font-size: 1.15rem; line-height: 1.2; color: #b8861b; font-weight: normal; }
+.nvp-title h2 { margin: 0; font-size: 1.35rem; font-weight: 800; letter-spacing: -0.01em; }
+.nvp-close { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border: 0; border-radius: 50%; background: var(--bg-elevated, #e9efec); color: var(--text-muted, #6b7a75); cursor: pointer; }
+.nvp-close:hover { color: var(--text-primary, #10261f); }
+
+.nvp-tabs { display: flex; gap: 4px; margin: 12px 20px 0; padding: 4px; border-radius: 14px; background: color-mix(in srgb, var(--brand-primary, #0f7a5c) 8%, var(--bg-card, #fff)); }
+.nvp-tabs button { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 10px; border: 0; border-radius: 10px; background: transparent; color: var(--text-muted, #6b7a75); font: inherit; font-size: 0.9rem; font-weight: 700; cursor: pointer; transition: all 0.18s ease; }
+.nvp-tabs .material-symbols-outlined { font-size: 18px; }
+.nvp-tabs small { font-size: 0.72rem; opacity: 0.7; }
+.nvp-tabs button.on { background: var(--brand-primary, #0f7a5c); color: #fff; box-shadow: 0 6px 16px color-mix(in srgb, var(--brand-primary, #0f7a5c) 30%, transparent); }
+
+.nvp-tools { padding: 14px 20px 6px; display: flex; flex-direction: column; gap: 10px; }
+.nvp-search { display: flex; align-items: center; gap: 8px; padding: 0 12px; border-radius: 14px; border: 1.5px solid var(--border-default, #e3ebe7); background: var(--bg-card, #fff); transition: border-color 0.15s ease, box-shadow 0.15s ease; }
+.nvp-search:focus-within { border-color: var(--brand-primary, #0f7a5c); box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand-primary, #0f7a5c) 14%, transparent); }
+.nvp-search > .material-symbols-outlined { color: var(--text-muted, #6b7a75); font-size: 20px; }
+.nvp-search input { flex: 1; min-width: 0; padding: 12px 0; border: 0; outline: 0; background: transparent; color: inherit; font: inherit; font-size: 0.92rem; }
+.nvp-search button { display: inline-flex; border: 0; background: none; color: var(--text-muted, #6b7a75); cursor: pointer; }
+.nvp-chips { display: flex; gap: 6px; }
+.nvp-chips button { padding: 6px 14px; border-radius: 999px; border: 1.5px solid var(--border-default, #e3ebe7); background: var(--bg-card, #fff); color: var(--text-secondary, #3b4a45); font: inherit; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+.nvp-chips button.on { background: var(--brand-primary, #0f7a5c); border-color: var(--brand-primary, #0f7a5c); color: #fff; }
+
+.nvp-list { flex: 1; min-height: 0; overflow-y: auto; padding: 8px 12px 12px; scrollbar-width: thin; }
+.nvp-row { display: flex; align-items: center; gap: 12px; padding: 10px 10px; border-radius: 14px; text-decoration: none; color: inherit; transition: background 0.15s ease, transform 0.15s ease; }
+.nvp-row:hover { background: color-mix(in srgb, var(--brand-primary, #0f7a5c) 8%, var(--bg-card, #fff)); }
+.nvp-row:active { transform: scale(0.99); }
+
+.nvp-num { flex: none; width: 42px; height: 42px; display: inline-flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--brand-primary, #0f7a5c) 11%, transparent); color: var(--brand-primary, #0f7a5c); font-size: 0.85rem; clip-path: polygon(50% 0, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%); }
+.nvp-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.nvp-name { font-weight: 700; font-size: 0.95rem; }
+.nvp-meta { display: flex; align-items: center; gap: 6px; font-size: 0.76rem; color: var(--text-muted, #6b7a75); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nvp-type { flex: none; padding: 1px 7px; border-radius: 999px; font-size: 0.66rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
+.nvp-type.meccan { color: #b45309; background: color-mix(in srgb, #d97706 14%, transparent); }
+.nvp-type.medinan { color: var(--brand-primary, #0f7a5c); background: color-mix(in srgb, var(--brand-primary, #0f7a5c) 13%, transparent); }
+
+/* Arabic surah names: same Hafs face as Read Quran, regular weight (no faux bold) */
+.nvp-ar { flex: none; font-size: 1.45rem; line-height: 1.6; font-weight: normal; color: var(--text-primary, #10261f); }
+
+.nvp-empty { padding: 48px 16px; text-align: center; color: var(--text-muted, #6b7a75); }
+.nvp-empty .material-symbols-outlined { font-size: 44px; }
+
+.nvp-pages { padding: 16px 20px 12px; }
+.nvp-goto label { display: block; margin-bottom: 8px; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted, #6b7a75); }
+.nvp-goto div { display: flex; gap: 8px; }
+.nvp-goto input { flex: 1; min-width: 0; padding: 12px 14px; border-radius: 14px; border: 1.5px solid var(--border-default, #e3ebe7); background: var(--bg-card, #fff); color: inherit; font: inherit; }
+.nvp-goto input:focus { outline: 0; border-color: var(--brand-primary, #0f7a5c); box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand-primary, #0f7a5c) 14%, transparent); }
+.nvp-goto input[aria-invalid="true"] { border-color: #d6453d; }
+.nvp-goto button { padding: 0 22px; border: 0; border-radius: 14px; background: var(--brand-primary, #0f7a5c); color: #fff; font: inherit; font-weight: 800; cursor: pointer; }
+.nvp-goto button:disabled { opacity: 0.4; cursor: default; }
+
+.nvp-label { margin: 20px 0 8px; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted, #6b7a75); }
+.nvp-shortcuts { display: flex; flex-wrap: wrap; gap: 8px; }
+.nvp-shortcuts a { display: inline-flex; align-items: baseline; gap: 6px; padding: 8px 14px; border-radius: 999px; border: 1.5px solid var(--border-default, #e3ebe7); background: var(--bg-card, #fff); color: var(--text-primary, #10261f); text-decoration: none; font-size: 0.85rem; font-weight: 700; transition: all 0.15s ease; }
+.nvp-shortcuts a small { font-size: 0.7rem; color: var(--text-muted, #6b7a75); font-weight: 600; }
+.nvp-shortcuts a:hover { border-color: var(--brand-primary, #0f7a5c); color: var(--brand-primary, #0f7a5c); }
+
+.nvp-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+.nvp-grid a { display: flex; align-items: center; justify-content: center; padding: 10px 2px; border-radius: 10px; border: 1px solid var(--border-default, #e3ebe7); background: var(--bg-card, #fff); color: var(--text-secondary, #3b4a45); text-decoration: none; font-size: 0.8rem; font-weight: 700; transition: all 0.12s ease; }
+.nvp-grid a:hover { background: var(--brand-primary, #0f7a5c); border-color: var(--brand-primary, #0f7a5c); color: #fff; }
+
+.nvp-foot { display: flex; justify-content: space-between; padding: 12px 20px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid var(--border-default, #e3ebe7); font-size: 0.75rem; color: var(--text-muted, #6b7a75); }
+
+@media (max-width: 560px) {
+  .nvp { align-items: flex-end; }
+  .nvp-panel { max-width: none; height: 88dvh; border-radius: 22px 22px 0 0; border-right: 0; animation-name: nvp-up; }
+  .nvp-grid { grid-template-columns: repeat(5, 1fr); }
+  .nvp-foot span:last-child { display: none; }
+}
+@keyframes nvp-up { from { transform: translateY(30px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .nvp-panel, .nvp-backdrop { animation: none; } }

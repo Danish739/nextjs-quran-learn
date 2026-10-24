@@ -411,7 +411,7 @@ export default function MemorizeQuranPage() {
             : `${label}: next review in ${intervalLabel(out.interval)}`;
         setUndo({ key, snapshot, text });
         if (undoTimer.current) clearTimeout(undoTimer.current);
-        undoTimer.current = setTimeout(() => setUndo(null), 7000);
+        undoTimer.current = setTimeout(() => setUndo(null), 4000);
     };
 
     const undoRating = () => {
@@ -885,7 +885,7 @@ export default function MemorizeQuranPage() {
                                                         {RATINGS.map(r => {
                                                             const pv = previewRating(card, r.id);
                                                             return (
-                                                                <button key={r.id} className={`hz-rate-btn ${r.id}${pv.practice ? ' is-practice' : ''}`} onClick={() => rateVerse(v.key, r.id)} title={pv.practice ? 'Not due yet: counts as extra practice' : r.hint}>
+                                                                <button key={r.id} className={`hz-rate-btn ${r.id}${pv.practice ? ' is-practice' : ''}${card?.rating === r.id ? ' is-selected' : ''}`} aria-pressed={card?.rating === r.id} onClick={() => rateVerse(v.key, r.id)} title={pv.practice ? 'Not due yet: counts as extra practice' : r.hint}>
                                                                     <b>{r.label}</b>
                                                                     <small>{pv.label}</small>
                                                                 </button>
