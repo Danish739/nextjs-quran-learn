@@ -38,7 +38,7 @@
   --reader-border-light: var(--border-strong);
 
   /* Typography */
-  --font-arabic: 'UthmanicHafs', "UthmanicHafs", serif, "UthmanicHafs", serif, 'Amiri', "UthmanicHafs", serif, serif;
+  --font-arabic: "UthmanicHafs", serif;
   --font-ui: var(--font-sans);
 
   /* Spacing */

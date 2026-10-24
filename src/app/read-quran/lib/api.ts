@@ -438,6 +438,31 @@ export async function getTafsirContent(tafsirId: number | string, chapterId: num
     }
 }
 
+export interface AyahTafsir {
+    html: string;
+    /** Verse keys this commentary covers (commentaries often span a group of ayahs). */
+    verseKeys: string[];
+}
+
+const ayahTafsirCache = new Map<string, AyahTafsir | null>();
+
+/**
+ * Tafsir for a single ayah. Unlike by_chapter (paginated, so later ayahs came back empty),
+ * by_ayah always returns the commentary that covers the ayah, plus the group it belongs to.
+ */
+export async function getAyahTafsir(tafsirId: number | string, verseKey: string): Promise<AyahTafsir | null> {
+    const cacheKey = `${tafsirId}:${verseKey}`;
+    if (ayahTafsirCache.has(cacheKey)) return ayahTafsirCache.get(cacheKey) ?? null;
+    const response = await fetchWithRetry(`${API_BASE}/tafsirs/${tafsirId}/by_ayah/${verseKey}?language=en`);
+    const data = await response.json();
+    const t = data?.tafsir;
+    const result: AyahTafsir | null = t?.text
+        ? { html: t.text as string, verseKeys: Object.keys(t.verses ?? {}) }
+        : null;
+    ayahTafsirCache.set(cacheKey, result);
+    return result;
+}
+
 // Popular translations (alquran.cloud edition identifiers)
 /** `resourceId` is the api.quran.com v4 translation id */
 export const TRANSLATIONS = [

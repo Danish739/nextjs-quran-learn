@@ -66,7 +66,7 @@ html.rr-lock body {
 .rr-pop .font-arabic,
 .rr-drawer .font-arabic,
 .rr-word-sheet .font-arabic {
-  font-family: 'UthmanicHafs', 'Amiri', serif;
+  font-family: 'UthmanicHafs', serif;
   font-feature-settings: 'liga' 1, 'calt' 1, 'mark' 1, 'mkmk' 1;
 }
 
@@ -670,7 +670,7 @@ html.rr-dark .rr-bismillah img {
 }
 
 .rr-word-ar {
-  font-family: 'UthmanicHafs', 'Amiri', serif;
+  font-family: 'UthmanicHafs', serif;
   font-size: 26px;
   line-height: 1.6;
   color: var(--rr-arabic);
@@ -803,7 +803,7 @@ html.rr-dark .rr-bismillah img {
   border-radius: 23px 23px 9px 9px;
   background: var(--rr-cream);
   color: var(--rr-emerald-deep);
-  font-family: 'UthmanicHafs', 'Amiri', serif;
+  font-family: 'UthmanicHafs', serif;
   font-size: 18px;
   line-height: 1;
 }

@@ -46,7 +46,7 @@ const COLLECTIONS: Collection[] = [
 
 const LIMIT = 20;
 const SAVED_KEY = 'hadees-saved';
-const ARABIC_FONT = "'UthmanicHafsText', 'Amiri', serif";
+const ARABIC_FONT = "'UthmanicHafsText', serif";
 
 type View = { kind: 'home' } | { kind: 'collection'; id: string } | { kind: 'saved' };
 

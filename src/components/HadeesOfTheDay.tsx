@@ -162,7 +162,7 @@ function drawGraphic(canvas: HTMLCanvasElement, h: Hadees) {
   let arSize = 66;
   let arLines: string[] = [];
   do {
-    ctx.font = `${arSize}px UthmanicHafs, Amiri, serif`;
+    ctx.font = `${arSize}px UthmanicHafs, serif`;
     arLines = wrap(ctx, h.ar, W - 260);
     arSize -= 4;
   } while (arLines.length > 4 && arSize > 36);
@@ -179,7 +179,7 @@ function drawGraphic(canvas: HTMLCanvasElement, h: Hadees) {
   let y = 250 + (H - 250 - 330 - total) / 2 + arLH * 0.7;
 
   ctx.direction = 'rtl';
-  ctx.font = `${arSize}px UthmanicHafs, Amiri, serif`;
+  ctx.font = `${arSize}px UthmanicHafs, serif`;
   ctx.fillStyle = CREAM;
   for (const l of arLines) {
     ctx.fillText(l, W / 2, y);

@@ -519,7 +519,7 @@ export default function TafseerSurahPage({ params }: PageProps) {
                                         <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: s.num === surahNum ? '#f59e0b' : '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</p>
                                         <p style={{ margin: 0, fontSize: 11, color: '#94a3b8' }}>{s.meaning} · {s.v} verses</p>
                                     </div>
-                                    <span style={{ fontFamily: "'UthmanicHafs', 'Amiri', serif", fontSize: 16, color: '#475569', direction: 'rtl', flexShrink: 0 }}>{s.ar}</span>
+                                    <span style={{ fontFamily: "'UthmanicHafs', serif", fontSize: 16, color: '#475569', direction: 'rtl', flexShrink: 0 }}>{s.ar}</span>
                                 </Link>
                             ))}
                         </div>

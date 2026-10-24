@@ -190,6 +190,10 @@
   width: 30px;
   height: 30px;
   border-radius: 50%;
+  flex: none;
+  box-sizing: border-box;
+  overflow: hidden;
+  line-height: 1;
   font-size: 18px !important;
   color: var(--text-muted);
   background: var(--bg-elevated);
@@ -201,7 +205,7 @@
   opacity: 1;
   color: #fff;
   background: var(--from);
-  transform: rotate(45deg);
+  transform: scale(1.1);
 }
 
 .qg-badge {

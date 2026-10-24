@@ -38,7 +38,7 @@
 
 .hd .font-arabic,
 .hd-drawer .font-arabic {
-  font-family: 'UthmanicHafsText', 'Amiri', serif;
+  font-family: 'UthmanicHafsText', serif;
 }
 
 .hd .material-symbols-outlined,
@@ -102,7 +102,7 @@
 }
 
 .hd-saw {
-  font-family: 'UthmanicHafsText', 'Amiri', serif;
+  font-family: 'UthmanicHafsText', serif;
   color: var(--hd-gold);
 }
 

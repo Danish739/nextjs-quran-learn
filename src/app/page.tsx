@@ -1055,7 +1055,7 @@ export default function HomePage() {
                         </div>
                         <div className="hp-sr-meta" style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                           <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: s.t === 'Meccan' ? 'var(--brand-primary)' : '#94a3b8' }}>{s.t}</span>
-                          <span style={{ fontFamily: "'UthmanicHafs', 'Amiri', serif", fontSize: 17, color: 'var(--text-primary)' }}>{s.ar}</span>
+                          <span style={{ fontFamily: "'UthmanicHafs', serif", fontSize: 17, color: 'var(--text-primary)' }}>{s.ar}</span>
                         </div>
                       </div>
                     </Link>

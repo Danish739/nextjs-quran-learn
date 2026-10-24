@@ -33,7 +33,7 @@
 }
 
 .du .font-arabic {
-  font-family: 'UthmanicHafsText', 'Amiri', serif;
+  font-family: 'UthmanicHafsText', serif;
 }
 
 .du .material-symbols-outlined {
@@ -774,7 +774,7 @@
 
 .du-ar {
   margin: 0;
-  font-family: 'UthmanicHafsText', 'Amiri', serif;
+  font-family: 'UthmanicHafsText', serif;
   font-feature-settings: 'liga' 1, 'calt' 1, 'mark' 1, 'mkmk' 1;
   line-height: 2.05;
   text-align: right;

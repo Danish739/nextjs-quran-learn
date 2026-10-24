@@ -142,7 +142,7 @@ const FILTERS = [
   { id: 'Popular', label: 'Popular',       icon: 'star',           desc: 'Most read surahs', color: '#92400e' },
 ];
 
-const ARABIC_FONT = "'UthmanicHafs', 'Amiri', serif";
+const ARABIC_FONT = "'UthmanicHafs', serif";
 
 export default function TafseerIndexPage() {
     const [search, setSearch] = useState('');
