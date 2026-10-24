@@ -221,3 +221,88 @@
   align-items: center;
   justify-content: center;
 }
+
+
+/* ══════════════ Phones & small tablets ══════════════ */
+@media (max-width: 768px) {
+  .sc-hero-banner {
+    height: auto;
+    padding: 16px 16px 14px;
+  }
+  .sc-hero-content {
+    flex-direction: column;
+    gap: 14px;
+  }
+  .sc-hero-right {
+    display: none; /* the art block doesn't fit; the play button + titles carry it */
+  }
+  .sc-hero-left {
+    width: 100%;
+    min-width: 0;
+    gap: 14px;
+  }
+  .sc-hero-header {
+    align-items: center;
+    gap: 14px;
+  }
+  .sc-hero-play-btn {
+    width: 56px;
+    height: 56px;
+    flex-shrink: 0;
+  }
+  .sc-hero-titles {
+    flex: 1;
+    min-width: 0;
+    gap: 4px;
+  }
+  .sc-title-pill,
+  .sc-artist-pill,
+  .sc-album-pill {
+    max-width: 100%;
+  }
+  .sc-title {
+    font-size: 20px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .sc-artist {
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .sc-album-pill,
+  .sc-hero-meta {
+    display: none;
+  }
+  .sc-hero-waveform-container {
+    width: 100%;
+    height: 64px;
+    gap: 8px;
+  }
+  .sc-waveform {
+    min-width: 0;
+    height: 52px;
+  }
+  .sc-bar {
+    min-width: 1px;
+  }
+}
+
+@media (max-width: 768px) {
+  /* 240 bars can't fit a phone: draw every third one, edge to edge */
+  .sc-waveform-base,
+  .sc-waveform-fill {
+    gap: 2px;
+  }
+  .sc-bar {
+    min-width: 0;
+  }
+  .sc-bar:not(:nth-child(3n)) {
+    display: none;
+  }
+  .sc-waveform {
+    overflow: hidden;
+  }
+}

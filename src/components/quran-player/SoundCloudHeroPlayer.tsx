@@ -90,8 +90,7 @@ export function SoundCloudHeroPlayer({
             </div>
             
             <div className="sc-hero-meta">
-              <span className="sc-meta-time">1 month ago</span>
-              <span className="sc-meta-tag"># Quran</span>
+              <span className="sc-meta-tag">Surah {currentTrack.id}</span>
             </div>
           </div>
 

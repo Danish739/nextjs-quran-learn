@@ -55,7 +55,7 @@ export function MobilePlayer({
   return (
     <>
       {/* ═══ MOBILE MINI PLAYER ═══ */}
-      <div className="sp-mobile-player" onClick={() => currentTrack && setShowNowPlaying(true)}>
+      <div className={`sp-mobile-player${currentTrack ? '' : ' is-empty'}`} onClick={() => currentTrack && setShowNowPlaying(true)}>
         {currentTrack ? (
           <>
             <MiniProgressBar audioRef={audioRef} duration={duration} />

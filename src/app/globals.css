@@ -20,6 +20,19 @@
   font-display: swap;
 }
 
+/* Same Uthmanic Hafs file, minus U+060C: the font draws the Arabic comma as a
+   ◉ ornament, so hadith / adhkar prose falls back to Amiri for that one glyph. */
+@font-face {
+  font-family: "UthmanicHafsText";
+  src:
+    url("/fonts/quran/hafs/uthmanic_hafs/UthmanicHafs1Ver18.woff2") format("woff2"),
+    url("/fonts/quran/hafs/uthmanic_hafs/UthmanicHafs1Ver18.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0000-060B, U+060D-10FFFF;
+}
+
 /* ============ BASE STYLES ============ */
 html {
   scroll-behavior: smooth;

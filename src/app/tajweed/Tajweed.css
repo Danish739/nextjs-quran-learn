@@ -1,483 +1,598 @@
-/* Tajweed Page Styles */
+/* Tajweed page — all selectors are tj- prefixed so nothing leaks to other routes */
 
-.tajweed-page {
-  padding-top: 70px;
+.tj-page {
+  --tj-ink: #0f2a24;
+  --tj-text: #34413d;
+  --tj-muted: #6b7a75;
+  --tj-line: #e4ebe8;
+  --tj-bg: #f6f8f7;
+  --tj-card: #ffffff;
+  --tj-green: #0d5c4b;
+  --tj-green-deep: #082f27;
+  --tj-gold: #d9a93f;
+  --tj-gold-soft: #f3deaa;
+  --tj-radius: 18px;
+  background: var(--tj-bg);
+  color: var(--tj-text);
+  font-family: "Figtree", system-ui, sans-serif;
 }
 
-/* Hero Section */
-.tajweed-hero {
-  height: 600px;
-  background-image: url('/tajweed-hero-bg.jpg');
-  background-size: cover;
-  background-position: center;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  color: white;
-}
-
-.hero-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(rgba(44, 62, 80, 0.7), rgba(52, 73, 94, 0.85));
-  z-index: 1;
-}
-
-.hero-content {
-  position: relative;
-  z-index: 2;
-  max-width: 800px;
-  padding: 0 20px;
-}
-
-.tajweed-hero h1 {
-  font-size: 3.5rem;
-  font-weight: 700;
-  margin-bottom: 20px;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-}
-
-.tajweed-hero .lead {
-  font-size: 1.3rem;
-  margin-bottom: 40px;
-  opacity: 0.9;
-}
-
-.hero-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 15px;
-}
-
-.btn {
-  padding: 12px 24px;
-  border-radius: 50px;
-  font-weight: 500;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 1rem;
-  border: none;
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, #1abc9c, #16a085);
-  color: white;
-  box-shadow: 0 4px 10px rgba(22, 160, 133, 0.3);
-}
-
-.btn-secondary {
-  background-color: transparent;
-  color: white;
-  border: 2px solid white;
-}
-
-.btn-primary:hover {
-  background: linear-gradient(135deg, #16a085, #1abc9c);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(22, 160, 133, 0.4);
-}
-
-.btn-secondary:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  transform: translateY(-2px);
-}
-
-.btn-outline {
-  background-color: transparent;
-  border: 2px solid #16a085;
-  color: #16a085;
-}
-
-.btn-outline:hover {
-  background-color: #16a085;
-  color: white;
-}
-
-/* Container */
-.container {
+.tj-wrap {
   width: 100%;
-  max-width: 1200px;
+  max-width: 1160px;
   margin: 0 auto;
   padding: 0 20px;
 }
 
-/* Intro Section */
-.tajweed-intro {
-  padding: 100px 0;
-  background-color: white;
-}
-
-.tajweed-intro .container {
-  display: flex;
+/* ---------- Buttons ---------- */
+.tj-btn {
+  display: inline-flex;
   align-items: center;
-  gap: 50px;
-}
-
-.intro-content {
-  flex: 1;
-}
-
-.intro-image {
-  flex: 1;
-  display: flex;
   justify-content: center;
-}
-
-.intro-image img {
-  max-width: 100%;
-  height: auto;
-  border-radius: 10px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-}
-
-.tajweed-intro h2 {
-  font-size: 2.5rem;
+  padding: 13px 24px;
+  border-radius: 999px;
   font-weight: 600;
-  margin-bottom: 20px;
-  color: #2c3e50;
+  font-size: 0.98rem;
+  text-decoration: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  border: 1.5px solid transparent;
 }
-
-.tajweed-intro h2 span {
-  color: #16a085;
+.tj-btn:hover { transform: translateY(-2px); }
+.tj-btn-gold {
+  background: linear-gradient(135deg, #e9c46a, var(--tj-gold));
+  color: #2a1f00;
+  box-shadow: 0 8px 22px rgba(217, 169, 63, 0.35);
 }
-
-.tajweed-intro p {
-  color: #34495e;
-  margin-bottom: 20px;
-  line-height: 1.7;
-  font-size: 1.05rem;
+.tj-btn-ghost {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.06);
 }
+.tj-btn-ghost:hover { background: rgba(255, 255, 255, 0.14); }
 
-.tajweed-intro .btn {
-  margin-top: 10px;
-}
-
-/* Features Section */
-.tajweed-features {
-  padding: 100px 0;
-  background-color: #f9f9f9;
-}
-
-.section-title {
-  text-align: center;
-  font-size: 2.5rem;
-  font-weight: 600;
-  margin-bottom: 60px;
-  color: #2c3e50;
+/* ---------- Hero ---------- */
+.tj-hero {
   position: relative;
-  padding-bottom: 15px;
+  overflow: hidden;
+  padding: 150px 0 96px;
+  color: #fff;
+  background:
+    radial-gradient(1200px 500px at 85% -10%, rgba(217, 169, 63, 0.22), transparent 60%),
+    radial-gradient(900px 500px at 0% 110%, rgba(31, 169, 112, 0.25), transparent 60%),
+    linear-gradient(160deg, #0b4a3d 0%, var(--tj-green-deep) 100%);
 }
-
-.section-title::after {
-  content: '';
+.tj-hero::before {
+  content: "";
   position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 80px;
-  height: 4px;
-  background: linear-gradient(to right, #1abc9c, #16a085);
+  inset: 0;
+  opacity: 0.07;
+  background-image:
+    radial-gradient(circle at 25% 25%, #fff 1.2px, transparent 1.6px),
+    radial-gradient(circle at 75% 75%, #fff 1.2px, transparent 1.6px);
+  background-size: 34px 34px;
 }
-
-.features-grid {
+.tj-hero-grid {
+  position: relative;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 30px;
-}
-
-.feature-card {
-  background: white;
-  padding: 40px 30px;
-  border-radius: 10px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-  text-align: center;
-  transition: transform 0.3s ease;
-}
-
-.feature-card:hover {
-  transform: translateY(-5px);
-}
-
-.feature-icon {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
-  color: #16a085;
-  display: flex;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 56px;
   align-items: center;
-  justify-content: center;
-  margin: 0 auto 25px;
 }
-
-.feature-icon i {
-  font-size: 2.2rem;
+.tj-eyebrow {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  color: var(--tj-gold-soft);
 }
-
-.feature-card h3 {
-  font-size: 1.3rem;
-  margin-bottom: 15px;
-  color: #2c3e50;
+.tj-hero h1 {
+  margin: 18px 0 16px;
+  font-size: clamp(2.3rem, 5vw, 3.8rem);
+  line-height: 1.08;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #fff;
 }
-
-.feature-card p {
-  color: #7f8c8d;
-  line-height: 1.6;
+.tj-hero h1 em {
+  font-style: normal;
+  color: var(--tj-gold);
 }
-
-/* Tajweed Rules Section */
-.tajweed-rules {
-  padding: 100px 0;
-  background-color: #fff;
+.tj-hero-text > p {
+  max-width: 520px;
+  font-size: 1.12rem;
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.82);
+  margin: 0 0 30px;
 }
-
-.rules-tabs {
+.tj-cta { display: flex; flex-wrap: wrap; gap: 12px; }
+.tj-stats {
   display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 40px;
+  gap: 32px;
+  list-style: none;
+  padding: 0;
+  margin: 40px 0 0;
 }
+.tj-stats li { display: flex; flex-direction: column; }
+.tj-stats b { font-size: 1.6rem; color: var(--tj-gold-soft); }
+.tj-stats span { font-size: 0.82rem; color: rgba(255, 255, 255, 0.65); }
 
-.tab {
-  padding: 12px 20px;
-  background: #f1f1f1;
-  border: none;
-  border-radius: 30px;
-  cursor: pointer;
-  font-weight: 500;
-  color: #34495e;
-  transition: all 0.3s ease;
+.tj-hero-card {
+  background: rgba(255, 255, 255, 0.97);
+  color: var(--tj-ink);
+  border-radius: 24px;
+  padding: 26px 28px 22px;
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(217, 169, 63, 0.5);
 }
-
-.tab.active,
-.tab:hover {
-  background: #16a085;
-  color: white;
-}
-
-.rule-content {
-  display: flex;
-  align-items: flex-start;
-  gap: 40px;
-  background: #f9f9f9;
-  padding: 40px;
-  border-radius: 10px;
-}
-
-.rule-text {
-  flex: 1;
-}
-
-.rule-visual {
-  flex: 1;
-  text-align: center;
-}
-
-.rule-visual img {
-  max-width: 100%;
-  border-radius: 8px;
-  margin-bottom: 15px;
-}
-
-.rule-content h3 {
-  font-size: 1.8rem;
-  margin-bottom: 20px;
-  color: #16a085;
-}
-
-.rule-content p {
-  margin-bottom: 15px;
-  line-height: 1.7;
-  color: #34495e;
-}
-
-.rule-content ul {
-  margin-bottom: 20px;
-  padding-left: 20px;
-}
-
-.rule-content li {
-  margin-bottom: 8px;
-  color: #34495e;
-}
-
-.legend {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 15px;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  font-size: 0.9rem;
-  color: #7f8c8d;
-}
-
-.color-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  margin-right: 5px;
-}
-
-.halq {
-  background-color: #e74c3c;
-}
-
-.lisan {
-  background-color: #3498db;
-}
-
-.shafatan {
-  background-color: #2ecc71;
-}
-
-/* Learning Path Section */
-.tajweed-levels {
-  padding: 100px 0;
-  background-color: #f5f7fa;
-}
-
-.section-subtitle {
-  text-align: center;
-  color: #7f8c8d;
-  font-size: 1.1rem;
-  margin-top: -40px;
-  margin-bottom: 60px;
-}
-
-.levels-timeline {
-  position: relative;
-  max-width: 900px;
-  margin: 0 auto;
-}
-
-.levels-timeline::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 24px;
-  width: 4px;
-  background: linear-gradient(to bottom, #1abc9c, #16a085);
-  z-index: 1;
-}
-
-.level {
-  position: relative;
-  padding-left: 60px;
-  margin-bottom: 60px;
-}
-
-.level:last-child {
-  margin-bottom: 0;
-}
-
-.level-icon {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 50px;
-  height: 50px;
-  background: linear-gradient(135deg, #1abc9c, #16a085);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
+.tj-hero-card-label {
+  font-size: 0.78rem;
   font-weight: 600;
-  font-size: 1.5rem;
-  z-index: 2;
-  box-shadow: 0 5px 10px rgba(22, 160, 133, 0.3);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--tj-muted);
+  margin-bottom: 8px;
+}
+.tj-hero-card .tj-verse { font-size: clamp(1.9rem, 3.6vw, 2.6rem); }
+.tj-hero-card-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--tj-line);
+  font-size: 0.82rem;
+  color: var(--tj-muted);
+}
+.tj-hero-card-legend i,
+.tj-key i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 6px;
 }
 
-.level-content {
-  background: white;
-  border-radius: 10px;
+/* ---------- Verse rendering (Quran.com tajweed markup) ---------- */
+.tj-verse {
+  font-family: "UthmanicHafs", serif;
+  font-size: 2rem;
+  line-height: 2.3;
+  text-align: center;
+  color: var(--tj-ink);
+}
+.tj-verse .end {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5em;
+  height: 1.5em;
+  margin-inline: 0.3em;
+  border: 1.5px solid var(--tj-gold);
+  border-radius: 50%;
+  font-size: 0.45em;
+  color: #9a7313;
+  vertical-align: middle;
+}
+.tj-verse tajweed { transition: opacity 0.25s ease; }
+
+.tj-verse tajweed.ham_wasl,
+.tj-verse tajweed.laam_shamsiyah { color: #aaaaaa; }
+.tj-verse tajweed.madda_normal { color: #537fff; }
+.tj-verse tajweed.madda_permissible { color: #4050ff; }
+.tj-verse tajweed.madda_necessary { color: #000ebc; }
+.tj-verse tajweed.madda_obligatory { color: #2144c1; }
+.tj-verse tajweed.qalaqah { color: #dd0008; }
+.tj-verse tajweed.ikhafa,
+.tj-verse tajweed.ikhafa_shafawi { color: #d500b7; }
+.tj-verse tajweed.idgham_ghunnah,
+.tj-verse tajweed.ghunnah,
+.tj-verse tajweed.idgham_wo_ghunnah { color: #169200; }
+.tj-verse tajweed.idgham_shafawi { color: #58b800; }
+.tj-verse tajweed.iqlab { color: #26bffd; }
+
+/* Focus mode: dim every rule except the selected one */
+.tj-verse.has-focus tajweed { opacity: 0.25; }
+.tj-verse[data-focus="ikhafa"] tajweed.ikhafa,
+.tj-verse[data-focus="iqlab"] tajweed.iqlab,
+.tj-verse[data-focus="idgham_ghunnah"] tajweed.idgham_ghunnah,
+.tj-verse[data-focus="idgham_wo_ghunnah"] tajweed.idgham_wo_ghunnah,
+.tj-verse[data-focus="ghunnah"] tajweed.ghunnah,
+.tj-verse[data-focus="ikhafa_shafawi"] tajweed.ikhafa_shafawi,
+.tj-verse[data-focus="idgham_shafawi"] tajweed.idgham_shafawi,
+.tj-verse[data-focus="madda_normal"] tajweed.madda_normal,
+.tj-verse[data-focus="madda_permissible"] tajweed.madda_permissible,
+.tj-verse[data-focus="madda_necessary"] tajweed.madda_necessary,
+.tj-verse[data-focus="madda_obligatory"] tajweed.madda_obligatory,
+.tj-verse[data-focus="qalaqah"] tajweed.qalaqah,
+.tj-verse[data-focus="laam_shamsiyah"] tajweed.laam_shamsiyah,
+.tj-verse[data-focus="ham_wasl"] tajweed.ham_wasl {
+  opacity: 1;
+  text-shadow: 0 0 0.6em currentColor;
+}
+.tj-verse[data-focus="laam_shamsiyah"] tajweed.laam_shamsiyah,
+.tj-verse[data-focus="ham_wasl"] tajweed.ham_wasl { color: #6b7280; text-shadow: none; }
+
+.tj-verse-skeleton {
+  height: 78px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #eef2f0 25%, #f8faf9 50%, #eef2f0 75%);
+  background-size: 200% 100%;
+  animation: tj-shimmer 1.2s infinite linear;
+}
+@keyframes tj-shimmer { to { background-position: -200% 0; } }
+.tj-verse-state {
+  padding: 22px;
+  text-align: center;
+  color: var(--tj-muted);
+}
+.tj-verse-state button {
+  border: 0;
+  background: none;
+  color: var(--tj-green);
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* ---------- Sections ---------- */
+.tj-section { padding: 88px 0; }
+.tj-kicker {
+  display: inline-block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #a77d17;
+}
+.tj-section h2 {
+  margin: 8px 0 0;
+  font-size: clamp(1.7rem, 3.2vw, 2.4rem);
+  line-height: 1.15;
+  font-weight: 800;
+  color: var(--tj-ink);
+  letter-spacing: -0.01em;
+}
+.tj-head { max-width: 640px; margin: 0 auto 44px; text-align: center; }
+.tj-head p { margin: 14px 0 0; color: var(--tj-muted); line-height: 1.65; }
+
+/* Intro */
+.tj-intro { background: #fff; }
+.tj-intro-grid {
+  display: grid;
+  grid-template-columns: 0.8fr 1.2fr;
+  gap: 56px;
+  align-items: start;
+}
+.tj-intro-copy p { margin: 0 0 16px; line-height: 1.75; font-size: 1.05rem; }
+.tj-ar-inline { font-family: "UthmanicHafs", serif; font-size: 1.4em; color: var(--tj-green); }
+.tj-pillars {
+  list-style: none;
+  padding: 0;
+  margin: 26px 0 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+.tj-pillars li {
+  padding: 16px;
+  border-radius: 14px;
+  background: var(--tj-bg);
+  border: 1px solid var(--tj-line);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.tj-pillars b { color: var(--tj-green); }
+.tj-pillars span { font-size: 0.85rem; color: var(--tj-muted); }
+
+/* Rule explorer */
+.tj-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 28px;
+}
+.tj-tab {
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: 1px solid var(--tj-line);
+  background: #fff;
+  color: var(--tj-text);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.tj-tab:hover { border-color: var(--tj-green); }
+.tj-tab.active {
+  background: var(--tj-green);
+  border-color: var(--tj-green);
+  color: #fff;
+}
+.tj-explorer-body {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+.tj-rule-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tj-rule-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  text-align: left;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid var(--tj-line);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.tj-rule-item:hover { transform: translateX(3px); border-color: var(--c); }
+.tj-rule-item.active {
+  border-color: var(--c);
+  box-shadow: 0 6px 18px rgba(15, 42, 36, 0.08), inset 4px 0 0 var(--c);
+}
+.tj-swatch {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--c);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--c) 18%, transparent);
+}
+.tj-rule-names { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.tj-rule-names strong { font-size: 0.95rem; color: var(--tj-ink); }
+.tj-rule-names small { font-size: 0.78rem; color: var(--tj-muted); }
+.tj-rule-ar { font-family: "UthmanicHafs", serif; font-size: 1.05rem; color: var(--tj-muted); }
+
+.tj-detail {
+  position: sticky;
+  top: 90px;
+  background: #fff;
+  border-radius: var(--tj-radius);
+  border: 1px solid var(--tj-line);
+  border-top: 5px solid var(--c);
   padding: 30px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+  box-shadow: 0 18px 50px rgba(15, 42, 36, 0.07);
+}
+.tj-detail header { position: relative; padding-right: 110px; }
+.tj-detail-ar {
+  position: absolute;
+  right: 0;
+  top: 0;
+  font-family: "UthmanicHafs", serif;
+  font-size: 1.9rem;
+  color: var(--c);
+}
+.tj-detail h3 { margin: 0; font-size: 1.6rem; color: var(--tj-ink); }
+.tj-detail-sum { margin: 4px 0 0; color: var(--c); font-weight: 600; }
+.tj-detail-how { margin: 18px 0; line-height: 1.75; font-size: 1.03rem; }
+.tj-letters {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  margin-bottom: 18px;
+  border-radius: 12px;
+  background: var(--tj-bg);
+}
+.tj-letters span {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tj-muted);
+}
+.tj-letters b {
+  font-family: "UthmanicHafs", serif;
+  font-size: 1.45rem;
+  letter-spacing: 0.15em;
+  color: var(--c);
+}
+.tj-example {
+  padding: 18px 20px;
+  border-radius: 14px;
+  border: 1px solid var(--tj-line);
+  background: linear-gradient(180deg, #fffdf7, #fff);
+}
+.tj-example-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--tj-muted);
+}
+.tj-example .tj-verse { margin-top: 6px; }
+.tj-example-hint { margin: 6px 0 0; font-size: 0.8rem; color: var(--tj-muted); text-align: center; }
+
+.tj-play {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--tj-green);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+.tj-play:hover { transform: translateY(-1px); background: #0a4a3c; }
+.tj-play.on { background: var(--tj-gold); color: #2a1f00; }
+
+/* Try any ayah */
+.tj-try-sec { background: linear-gradient(180deg, #fff, #f1f6f4); }
+.tj-try { max-width: 820px; margin: 0 auto; }
+.tj-try-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+}
+.tj-try-form label { font-weight: 600; color: var(--tj-ink); }
+.tj-try-form input {
+  width: 140px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1.5px solid var(--tj-line);
+  background: #fff;
+  font: inherit;
+  text-align: center;
+  color: var(--tj-ink);
+}
+.tj-try-form input:focus { outline: none; border-color: var(--tj-green); box-shadow: 0 0 0 4px rgba(13, 92, 75, 0.12); }
+.tj-try-form input[aria-invalid="true"] { border-color: #d6453d; }
+.tj-try-form button {
+  padding: 12px 22px;
+  border-radius: 12px;
+  border: 0;
+  background: var(--tj-green);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+.tj-try-err { text-align: center; color: #c0392b; font-size: 0.9rem; margin: 10px 0 0; }
+.tj-try-out {
+  margin-top: 24px;
+  padding: 22px 26px;
+  background: #fff;
+  border-radius: var(--tj-radius);
+  border: 1px solid var(--tj-line);
+  box-shadow: 0 18px 50px rgba(15, 42, 36, 0.07);
+  max-height: 520px;
+  overflow-y: auto;
+}
+.tj-try-out .tj-verse { font-size: clamp(1.6rem, 3vw, 2.2rem); margin-top: 8px; }
+.tj-key {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 18px;
+  margin-top: 18px;
+  font-size: 0.82rem;
+  color: var(--tj-muted);
 }
 
-.level-content h3 {
+/* Makharij */
+.tj-mk-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 16px;
+}
+.tj-mk-card {
+  padding: 24px 20px;
+  border-radius: var(--tj-radius);
+  background: #fff;
+  border: 1px solid var(--tj-line);
+  border-bottom: 4px solid var(--c);
+  text-align: center;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.tj-mk-card:hover { transform: translateY(-5px); box-shadow: 0 16px 36px rgba(15, 42, 36, 0.1); }
+.tj-mk-letters {
+  min-height: 3.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  font-family: "UthmanicHafs", serif;
   font-size: 1.5rem;
-  margin-bottom: 10px;
-  color: #16a085;
+  line-height: 1.5;
+  letter-spacing: 0.12em;
+  color: var(--c);
 }
+.tj-mk-card h3 { margin: 12px 0 2px; font-size: 1.05rem; color: var(--tj-ink); }
+.tj-mk-card p { margin: 0; font-size: 0.85rem; color: var(--tj-muted); }
 
-.level-content p {
-  margin-bottom: 15px;
-  color: #34495e;
+/* Learning path */
+.tj-path { background: #fff; }
+.tj-steps {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+  counter-reset: none;
 }
-
-.level-content ul {
-  list-style-type: disc;
-  margin-left: 20px;
+.tj-step {
+  position: relative;
+  padding: 26px 22px;
+  border-radius: var(--tj-radius);
+  background: var(--tj-bg);
+  border: 1px solid var(--tj-line);
 }
-
-.level-content li {
-  color: #7f8c8d;
-  margin-bottom: 5px;
+.tj-step-n {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0d5c4b, #1a8a6e);
+  color: #fff;
+  font-weight: 800;
+  box-shadow: 0 6px 14px rgba(13, 92, 75, 0.3);
 }
+.tj-step h3 { margin: 14px 0 4px; color: var(--tj-ink); font-size: 1.15rem; }
+.tj-step p { margin: 0 0 12px; font-size: 0.92rem; color: var(--tj-muted); }
+.tj-step ul { margin: 0; padding-left: 18px; font-size: 0.88rem; line-height: 1.7; }
 
-/* Responsive */
-@media (max-width: 992px) {
-  .tajweed-hero h1 {
-    font-size: 2.8rem;
-  }
-  
-  .tajweed-intro .container {
-    flex-direction: column;
-    gap: 40px;
-  }
-  
-  .intro-content, .intro-image {
-    width: 100%;
-  }
-  
-  .rule-content {
-    flex-direction: column;
-    gap: 30px;
-  }
-  
-  .rule-visual {
-    width: 100%;
-  }
+.tj-final {
+  margin-top: 56px;
+  padding: 44px 24px;
+  text-align: center;
+  color: #fff;
+  border-radius: 24px;
+  background:
+    radial-gradient(600px 240px at 80% 0%, rgba(217, 169, 63, 0.25), transparent 60%),
+    linear-gradient(160deg, #0b4a3d, var(--tj-green-deep));
 }
+.tj-final h3 { margin: 0 0 8px; font-size: 1.6rem; }
+.tj-final p { margin: 0 0 22px; color: rgba(255, 255, 255, 0.78); }
 
-@media (max-width: 768px) {
-  .tajweed-hero h1 {
-    font-size: 2.2rem;
-  }
-  
-  .hero-buttons {
-    flex-direction: column;
-  }
-  
-  .rules-tabs {
-    flex-direction: column;
-    align-items: center;
-  }
-  
-  .tab {
-    width: 100%;
-    max-width: 300px;
-    text-align: center;
-  }
-  
-  .section-title {
-    font-size: 2rem;
-  }
-  
-  .features-grid {
-    grid-template-columns: 1fr;
-  }
+/* ---------- Responsive ---------- */
+@media (max-width: 960px) {
+  .tj-hero-grid,
+  .tj-intro-grid,
+  .tj-explorer-body { grid-template-columns: 1fr; }
+  .tj-hero-grid { gap: 40px; }
+  .tj-intro-grid { gap: 20px; }
+  .tj-detail { position: static; order: -1; }
+  .tj-steps { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+  .tj-hero { padding: 110px 0 64px; }
+  .tj-section { padding: 60px 0; }
+  .tj-stats { gap: 22px; }
+  .tj-pillars { grid-template-columns: 1fr; }
+  .tj-steps { grid-template-columns: 1fr; }
+  .tj-detail { padding: 22px 18px; }
+  .tj-detail header { padding-right: 0; }
+  .tj-detail-ar { position: static; display: block; margin-bottom: 6px; }
+  .tj-cta .tj-btn { width: 100%; }
+  .tj-tabs { justify-content: flex-start; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 6px; }
+  .tj-tab { white-space: nowrap; }
+  .tj-try-out { padding: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tj-page * { transition: none !important; animation: none !important; }
 }

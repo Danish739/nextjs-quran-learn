@@ -2278,3 +2278,51 @@ body:has(.quranfy-player-page) .skip-link {
 @media (max-width: 768px) {
   .sp-queue-panel { top: 0; left: 0; width: 100%; bottom: var(--sp-mobile-player-height); }
 }
+
+
+/* ── Dark only: the theme toggle is hidden here (the page forces dark) ── */
+body:has(.quranfy-player-page) .nv__icon[aria-label^="Switch to"] {
+  display: none !important;
+}
+
+/* ── Phones ── */
+@media (max-width: 768px) {
+  /* no empty "Select a Surah to play" bar before anything is chosen */
+  .sp-mobile-player.is-empty {
+    display: none !important;
+  }
+  .sp-reciter-row {
+    gap: 14px;
+    padding: 0 16px;
+    scroll-snap-type: x mandatory;
+  }
+  .sp-reciter-item {
+    width: 104px;
+    scroll-snap-align: start;
+  }
+  .sp-reciter-avatar {
+    width: 96px;
+    height: 96px;
+  }
+}
+
+@media (max-width: 1024px) {
+  /* collapse the mini-player row until something is playing */
+  .quranfy-player-page .sp-shell:has(.sp-mobile-player.is-empty) {
+    grid-template-rows: 1fr 0 56px;
+  }
+}
+
+@media (max-width: 768px) {
+  .sp-reciter-name {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 13px;
+  }
+}
+
+.sp-reciter-row {
+  scrollbar-width: none;
+}

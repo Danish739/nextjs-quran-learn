@@ -161,6 +161,29 @@ export default function QuranPlayerPage() {
     if (mainRef.current) mainRef.current.scrollTop = 0;
   };
 
+  // The player is dark-only: hold the document in dark mode while it's open,
+  // then hand back to the user's saved theme when leaving.
+  useEffect(() => {
+    const root = document.documentElement;
+    const force = () => {
+      if (root.getAttribute('data-theme') !== 'dark') root.setAttribute('data-theme', 'dark');
+      if (!root.classList.contains('dark')) root.classList.add('dark');
+    };
+    force();
+    const obs = new MutationObserver(force);
+    obs.observe(root, { attributes: true, attributeFilter: ['data-theme', 'class'] });
+    return () => {
+      obs.disconnect();
+      let saved = 'system';
+      try { saved = localStorage.getItem('quran-learn-theme') || 'system'; } catch { /* ignore */ }
+      const resolved = saved === 'system'
+        ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+        : saved;
+      root.setAttribute('data-theme', resolved);
+      root.classList.toggle('dark', resolved === 'dark');
+    };
+  }, []);
+
   useEffect(() => {
     const update = () => {
       const h = new Date().getHours();
@@ -430,7 +453,7 @@ export default function QuranPlayerPage() {
                 currentTrack={currentTrack || tracks[0]} 
                 audioRef={audioRef} 
                 isPlaying={isPlaying} 
-                togglePlay={togglePlay} 
+                togglePlay={() => (currentTrack ? togglePlay() : tracks[0] && handlePlayTrack(tracks[0]))} 
               />
 
               {/* Quick Play Grid */}
