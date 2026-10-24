@@ -10,6 +10,7 @@ import TodayPanel from '@/components/TodayPanel';
 import QuickAccessGrid from '@/components/QuickAccessGrid';
 import TasbeehCounter from '@/components/TasbeehCounter';
 import GetStarted from '@/components/GetStarted';
+import FollowUs from '@/components/FollowUs';
 import PrayerStrip from '@/components/PrayerStrip';
 
 // ── Prayer Times Types ──
@@ -1220,6 +1221,9 @@ export default function HomePage() {
 
             {/* ── GET STARTED ── */}
             <GetStarted />
+
+            {/* ── FOLLOW US ── */}
+            <FollowUs />
 
           </div>
         </main>

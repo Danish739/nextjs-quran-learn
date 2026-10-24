@@ -8,8 +8,9 @@ import { qcfFontFamily, qcfPageFontReady } from '@/app/read-quran/lib/qcf';
 import { MushafLoader } from '@/app/read-quran/components/MushafPager';
 import {
     HifzStore, HifzVerse, HifzWord, Rating,
-    emptyStore, loadStore, saveStore, rate, isMemorized, dueKeys, memorizedCount,
+    emptyStore, loadStore, saveStore, rateWithOutcome, isMemorized, dueKeys, memorizedCount,
     startedCount, dueLabel, liveStreak, touchStreak, fetchChapterVerses,
+    previewRating, isDue, resetCard, newTodayCount, requestPersistence, intervalLabel,
 } from './lib/hifz';
 import './styles/hifz.css';
 
@@ -121,6 +122,8 @@ export default function MemorizeQuranPage() {
     const [focus, setFocus] = useState(false);
     const [complete, setComplete] = useState<{ ayahs: number; repeats: number } | null>(null);
     const [toast, setToast] = useState('');
+    const [undo, setUndo] = useState<{ key: string; snapshot: HifzStore; text: string } | null>(null);
+    const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // ── Playback ──
     const [selectedReciter, setSelectedReciter] = useState(7);
@@ -168,6 +171,7 @@ export default function MemorizeQuranPage() {
     // Initial data
     useEffect(() => {
         setStore(loadStore());
+        requestPersistence();
         Promise.all([
             fetch('/api/memorize-quran?action=chapters').then(r => r.json()),
             fetch('/api/memorize-quran?action=reciters').then(r => r.json()),
@@ -397,9 +401,36 @@ export default function MemorizeQuranPage() {
     };
 
     const rateVerse = (key: string, r: Rating) => {
-        updateStore(s => rate(s, key, r));
-        if (r === 'again') flash('We’ll bring this ayah back in 10 minutes');
+        const snapshot = store;
+        const out = rateWithOutcome(snapshot, key, r);
+        updateStore(() => out.store);
+        const label = RATINGS.find(x => x.id === r)?.label ?? '';
+        const text =
+            out.kind === 'practice' ? `${label}: extra practice. Next review ${dueLabel(out.store.cards[key])}`
+            : out.kind === 'lapse' ? 'Again: we’ll bring this ayah back in 10 minutes'
+            : `${label}: next review in ${intervalLabel(out.interval)}`;
+        setUndo({ key, snapshot, text });
+        if (undoTimer.current) clearTimeout(undoTimer.current);
+        undoTimer.current = setTimeout(() => setUndo(null), 7000);
     };
+
+    const undoRating = () => {
+        if (!undo) return;
+        const { snapshot } = undo;
+        // restore the schedule only, keep time-spent and settings changes made since
+        updateStore(s => ({ ...s, cards: snapshot.cards, newToday: snapshot.newToday, streak: snapshot.streak }));
+        setUndo(null);
+        if (undoTimer.current) clearTimeout(undoTimer.current);
+    };
+
+    const resetVerse = (key: string) => {
+        if (!window.confirm('Reset this ayah? Its review schedule will be cleared and you can start it again.')) return;
+        updateStore(s => resetCard(s, key));
+        setUndo(null);
+        flash('Ayah reset');
+    };
+
+    const setNewPerDay = (n: number) => updateStore(s => ({ ...s, settings: { ...(s.settings ?? { newPerDay: 20 }), newPerDay: n } }));
 
     // Keyboard shortcuts
     useEffect(() => {
@@ -537,12 +568,26 @@ export default function MemorizeQuranPage() {
                             )}
                         </div>
 
+                        <div className="hz-goal">
+                            <div>
+                                <b>Daily new ayahs</b>
+                                <small>{(store.settings?.newPerDay ?? 20) > 0 ? `${newTodayCount(store)} of ${store.settings?.newPerDay ?? 20} started today` : `${newTodayCount(store)} started today`}</small>
+                            </div>
+                            <div className="hz-goal-opts" role="group" aria-label="Daily new ayah goal">
+                                {[10, 20, 30, 0].map(n => (
+                                    <button key={n} className={(store.settings?.newPerDay ?? 20) === n ? 'on' : ''} onClick={() => setNewPerDay(n)}>
+                                        {n === 0 ? 'No limit' : n}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
                         <div className="hz-how">
                             <b>How it works</b>
                             <ol>
                                 <li><span>1</span>Listen to each ayah on repeat</li>
                                 <li><span>2</span>Test yourself with Recall or Fill-the-blanks</li>
-                                <li><span>3</span>Rate it — we schedule the next review</li>
+                                <li><span>3</span>Rate it once it’s due, and we schedule the next review</li>
                             </ol>
                         </div>
                     </section>
@@ -608,6 +653,12 @@ export default function MemorizeQuranPage() {
                     </section>
                 </div>
                 {toast && <div className="hz-toast" role="status">{toast}</div>}
+            {undo && (
+                <div className="hz-undo" role="status">
+                    <span>{undo.text}</span>
+                    <button onClick={undoRating}>Undo</button>
+                </div>
+            )}
             </main>
         );
     }
@@ -814,16 +865,39 @@ export default function MemorizeQuranPage() {
 
                                         {showTranslation && (mode === 'listen' || allShown) && <p className="hz-translation">{v.translation}</p>}
 
-                                        <div className="hz-rate">
-                                            <span>How well do you know it?</span>
-                                            <div>
-                                                {RATINGS.map(r => (
-                                                    <button key={r.id} className={`hz-rate-btn ${r.id}`} onClick={() => rateVerse(v.key, r.id)} title={r.hint}>
-                                                        {r.label}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
+                                        {(() => {
+                                            const waiting = !!card && !isDue(card);
+                                            const goal = store.settings?.newPerDay ?? 20;
+                                            const todayNew = newTodayCount(store);
+                                            const goalHit = !card && goal > 0 && todayNew >= goal;
+                                            return (
+                                                <div className={`hz-rate${waiting ? ' is-waiting' : ''}`}>
+                                                    <span className="hz-rate-label">
+                                                        {waiting ? (
+                                                            <><span className="material-symbols-outlined">lock_clock</span>Next review {dueLabel(card)}. Extra practice won’t change the schedule.</>
+                                                        ) : goalHit ? (
+                                                            <><span className="material-symbols-outlined">flag</span>Daily goal of {goal} new ayahs reached. More is optional.</>
+                                                        ) : (
+                                                            'How well do you know it?'
+                                                        )}
+                                                    </span>
+                                                    <div>
+                                                        {RATINGS.map(r => {
+                                                            const pv = previewRating(card, r.id);
+                                                            return (
+                                                                <button key={r.id} className={`hz-rate-btn ${r.id}${pv.practice ? ' is-practice' : ''}`} onClick={() => rateVerse(v.key, r.id)} title={pv.practice ? 'Not due yet: counts as extra practice' : r.hint}>
+                                                                    <b>{r.label}</b>
+                                                                    <small>{pv.label}</small>
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                    {card && (
+                                                        <button className="hz-rate-reset" onClick={() => resetVerse(v.key)}>Reset this ayah</button>
+                                                    )}
+                                                </div>
+                                            );
+                                        })()}
                                     </article>
                                 );
                             })}
@@ -878,6 +952,12 @@ export default function MemorizeQuranPage() {
             )}
 
             {toast && <div className="hz-toast" role="status">{toast}</div>}
+            {undo && (
+                <div className="hz-undo" role="status">
+                    <span>{undo.text}</span>
+                    <button onClick={undoRating}>Undo</button>
+                </div>
+            )}
         </main>
     );
 }
