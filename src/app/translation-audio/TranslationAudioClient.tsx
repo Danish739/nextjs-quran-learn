@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { surahList } from '../audio-quran/surahList';
+import { loadQcfFontsForPages, qcfFontFamily } from '../read-quran/lib/qcf';
 
 const EVERYAYAH = 'https://everyayah.com/data';
 const QURAN_API = 'https://api.quran.com/api/v4';
@@ -34,11 +35,22 @@ type Mode = 'translation' | 'both';
 const SPEEDS = [0.75, 1, 1.25, 1.5];
 const PREF_KEY = 'translation-audio-prefs';
 
+interface GlyphWord {
+  id?: number;
+  code_v2: string;
+  page_number?: number;
+  char_type_name?: string;
+}
+
 interface Ayah {
   n: number;
   ar: string;
+  /** Mushaf glyph words, the same data and page fonts Read Quran renders with */
+  words: GlyphWord[];
   tr: string;
 }
+
+const escapeGlyph = (v: string) => v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 const pad = (n: number, w = 3) => String(n).padStart(w, '0');
 const fileName = (s: number, a: number) => `${pad(s)}${pad(a)}.mp3`;
@@ -46,12 +58,19 @@ const stripTags = (t: string) => t.replace(/<sup[\s\S]*?<\/sup>/gi, '').replace(
 
 async function loadAyahs(surah: number, textId: number): Promise<Ayah[]> {
   const [ar, tr] = await Promise.all([
-    fetch(`${QURAN_API}/quran/verses/uthmani?chapter_number=${surah}`).then(r => r.json()),
+    fetch(`${QURAN_API}/verses/by_chapter/${surah}?words=true&mushaf=1&fields=text_uthmani&word_fields=code_v2,page_number,char_type_name&per_page=300`).then(r => r.json()),
     fetch(`${QURAN_API}/quran/translations/${textId}?chapter_number=${surah}`).then(r => r.json()),
   ]);
-  const verses = ar.verses as { text_uthmani: string }[];
+  const verses = ar.verses as { text_uthmani: string; words?: GlyphWord[] }[];
   const trs = tr.translations as { text: string }[];
-  return verses.map((v, i) => ({ n: i + 1, ar: v.text_uthmani, tr: stripTags(trs[i]?.text ?? '') }));
+  const rows = verses.map((v, i) => ({
+    n: i + 1,
+    ar: v.text_uthmani,
+    words: (v.words ?? []).filter(w => w.code_v2),
+    tr: stripTags(trs[i]?.text ?? ''),
+  }));
+  loadQcfFontsForPages(rows.flatMap(r => r.words.map(w => w.page_number ?? 1)));
+  return rows;
 }
 
 export default function TranslationAudioClient() {
@@ -263,7 +282,18 @@ export default function TranslationAudioClient() {
                     <small>{a.n}</small>
                   </button>
                   <div className="ta-ayah-body">
-                    <p className={`ta-ar font-arabic${on && playing && phase === 'ar' ? ' hot' : ''}`} dir="rtl" lang="ar">{a.ar}</p>
+                    <p className={`ta-ar${a.words.length ? ' is-qcf' : ' font-arabic'}${on && playing && phase === 'ar' ? ' hot' : ''}`} dir="rtl" lang="ar">
+                      {a.words.length ? a.words.map((w, i) => (
+                        <span key={w.id ?? i}>
+                          <span
+                            className={w.char_type_name === 'end' ? 'ta-qcf-end' : undefined}
+                            style={{ fontFamily: `${qcfFontFamily(w.page_number ?? 1)}, UthmanicHafs, serif` }}
+                            dangerouslySetInnerHTML={{ __html: escapeGlyph(w.code_v2) }}
+                          />
+                          {i < a.words.length - 1 ? ' ' : ''}
+                        </span>
+                      )) : a.ar}
+                    </p>
                     <p className={`ta-tr${on && playing && phase === 'tr' ? ' hot' : ''}`} dir={lang.dir} lang={lang.id}>{a.tr}</p>
                   </div>
                 </li>

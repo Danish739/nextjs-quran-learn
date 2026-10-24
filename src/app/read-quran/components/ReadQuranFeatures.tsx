@@ -27,22 +27,6 @@ export default function ReadQuranFeatures() {
                         <div className="rq-card-meta">114 Chapters</div>
                     </article>
 
-                    {/* Card 2 — Read by Juz */}
-                    <article className="rq-card">
-                        <div className="rq-card-illus rq-illus-juz" aria-hidden="true">
-                            <svg width="84" height="64" viewBox="0 0 84 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <circle cx="42" cy="32" r="20" stroke="#C8A96B" strokeWidth="6" strokeLinecap="round" strokeDasharray="4 6" />
-                                <path d="M42 12 C52 8, 64 10, 68 20" stroke="#0F3D2E" strokeWidth="1.5" opacity="0.6" />
-                                <path d="M6 52 C20 44, 36 44, 78 52" stroke="#E9E2D6" strokeWidth="6" opacity="0.6" strokeLinecap="round" />
-                            </svg>
-                        </div>
-                        <div className="rq-card-content">
-                            <div className="rq-card-title">Read by Juz</div>
-                            <div className="rq-card-desc">Follow the Quran in 30 Juz for simple and structured reading.</div>
-                        </div>
-                        <div className="rq-card-meta">30 Juz</div>
-                    </article>
-
                     {/* Card 3 — Search the Quran */}
                     <article className="rq-card">
                         <div className="rq-card-illus rq-illus-search" aria-hidden="true">

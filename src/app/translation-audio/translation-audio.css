@@ -88,6 +88,8 @@
 .ta-ayah.on .ta-ayah-play { background: var(--ta-accent); color: #fff; }
 .ta-ayah-body { flex: 1; min-width: 0; }
 .ta-ar { margin: 0 0 10px; font-size: clamp(1.5rem, 3.4vw, 2rem); line-height: 2.1; text-align: right; color: var(--ta-ink); transition: color 0.2s ease; }
+.ta-ar.is-qcf { line-height: 2.1; word-spacing: 0.05em; font-feature-settings: normal; }
+.ta-qcf-end { color: var(--ta-accent); }
 .ta-tr { margin: 0; font-size: 1rem; line-height: 1.75; color: var(--ta-muted); transition: color 0.2s ease; }
 .ta-tr[dir="rtl"] { font-size: 1.1rem; line-height: 2; }
 .ta-ar.hot, .ta-tr.hot { color: var(--ta-accent-2); }

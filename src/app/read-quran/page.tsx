@@ -8,39 +8,6 @@ import { getLastRead, getProgressPercentage, getProgress, LastReadPosition } fro
 import SurahExplorer, { SurahInfo } from '@/components/SurahExplorer';
 import './styles/library.css';
 
-const JUZ = [
-  { juz: 1, start: '1:1', surah: 'Al-Fatihah', page: 1 },
-  { juz: 2, start: '2:142', surah: 'Al-Baqarah', page: 22 },
-  { juz: 3, start: '2:253', surah: 'Al-Baqarah', page: 42 },
-  { juz: 4, start: '3:93', surah: "Al 'Imran", page: 62 },
-  { juz: 5, start: '4:24', surah: 'An-Nisa', page: 82 },
-  { juz: 6, start: '4:148', surah: 'An-Nisa', page: 102 },
-  { juz: 7, start: '5:83', surah: "Al-Ma'idah", page: 121 },
-  { juz: 8, start: '6:111', surah: "Al-An'am", page: 142 },
-  { juz: 9, start: '7:88', surah: "Al-A'raf", page: 162 },
-  { juz: 10, start: '8:41', surah: 'Al-Anfal', page: 182 },
-  { juz: 11, start: '9:93', surah: 'At-Tawbah', page: 201 },
-  { juz: 12, start: '11:6', surah: 'Hud', page: 222 },
-  { juz: 13, start: '12:53', surah: 'Yusuf', page: 242 },
-  { juz: 14, start: '15:1', surah: 'Al-Hijr', page: 262 },
-  { juz: 15, start: '17:1', surah: "Al-Isra'", page: 282 },
-  { juz: 16, start: '18:75', surah: 'Al-Kahf', page: 302 },
-  { juz: 17, start: '21:1', surah: "Al-Anbiya'", page: 322 },
-  { juz: 18, start: '23:1', surah: "Al-Mu'minun", page: 342 },
-  { juz: 19, start: '25:21', surah: 'Al-Furqan', page: 362 },
-  { juz: 20, start: '27:56', surah: 'An-Naml', page: 382 },
-  { juz: 21, start: '29:46', surah: 'Al-Ankabut', page: 402 },
-  { juz: 22, start: '33:31', surah: 'Al-Ahzab', page: 422 },
-  { juz: 23, start: '36:28', surah: 'Ya-Sin', page: 442 },
-  { juz: 24, start: '39:32', surah: 'Az-Zumar', page: 462 },
-  { juz: 25, start: '41:47', surah: 'Fussilat', page: 482 },
-  { juz: 26, start: '46:1', surah: 'Al-Ahqaf', page: 502 },
-  { juz: 27, start: '51:31', surah: 'Adh-Dhariyat', page: 522 },
-  { juz: 28, start: '58:1', surah: 'Al-Mujadila', page: 542 },
-  { juz: 29, start: '67:1', surah: 'Al-Mulk', page: 562 },
-  { juz: 30, start: '78:1', surah: "An-Naba'", page: 582 },
-];
-
 const MODES = [
   { icon: 'translate', title: 'Translation', text: 'Arabic with English meaning', href: '/read-quran/1' },
   { icon: 'text_fields', title: 'Word by Word', text: 'Understand every word', href: '/read-quran/1?mode=word-by-word' },
@@ -51,7 +18,7 @@ const MODES = [
 const RING_R = 30;
 const RING_C = 2 * Math.PI * RING_R;
 
-type Tab = 'surah' | 'juz' | 'page';
+type Tab = 'surah' | 'page';
 
 export default function ReadQuranPage() {
   const router = useRouter();
@@ -161,7 +128,6 @@ export default function ReadQuranPage() {
       <div className="lib-tabs" role="tablist" aria-label="Browse the Quran">
         {([
           ['surah', 'Surah', 'menu_book'],
-          ['juz', 'Juz', 'view_module'],
           ['page', 'Page', 'description'],
         ] as const).map(([id, label, icon]) => (
           <button key={id} role="tab" aria-selected={tab === id} className={tab === id ? 'on' : ''} onClick={() => setTab(id)}>
@@ -185,24 +151,6 @@ export default function ReadQuranPage() {
         ) : (
           <SurahExplorer surahs={surahs} recentNums={lastRead ? [lastRead.surahId] : []} />
         )
-      )}
-
-      {tab === 'juz' && (
-        <section className="lib-juz" aria-label="Juz">
-          {JUZ.map((j, i) => {
-            const [s, a] = j.start.split(':');
-            return (
-              <Link key={j.juz} href={`/read-quran/${s}#verse-${a}`} className="lib-juz-card" style={{ animationDelay: `${i * 15}ms` }}>
-                <span className="lib-juz-num">{j.juz}</span>
-                <span className="lib-juz-text">
-                  <b>Juz {j.juz}</b>
-                  <small>{j.surah} · {j.start}</small>
-                </span>
-                <span className="lib-juz-page">p. {j.page}</span>
-              </Link>
-            );
-          })}
-        </section>
       )}
 
       {tab === 'page' && (

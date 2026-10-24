@@ -1018,3 +1018,36 @@
     animation: none !important;
   }
 }
+
+
+/* ---- search across all collections ---- */
+.hd-filter-chips {
+  display: flex;
+  gap: 8px;
+  margin: 4px 0 10px;
+  padding-bottom: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.hd-filter-chips::-webkit-scrollbar { display: none; }
+.hd-filter-chips button {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1.5px solid var(--hd-line);
+  background: var(--hd-card);
+  color: var(--hd-ink);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.hd-filter-chips button small { font-size: 0.72rem; opacity: 0.65; font-weight: 700; }
+.hd-filter-chips button.on { background: var(--hue, var(--brand-primary)); border-color: var(--hue, var(--brand-primary)); color: #fff; }
+.hd-filter-chips button:disabled { opacity: 0.4; cursor: default; }
+.hd-link { border: 0; background: none; padding: 0; color: var(--brand-primary); font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
+form.hd-search { flex: 1; }

@@ -24,7 +24,7 @@ interface Tile {
 const TILES: Tile[] = [
   { key: 'read', label: 'Read Quran', sub: '114 Surahs', ar: 'اقرأ', icon: 'menu_book', href: '/read-quran/1', from: '#10b981', to: '#047857', anim: 'flip' },
   { key: 'mushaf', label: 'Mushaf', sub: '604 Pages', ar: 'مصحف', icon: 'auto_stories', href: '/quran-pages', from: '#f59e0b', to: '#b45309', anim: 'tilt' },
-  { key: 'nav', label: 'Navigate', sub: 'Surah · Juz · Page', ar: 'تصفح', icon: 'explore', action: 'navigate', from: '#38bdf8', to: '#0369a1', anim: 'spin' },
+  { key: 'nav', label: 'Navigate', sub: 'Surah · Page', ar: 'تصفح', icon: 'explore', action: 'navigate', from: '#38bdf8', to: '#0369a1', anim: 'spin' },
   { key: 'hifz', label: 'Memorize', sub: 'Hifz Program', ar: 'حفظ', icon: 'psychology', href: '/memorize-quran', from: '#c084fc', to: '#7e22ce', anim: 'pulse' },
   { key: 'radio', label: 'Quran Radio', sub: '24/7 Recitation', ar: 'إذاعة', icon: 'radio', href: '/radio', from: '#f87171', to: '#b91c1c', badge: 'LIVE', anim: 'wave' },
   { key: 'wbw', label: 'Word by Word', sub: 'Arabic Learning', ar: 'كلمة', icon: 'translate', href: '/read-quran/1?mode=word-by-word', from: '#22d3ee', to: '#0e7490', anim: 'swap' },

@@ -9,7 +9,6 @@ interface NavigationTabsProps {
 
 const tabs = [
   { id: 'surah', title: 'Surahs', count: 114 },
-  { id: 'juz', title: 'Juz', count: 30 },
   { id: 'manzil', title: 'Manzil', count: 7 },
   { id: 'hizb', title: 'Hizb', count: 60 },
   { id: 'page', title: 'Pages', count: 604 },

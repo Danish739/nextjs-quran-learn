@@ -5,7 +5,12 @@ export const dynamic = 'force-dynamic';
 // fawazahmed0 Hadith API hosted on jsDelivr CDN — completely free, no API key
 const CDN = 'https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions';
 
-const VALID_COLLECTIONS = new Set(['bukhari', 'muslim', 'abudawud', 'tirmidhi', 'nasai', 'ibnmajah']);
+const BOOKS = ['bukhari', 'muslim', 'abudawud', 'tirmidhi', 'nasai', 'ibnmajah'] as const;
+const VALID_COLLECTIONS = new Set<string>([...BOOKS, 'all']);
+
+/** Strips Arabic diacritics and tatweel so plain-letter queries match fully-vowelled hadith text */
+const normAr = (t: string) => t.replace(/[ؐ-ًؚ-ٰٟۖ-ۭـ]/g, '').replace(/[أإآٱ]/g, 'ا');
+const HAS_ARABIC = /[؀-ۿ]/;
 
 const cache = new Map<string, { 
   metadata: any;
@@ -49,6 +54,56 @@ async function loadBook(book: string) {
   return result;
 }
 
+/** Search every collection at once; results keep collection order and carry their collection id. */
+async function searchAll(query: string, page: number, limit: number, only: string | null) {
+  const q = query.toLowerCase();
+  const arabic = HAS_ARABIC.test(query);
+  const nq = arabic ? normAr(query) : '';
+
+  const loaded = await Promise.allSettled(BOOKS.map(b => loadBook(b)));
+  const counts: Record<string, number> = {};
+  const unavailable: string[] = [];
+  const matches: { collection: string; number: string; english: string; arabic: string; chapter: string }[] = [];
+
+  loaded.forEach((r, i) => {
+    const book = BOOKS[i];
+    if (r.status !== 'fulfilled') { unavailable.push(book); return; }
+    const { metadata, hadiths } = r.value;
+    let n = 0;
+    for (const h of hadiths) {
+      const hit = h.english.toLowerCase().includes(q) || (arabic && normAr(h.arabic).includes(nq));
+      if (!hit) continue;
+      n++;
+      if (!only || only === book) {
+        matches.push({
+          collection: book,
+          number: String(h.number),
+          english: h.english,
+          arabic: h.arabic,
+          chapter: h.chapter ? (metadata.sections[h.chapter] || `Book ${h.chapter}`) : '',
+        });
+      }
+    }
+    counts[book] = n;
+  });
+
+  if (unavailable.length === BOOKS.length) {
+    return NextResponse.json({ error: 'Failed to load hadith collections.' }, { status: 502 });
+  }
+
+  const total = matches.length;
+  const start = (page - 1) * limit;
+  return NextResponse.json({
+    hadiths: matches.slice(start, start + limit),
+    counts,
+    unavailable,
+    total,
+    page,
+    limit,
+    totalPages: Math.max(1, Math.ceil(total / limit)),
+  });
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const collection = searchParams.get('collection') ?? 'bukhari';
@@ -61,6 +116,10 @@ export async function GET(request: Request) {
   }
 
   try {
+    if (collection === 'all') {
+      if (!query) return NextResponse.json({ error: 'A search term is required to search all collections.' }, { status: 400 });
+      return await searchAll(query, page, limit, searchParams.get('only'));
+    }
     const { metadata, hadiths: allHadiths } = await loadBook(collection);
     let hadiths = allHadiths;
 
@@ -74,7 +133,7 @@ export async function GET(request: Request) {
       const q = query.toLowerCase();
       hadiths = hadiths.filter(h =>
         h.english.toLowerCase().includes(q) ||
-        h.arabic.includes(query) ||
+        (HAS_ARABIC.test(query) && normAr(h.arabic).includes(normAr(query))) ||
         String(h.number) === query
       );
     }

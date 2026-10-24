@@ -190,7 +190,7 @@ const FEATURED_ACTIONS = [
 
 const FEATURES = [
   { icon: 'menu_book', label: 'Read Quran', sub: '114 Surahs', href: '/read-quran/1', color: 'var(--brand-primary)' },
-  { icon: 'explore', label: 'Navigate', sub: 'Surah · Juz · Page', href: '#navigate', color: '#0ea5e9' },
+  { icon: 'explore', label: 'Navigate', sub: 'Surah · Page', href: '#navigate', color: '#0ea5e9' },
   { icon: 'ads_click', label: 'Memorize', sub: 'Hifz Program', href: '/memorize-quran', color: '#a855f7' },
   { icon: 'radio', label: 'Quran Radio', sub: '24/7 Recitation', href: '/radio', color: '#ef4444' },
   { icon: 'translate', label: 'Word by Word', sub: 'Arabic Learning', href: '/read-quran/1?mode=word-by-word', color: '#06b6d4' },
@@ -210,41 +210,7 @@ const AYAHS_OF_DAY = [
 const STATS = [
   { num: '114', label: 'Surahs', icon: 'menu_book' },
   { num: '6,236', label: 'Ayahs', icon: 'format_quote' },
-  { num: '30', label: 'Juz', icon: 'auto_stories' },
   { num: '77,797', label: 'Words', icon: 'abc' },
-];
-
-const JUZ_DATA = [
-  { juz: 1, start: '1:1', surah: 'Al-Fatihah', page: 1 },
-  { juz: 2, start: '2:142', surah: 'Al-Baqarah', page: 22 },
-  { juz: 3, start: '2:253', surah: 'Al-Baqarah', page: 42 },
-  { juz: 4, start: '3:93', surah: "Al 'Imran", page: 62 },
-  { juz: 5, start: '4:24', surah: 'An-Nisa', page: 82 },
-  { juz: 6, start: '4:148', surah: 'An-Nisa', page: 102 },
-  { juz: 7, start: '5:83', surah: "Al-Ma'idah", page: 121 },
-  { juz: 8, start: '6:111', surah: "Al-An'am", page: 142 },
-  { juz: 9, start: '7:88', surah: "Al-A'raf", page: 162 },
-  { juz: 10, start: '8:41', surah: 'Al-Anfal', page: 182 },
-  { juz: 11, start: '9:93', surah: 'At-Tawbah', page: 201 },
-  { juz: 12, start: '11:6', surah: 'Hud', page: 222 },
-  { juz: 13, start: '12:53', surah: 'Yusuf', page: 242 },
-  { juz: 14, start: '15:1', surah: 'Al-Hijr', page: 262 },
-  { juz: 15, start: '17:1', surah: "Al-Isra'", page: 282 },
-  { juz: 16, start: '18:75', surah: 'Al-Kahf', page: 302 },
-  { juz: 17, start: '21:1', surah: "Al-Anbiya'", page: 322 },
-  { juz: 18, start: '23:1', surah: "Al-Mu'minun", page: 342 },
-  { juz: 19, start: '25:21', surah: 'Al-Furqan', page: 362 },
-  { juz: 20, start: '27:56', surah: 'An-Naml', page: 382 },
-  { juz: 21, start: '29:46', surah: 'Al-Ankabut', page: 402 },
-  { juz: 22, start: '33:31', surah: 'Al-Ahzab', page: 422 },
-  { juz: 23, start: '36:28', surah: 'Ya-Sin', page: 442 },
-  { juz: 24, start: '39:32', surah: 'Az-Zumar', page: 462 },
-  { juz: 25, start: '41:47', surah: 'Fussilat', page: 482 },
-  { juz: 26, start: '46:1', surah: 'Al-Ahqaf', page: 502 },
-  { juz: 27, start: '51:31', surah: 'Adh-Dhariyat', page: 522 },
-  { juz: 28, start: '58:1', surah: 'Al-Mujadila', page: 542 },
-  { juz: 29, start: '67:1', surah: 'Al-Mulk', page: 564 },
-  { juz: 30, start: '78:1', surah: "An-Naba'", page: 582 },
 ];
 
 // Search / Quick Start / Navigate bar — hidden for now
@@ -459,7 +425,7 @@ export default function HomePage() {
   // ── Navigate Quran panel ──
   const [showNav, setShowNav] = useState(false);
   const [navLoading, setNavLoading] = useState(false);
-  const [navTab, setNavTab] = useState<'surah' | 'juz' | 'page'>('surah');
+  const [navTab, setNavTab] = useState<'surah' | 'page'>('surah');
   const [navSearch, setNavSearch] = useState('');
   const navRef = useRef<HTMLDivElement>(null);
   const openNav = () => { setShowNav(true); setNavLoading(true); setTimeout(() => setNavLoading(false), 600); };
@@ -651,7 +617,7 @@ export default function HomePage() {
               </div>
               {/* Tabs */}
               <div style={{ display: 'flex', background: 'var(--bg-surface)', borderRadius: 10, padding: 3, gap: 2 }}>
-                {(['surah', 'juz', 'page'] as const).map(tab => (
+                {(['surah', 'page'] as const).map(tab => (
                   <button key={tab} onClick={() => { setNavTab(tab); setNavSearch(''); }} style={{
                     flex: 1, padding: '8px 12px', borderRadius: 8, border: 'none', cursor: 'pointer',
                     fontSize: 13, fontWeight: 600, transition: 'all 0.15s',
@@ -722,35 +688,7 @@ export default function HomePage() {
                     </div>
                   </Link>
                 ))}</>;
-              })() : navTab === 'juz' ? (
-                <div style={{ padding: '8px 12px' }}>
-                  {JUZ_DATA.map(j => {
-                    const surahNum = parseInt(j.start.split(':')[0]);
-                    return (
-                      <Link key={j.juz} href={`/read-quran/${surahNum}?mode=reading`} onClick={() => setShowNav(false)} style={{ textDecoration: 'none', display: 'block' }}>
-                        <div style={{
-                          display: 'flex', alignItems: 'center', gap: 12, padding: '14px 12px',
-                          borderRadius: 10, marginBottom: 4, transition: 'background 0.12s', cursor: 'pointer',
-                        }}
-                          onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-card-hover)'}
-                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                        >
-                          <div style={{ width: 40, height: 40, borderRadius: 10, background: 'linear-gradient(135deg, rgba(var(--brand-rgb),0.12), rgba(var(--brand-hover-rgb),0.08))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 15, color: 'var(--brand-primary)', flexShrink: 0 }}>
-                            {j.juz}
-                          </div>
-                          <div style={{ flex: 1 }}>
-                            <p style={{ margin: 0, fontWeight: 600, fontSize: 14, ...S.text }}>Juz {j.juz}</p>
-                            <p style={{ margin: 0, fontSize: 11.5, ...S.muted }}>Starts at {j.surah} ({j.start})</p>
-                          </div>
-                          <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                            <span style={{ fontSize: 11, ...S.muted }}>Page {j.page}</span>
-                          </div>
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </div>
-              ) : (
+              })() : (
                 <div style={{ padding: '16px 16px' }}>
                   <p style={{ margin: '0 0 12px', fontSize: 12, ...S.muted }}>Go to a specific page (1–604)</p>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 6 }}>
@@ -777,7 +715,7 @@ export default function HomePage() {
             {/* Panel Footer */}
             <div style={{ padding: '12px 20px', borderTop: `1px solid ${'var(--bg-elevated)'}`, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span style={{ fontSize: 11, ...S.muted }}>
-                {navTab === 'surah' ? '114 Surahs' : navTab === 'juz' ? '30 Juz' : '604 Pages'}
+                {navTab === 'surah' ? '114 Surahs' : '604 Pages'}
               </span>
               <span style={{ fontSize: 11, ...S.muted }}>ESC to close</span>
             </div>

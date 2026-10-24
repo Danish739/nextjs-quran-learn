@@ -48,7 +48,9 @@ const LIMIT = 20;
 const SAVED_KEY = 'hadees-saved';
 const ARABIC_FONT = "'UthmanicHafsText', serif";
 
-type View = { kind: 'home' } | { kind: 'collection'; id: string } | { kind: 'saved' };
+type View = { kind: 'home' } | { kind: 'collection'; id: string } | { kind: 'saved' } | { kind: 'search'; q: string };
+
+interface SearchHit extends Hadith { collection: string }
 
 /** Paginator with ellipses */
 function pageList(page: number, total: number): (number | '…')[] {
@@ -156,6 +158,10 @@ export default function HadeesPage() {
   const [booksOpen, setBooksOpen] = useState(false);
   const [bookFilter, setBookFilter] = useState('');
   const [homeQuery, setHomeQuery] = useState('');
+  // cross-collection search
+  const [hits, setHits] = useState<SearchHit[]>([]);
+  const [counts, setCounts] = useState<Record<string, number>>({});
+  const [only, setOnly] = useState('');
   const topRef = useRef<HTMLDivElement>(null);
 
   const col = view.kind === 'collection' ? COLLECTIONS.find(c => c.id === view.id)! : null;
@@ -168,6 +174,12 @@ export default function HadeesPage() {
     const p = new URLSearchParams(window.location.search);
     const c = p.get('c');
     if (c === 'saved') setView({ kind: 'saved' });
+    else if (c === 'all' && p.get('q')) {
+      setView({ kind: 'search', q: p.get('q')! });
+      setHomeQuery(p.get('q')!);
+      setOnly(p.get('only') || '');
+      setPage(Math.max(1, Number(p.get('page')) || 1));
+    }
     else if (c && COLLECTIONS.some(x => x.id === c)) {
       setView({ kind: 'collection', id: c });
       setBookId(p.get('book') || '');
@@ -190,8 +202,14 @@ export default function HadeesPage() {
   /* Keep the URL in sync so links and refresh return to the same place */
   useEffect(() => {
     const url = new URL(window.location.href);
-    ['c', 'book', 'page', 'q'].forEach(k => url.searchParams.delete(k));
+    ['c', 'book', 'page', 'q', 'only'].forEach(k => url.searchParams.delete(k));
     if (view.kind === 'saved') url.searchParams.set('c', 'saved');
+    if (view.kind === 'search') {
+      url.searchParams.set('c', 'all');
+      url.searchParams.set('q', view.q);
+      if (only) url.searchParams.set('only', only);
+      if (page > 1) url.searchParams.set('page', String(page));
+    }
     if (view.kind === 'collection') {
       url.searchParams.set('c', view.id);
       if (bookId) url.searchParams.set('book', bookId);
@@ -199,7 +217,7 @@ export default function HadeesPage() {
       if (search) url.searchParams.set('q', search);
     }
     window.history.replaceState(null, '', url.toString());
-  }, [view, bookId, page, search]);
+  }, [view, bookId, page, search, only]);
 
   /* Debounced search */
   useEffect(() => {
@@ -233,6 +251,29 @@ export default function HadeesPage() {
     return () => { cancelled = true; };
   }, [view, page, search, bookId, retry]);
 
+  /* Fetch: search across all six collections */
+  useEffect(() => {
+    if (view.kind !== 'search') return;
+    let cancelled = false;
+    setLoading(true);
+    setError('');
+    const params = new URLSearchParams({ collection: 'all', search: view.q, page: String(page), limit: String(LIMIT) });
+    if (only) params.set('only', only);
+    fetch(`/api/hadith?${params}`)
+      .then(r => r.json().then(d => ({ ok: r.ok, d })))
+      .then(({ ok, d }) => {
+        if (cancelled) return;
+        if (!ok || d.error) throw new Error(d.error || 'Search failed');
+        setHits(d.hadiths ?? []);
+        setCounts(d.counts ?? {});
+        setTotal(d.total ?? 0);
+        setTotalPages(d.totalPages ?? 1);
+      })
+      .catch(e => { if (!cancelled) { setError(e instanceof Error ? e.message : 'Search failed'); setHits([]); } })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [view, page, only, retry]);
+
   const scrollTop = () => topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   const openCollection = (id: string, q = '') => {
@@ -243,6 +284,18 @@ export default function HadeesPage() {
     setSearchInput(q);
     setSearch(q);
     setHadiths([]);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const searchAll = (q: string) => {
+    const term = q.trim();
+    if (!term) return;
+    setView({ kind: 'search', q: term });
+    setHomeQuery(term);
+    setOnly('');
+    setPage(1);
+    setHits([]);
+    setCounts({});
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -288,10 +341,10 @@ export default function HadeesPage() {
             <p className="hd-kicker"><span className="font-arabic">الحديث النبوي</span><span className="hd-kicker-sep" />The Sunnah</p>
             <h1>The words of the Prophet <span className="hd-saw">ﷺ</span>, <em>within reach.</em></h1>
             <p className="hd-sub">Read and search the six major collections in Arabic and English, and keep the narrations that move you.</p>
-            <form className="hd-hero-search" onSubmit={e => { e.preventDefault(); if (homeQuery.trim()) openCollection('bukhari', homeQuery.trim()); }}>
+            <form className="hd-hero-search" onSubmit={e => { e.preventDefault(); searchAll(homeQuery); }}>
               <span className="material-symbols-outlined">search</span>
-              <input value={homeQuery} onChange={e => setHomeQuery(e.target.value)} placeholder="Search a word or topic, e.g. intention, mercy, prayer" aria-label="Search hadith" />
-              <button type="submit" disabled={!homeQuery.trim()}>Search Bukhari</button>
+              <input value={homeQuery} onChange={e => setHomeQuery(e.target.value)} placeholder="Search all six collections, e.g. intention, mercy, prayer" aria-label="Search hadith" />
+              <button type="submit" disabled={!homeQuery.trim()}>Search all</button>
             </form>
           </header>
 
@@ -325,6 +378,90 @@ export default function HadeesPage() {
               ))}
             </div>
           </section>
+        </div>
+      </main>
+    );
+  }
+
+  /* ═════════════════ SEARCH (all collections) ═════════════════ */
+  if (view.kind === 'search') {
+    const sumCounts = Object.values(counts).reduce((a, b) => a + b, 0);
+    const from = total === 0 ? 0 : (page - 1) * LIMIT + 1;
+    const to = Math.min(page * LIMIT, total);
+    return (
+      <main className="hd">
+        <div className="hd-bar">
+          <button className="hd-icon" onClick={goHome} aria-label="Back"><span className="material-symbols-outlined">arrow_back</span></button>
+          <div className="hd-bar-title"><b>Search all collections</b><small>Bukhari · Muslim · Abu Dawud · Tirmidhi · Nasa’i · Ibn Majah</small></div>
+        </div>
+        <div className="hd-wrap narrow" ref={topRef}>
+          <div className="hd-tools">
+            <form className="hd-search" onSubmit={e => { e.preventDefault(); searchAll(homeQuery); }}>
+              <span className="material-symbols-outlined">search</span>
+              <input value={homeQuery} onChange={e => setHomeQuery(e.target.value)} placeholder="Search all six collections…" aria-label="Search all collections" />
+              {homeQuery && <button type="button" onClick={goHome} aria-label="Clear search"><span className="material-symbols-outlined">close</span></button>}
+            </form>
+          </div>
+
+          <div className="hd-filter-chips" role="tablist" aria-label="Filter by collection">
+            <button role="tab" aria-selected={!only} className={!only ? 'on' : ''} onClick={() => { setOnly(''); setPage(1); }}>
+              All {sumCounts > 0 && <small>{sumCounts.toLocaleString()}</small>}
+            </button>
+            {COLLECTIONS.map(c => (
+              <button key={c.id} role="tab" aria-selected={only === c.id} className={only === c.id ? 'on' : ''}
+                disabled={counts[c.id] === 0} onClick={() => { setOnly(c.id); setPage(1); }}
+                style={{ ['--hue' as string]: c.hue }}>
+                {c.name.replace(/^(Sahih|Sunan|Jami') ?/, '').replace('al-', '')}
+                {counts[c.id] !== undefined && <small>{counts[c.id].toLocaleString()}</small>}
+              </button>
+            ))}
+          </div>
+
+          <div className="hd-status">
+            {loading ? 'Searching all collections…' : error ? null
+              : <>{total.toLocaleString()} result{total === 1 ? '' : 's'} for “<b>{view.q}</b>”{total > 0 && <> · showing {from}–{to}</>}</>}
+          </div>
+
+          {error ? (
+            <div className="hd-empty">
+              <span className="material-symbols-outlined">cloud_off</span>
+              <h3>Search failed</h3>
+              <p>{error}</p>
+              <button className="hd-btn primary" onClick={() => setRetry(r => r + 1)}>Try again</button>
+            </div>
+          ) : loading ? (
+            <MushafLoader label="Searching the six collections" />
+          ) : hits.length === 0 ? (
+            <div className="hd-empty">
+              <span className="material-symbols-outlined">search_off</span>
+              <h3>No hadith found</h3>
+              <p>Try a different word or a shorter phrase.</p>
+              <button className="hd-btn" onClick={goHome}>Back to collections</button>
+            </div>
+          ) : (
+            <div className="hd-list">
+              {hits.map((h, i) => {
+                const c = COLLECTIONS.find(x => x.id === h.collection) ?? COLLECTIONS[0];
+                const key = `${c.id}-${h.number}`;
+                return (
+                  <HadithCard key={key} h={h} col={c} saved={savedKeys.has(key)} onSave={() => toggleSave(c, h)} query={view.q} index={i}
+                    onCopy={() => copy(c, h)} onShare={() => share(c, h)} copied={copied === key} />
+                );
+              })}
+            </div>
+          )}
+
+          {!loading && !error && totalPages > 1 && (
+            <nav className="hd-pager" aria-label="Pages">
+              <button onClick={() => changePage(page - 1)} disabled={page === 1} aria-label="Previous page"><span className="material-symbols-outlined">chevron_left</span></button>
+              {pageList(page, totalPages).map((p, i) =>
+                p === '…' ? <span key={`e${i}`}>…</span> : (
+                  <button key={p} className={p === page ? 'on' : ''} onClick={() => changePage(p)}>{p}</button>
+                )
+              )}
+              <button onClick={() => changePage(page + 1)} disabled={page === totalPages} aria-label="Next page"><span className="material-symbols-outlined">chevron_right</span></button>
+            </nav>
+          )}
         </div>
       </main>
     );
@@ -410,7 +547,7 @@ export default function HadeesPage() {
 
         <div className="hd-status">
           {loading ? 'Loading…' : search
-            ? <>{total.toLocaleString()} result{total === 1 ? '' : 's'} for “<b>{search}</b>”</>
+            ? <>{total.toLocaleString()} result{total === 1 ? '' : 's'} for “<b>{search}</b>” in {col.name} · <button className="hd-link" onClick={() => searchAll(search)}>search all collections</button></>
             : total > 0 ? <>Showing <b>{from}–{to}</b> of {total.toLocaleString()} hadith</> : null}
         </div>
 
@@ -428,6 +565,7 @@ export default function HadeesPage() {
             <span className="material-symbols-outlined">search_off</span>
             <h3>No hadith found</h3>
             <p>Try another word, or search a different collection.</p>
+            {search && <button className="hd-btn primary" onClick={() => searchAll(search)}>Search all six collections</button>}
             <button className="hd-btn" onClick={() => { setSearchInput(''); setSearch(''); }}>Clear search</button>
           </div>
         ) : (

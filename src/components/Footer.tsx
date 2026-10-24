@@ -23,7 +23,6 @@ const Footer: React.FC = () => {
       links: [
         { name: 'Memorize (Hifz)', href: '/memorize-quran' },
         { name: 'Word by Word', href: '/read-quran/1?mode=word-by-word' },
-        { name: 'Juz / Para', href: '/juz/1' },
       ],
     },
   ];
