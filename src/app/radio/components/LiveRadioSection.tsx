@@ -11,7 +11,7 @@ export default function LiveRadioSection({ onStartRadio }: LiveRadioSectionProps
 
     const moods = [
         { id: 'calm', label: 'Calm', icon: '🌙', desc: 'Serene recitations' },
-        { id: 'energetic', label: 'Spiritual', icon: '✨', desc: 'Uplifting verses' },
+        { id: 'energetic', label: 'Spiritual', icon: '✨', desc: 'Uplifting ayahs' },
         { id: 'focus', label: 'Focus', icon: '📖', desc: 'Deep concentration' },
     ];
 

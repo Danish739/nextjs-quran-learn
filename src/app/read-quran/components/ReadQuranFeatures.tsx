@@ -40,7 +40,7 @@ export default function ReadQuranFeatures() {
                         </div>
                         <div className="rq-card-content">
                             <div className="rq-card-title">Search the Quran</div>
-                            <div className="rq-card-desc">Search verses quickly using words or phrases.</div>
+                            <div className="rq-card-desc">Search ayahs quickly using words or phrases.</div>
                         </div>
                         <div className="rq-card-meta">Find anywhere</div>
                     </article>

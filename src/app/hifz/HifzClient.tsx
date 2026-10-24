@@ -468,7 +468,7 @@ export default function HifzPage() {
               <h2 className="hifz-heading-arabic">حِفظُ القُرآن – <span className="hifz-heading-en">The Journey of Qur’an Memorization</span></h2>
               <div className="hifz-intro-text">
                 <div className="hifz-intro-arabic">قرآنِ پاک کو یاد کرنے کا سفر، دلوں کو منور کرنے والا۔</div>
-                <div className="hifz-intro-en">Begin your sacred journey — learn, review, and remember each verse with devotion.</div>
+                <div className="hifz-intro-en">Begin your sacred journey — learn, review, and remember each ayah with devotion.</div>
               </div>
             </div>
             {!selectedSurah && (
@@ -627,7 +627,7 @@ export default function HifzPage() {
                     <h3>Memorization Plan</h3>
                     <div className="plan-details">
                       <p><strong>Surah:</strong> {selectedSurah.englishName}</p>
-                      <p><strong>Total Verses:</strong> {selectedSurah.numberOfAyahs}</p>
+                      <p><strong>Total Ayahs:</strong> {selectedSurah.numberOfAyahs}</p>
                       <p><strong>Days Needed:</strong> {memorizationPlan?.length || 0}</p>
                     </div>
                   </div>
@@ -658,7 +658,7 @@ export default function HifzPage() {
                 {/* Verse Practice Area */}
                 <section className="verse-practice">
                   <div className="practice-section-header">
-                    <h3>Verse Practice</h3>
+                    <h3>Ayah Practice</h3>
                     {practiceMode && (
                       <div className="practice-mode-banner">
                         Practice Mode Active - Arabic and translation hidden
@@ -699,7 +699,7 @@ export default function HifzPage() {
 
                           {verse.hidden && (
                             <div className="verse-hidden-message">
-                              <p>Verse content is hidden</p>
+                              <p>Ayah content is hidden</p>
                             </div>
                           )}
 
@@ -707,7 +707,7 @@ export default function HifzPage() {
                             <button 
                               className={`audio-play-btn ${currentlyPlaying === verse.number ? 'playing' : ''}`}
                               onClick={() => currentlyPlaying === verse.number ? stopAudio() : playAudio(verse.audio, verse.number)}
-                              aria-label={`Play verse ${verse.number} audio`}
+                              aria-label={`Play ayah ${verse.number} audio`}
                             >
                               {currentlyPlaying === verse.number ? '⏹️ Stop' : '▶️ Play'}
                             </button>
@@ -715,16 +715,16 @@ export default function HifzPage() {
                             <button 
                               className="hide-verse-btn"
                               onClick={() => toggleVerseHidden(verse.number)}
-                              aria-label={verse.hidden ? 'Show verse' : 'Hide verse'}
+                              aria-label={verse.hidden ? 'Show ayah' : 'Hide ayah'}
                             >
-                              {verse.hidden ? 'Show Verse' : 'Hide Verse'}
+                              {verse.hidden ? 'Show Ayah' : 'Hide Ayah'}
                             </button>
                             
                             {practiceMode && (
                               <button 
                                 className="reveal-content-btn"
                                 onClick={() => toggleVerseReveal(verse.number)}
-                                aria-label={verse.revealed ? 'Hide verse' : 'Reveal verse'}
+                                aria-label={verse.revealed ? 'Hide ayah' : 'Reveal ayah'}
                               >
                                 {verse.revealed ? 'Hide Content' : 'Reveal Content'}
                               </button>
@@ -733,7 +733,7 @@ export default function HifzPage() {
                             <button 
                               className={`memorize-toggle-btn ${verse.memorized ? 'memorized' : ''}`}
                               onClick={() => toggleVerseMemorized(verse.number)}
-                              aria-label={verse.memorized ? 'Mark verse not memorized' : 'Mark verse memorized'}
+                              aria-label={verse.memorized ? 'Mark ayah not memorized' : 'Mark ayah memorized'}
                             >
                               {verse.memorized ? '✓ Memorized' : 'Mark Memorized'}
                             </button>

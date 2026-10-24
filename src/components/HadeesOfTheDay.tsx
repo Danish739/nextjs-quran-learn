@@ -155,7 +155,7 @@ function drawGraphic(canvas: HTMLCanvasElement, h: Hadees) {
   // Header
   ctx.fillStyle = GOLD;
   ctx.font = '600 26px Figtree, Arial, sans-serif';
-  ctx.fillText(`HADEES OF THE DAY  ·  ${h.topic.toUpperCase()}`, W / 2, 190);
+  ctx.fillText(`HADITH OF THE DAY  ·  ${h.topic.toUpperCase()}`, W / 2, 190);
 
   // Arabic
   ctx.direction = 'rtl';
@@ -333,7 +333,7 @@ export default function HadeesOfTheDay() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `hadees-${h.topic.toLowerCase().replace(/\s+/g, '-')}.png`;
+    a.download = `hadith-${h.topic.toLowerCase().replace(/\s+/g, '-')}.png`;
     a.click();
     URL.revokeObjectURL(url);
     flash('Image saved');
@@ -342,7 +342,7 @@ export default function HadeesOfTheDay() {
   const share = useCallback(async () => {
     const blob = await toBlob();
     if (blob && navigator.canShare) {
-      const file = new File([blob], 'hadees-of-the-day.png', { type: 'image/png' });
+      const file = new File([blob], 'hadith-of-the-day.png', { type: 'image/png' });
       if (navigator.canShare({ files: [file] })) {
         try {
           await navigator.share({ files: [file], text: `${h.en}\n— ${h.source}` });
@@ -362,7 +362,7 @@ export default function HadeesOfTheDay() {
       <div className="hod-head">
         <div>
           <p className="hod-kicker font-arabic">حديث اليوم</p>
-          <h2 id="hod-title">Hadees of the Day</h2>
+          <h2 id="hod-title">Hadith of the Day</h2>
         </div>
         <div className="hod-nav">
           {!isToday && (

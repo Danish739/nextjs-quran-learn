@@ -45,7 +45,7 @@ export default function ScrollReadView({
       ]);
 
       if (!arabicRes.ok || !translationRes.ok) {
-        throw new Error('Failed to fetch verses');
+        throw new Error('Failed to fetch ayahs');
       }
 
       const arabicData = await arabicRes.json();
@@ -59,7 +59,7 @@ export default function ScrollReadView({
 
       setVerses(combinedVerses);
     } catch (err) {
-      setError('Failed to load verses. Please try again.');
+      setError('Failed to load ayahs. Please try again.');
       console.error('Error fetching verses:', err);
     } finally {
       setLoading(false);

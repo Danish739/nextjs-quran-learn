@@ -218,10 +218,10 @@ async function loadVerse(key: string): Promise<string> {
   const hit = cache.get(key);
   if (hit) return hit;
   const res = await fetch(`${QURAN_API}/quran/verses/uthmani_tajweed?verse_key=${encodeURIComponent(key)}`);
-  if (!res.ok) throw new Error('Could not load verse');
+  if (!res.ok) throw new Error('Could not load ayah');
   const json = (await res.json()) as { verses?: { text_uthmani_tajweed: string }[] };
   const html = json.verses?.[0]?.text_uthmani_tajweed;
-  if (!html) throw new Error('Verse not found');
+  if (!html) throw new Error('Ayah not found');
   const clean = sanitize(html);
   cache.set(key, clean);
   return clean;
@@ -284,7 +284,7 @@ function Verse({ html, error, retry, focus }: { html: string | null; error: bool
       </div>
     );
   }
-  if (!html) return <div className="tj-verse-skeleton" aria-label="Loading verse" />;
+  if (!html) return <div className="tj-verse-skeleton" aria-label="Loading ayah" />;
   return (
     <div
       className={`tj-verse${focus ? ' has-focus' : ''}`}

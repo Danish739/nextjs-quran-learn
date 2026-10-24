@@ -29,7 +29,7 @@ const TOPICS = [
 ];
 
 const STATS = [
-  { icon: 'auto_stories', value: '750+', label: 'Scientific Verses' },
+  { icon: 'auto_stories', value: '750+', label: 'Scientific Ayahs' },
   { icon: 'biotech', value: '6', label: 'Major Fields' },
   { icon: 'history', value: '1,400+', label: 'Years Ahead' },
   { icon: 'groups', value: '20+', label: 'Scholars Cited' },

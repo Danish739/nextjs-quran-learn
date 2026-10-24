@@ -32,7 +32,7 @@ const SLIDES: Slide[] = [
   {
     kicker: 'Read every day',
     title: ['Read the words that ', 'changed', ' the world.'],
-    body: 'All 114 Surahs with clear translation, beautiful Uthmani script and verse-by-verse Tafseer.',
+    body: 'All 114 Surahs with clear translation, beautiful Uthmani script and ayah-by-ayah Tafseer.',
     cta: { label: 'Open the Quran', href: '/read-quran/1' },
     meta: ['114 Surahs', 'Translation & Tafseer'],
     ar: 'اقْرَأْ',
@@ -68,9 +68,9 @@ const SLIDES: Slide[] = [
   {
     kicker: 'Reflect deeply',
     title: ['Pause, reflect, and ', 'understand', '.'],
-    body: 'Discover the meaning behind every verse through trusted classical commentary.',
+    body: 'Discover the meaning behind every ayah through trusted classical commentary.',
     cta: { label: 'Explore Tafseer', href: '/tafseer' },
-    meta: ['Classical scholars', 'Verse by verse'],
+    meta: ['Classical scholars', 'Ayah by ayah'],
     ar: 'تَدَبَّرْ',
     caption: 'Tadabbur · Reflect',
     bg: '#7a4a1e',
@@ -123,7 +123,7 @@ export default function HeroCarousel() {
             <span className="material-symbols-outlined">light_mode</span>
             {hello}
           </p>
-          <h1 className="hc-h1">Grow closer, one verse at a time.</h1>
+          <h1 className="hc-h1">Grow closer, one ayah at a time.</h1>
           <p className="hc-sub">A peaceful space to learn, reflect, and connect with the Quran.</p>
         </div>
         <p className="hc-salam font-arabic" lang="ar" dir="rtl">السَّلَامُ عَلَيْكُمْ</p>

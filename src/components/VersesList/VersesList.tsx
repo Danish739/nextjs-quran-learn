@@ -23,7 +23,7 @@ export default function VersesList({
   isAutoPlaying = false,
   currentVerseIndex = null,
   playVerseByIndex,
-  ariaLabelPrefix = 'Verse',
+  ariaLabelPrefix = 'Ayah',
 }: Props) {
   return (
     <div className="verses-container">

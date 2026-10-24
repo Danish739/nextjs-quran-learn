@@ -164,7 +164,7 @@ export default function MushafReadingView({
   const glyphSize = Math.max(28, Math.min(64, Math.round(fontSize * 1.05)));
 
   if (!verses.length) {
-    return <div className="qc-empty">No verses available.</div>;
+    return <div className="qc-empty">No ayahs available.</div>;
   }
 
   const hasWordLines = pages.some((p) => p.lines.length > 0);

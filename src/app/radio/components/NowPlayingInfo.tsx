@@ -176,7 +176,7 @@ export default function NowPlayingInfo({
 
                     {/* Verse markers */}
                     <div className="flex justify-between text-xs text-gray-500">
-                        <span>Verse 1</span>
+                        <span>Ayah 1</span>
                         <span>Verse {totalVerses}</span>
                     </div>
                 </div>

@@ -20,7 +20,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/read-quran/1?mode=word-by-word', label: 'Word by Word', icon: 'translate', desc: 'Every word explained' },
       { href: '/tafseer', label: 'Tafseer', icon: 'lightbulb', desc: 'Classical commentary' },
     ],
-    feature: { title: 'Start with Al-Fatihah', text: 'The Opening — 7 verses that begin every prayer.', href: '/read-quran/1', cta: 'Read now' },
+    feature: { title: 'Start with Al-Fatihah', text: 'The Opening — 7 ayahs that begin every prayer.', href: '/read-quran/1', cta: 'Read now' },
   },
   {
     label: 'Learn',

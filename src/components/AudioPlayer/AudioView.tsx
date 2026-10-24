@@ -95,7 +95,7 @@ export default function AudioView({
         ]);
 
         if (!arabicResponse.ok || !translationResponse.ok) {
-          throw new Error('Failed to fetch verses');
+          throw new Error('Failed to fetch ayahs');
         }
 
         const arabicData = await arabicResponse.json();
@@ -117,7 +117,7 @@ export default function AudioView({
 
         setVerses(processedVerses);
       } catch (err) {
-        setError('Failed to load verses. Please try again later.');
+        setError('Failed to load ayahs. Please try again later.');
         console.error('Error fetching verses:', err);
       } finally {
         setIsLoading(false);
@@ -132,7 +132,7 @@ export default function AudioView({
   // Handle audio playback
   const handlePlay = async () => {
     if (!verses[currentVerseIndex]?.audio || !selectedReciter) {
-      setError('No audio available for this verse or no reciter selected');
+      setError('No audio available for this ayah or no reciter selected');
       return;
     }
 
@@ -578,7 +578,7 @@ export default function AudioView({
         )}
         
         {isLoading ? (
-          <div className="loading-state">Loading verses...</div>
+          <div className="loading-state">Loading ayahs...</div>
         ) : error ? (
           <div className="error-state">
             <p>{error}</p>

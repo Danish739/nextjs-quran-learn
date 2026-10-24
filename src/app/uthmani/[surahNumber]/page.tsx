@@ -3,7 +3,7 @@ import UthmaniReader from '../components/UthmaniReader';
 
 export const metadata: Metadata = {
   title: 'Uthmanic Hafs | Learn Quran',
-  description: 'Verse-by-verse Uthmanic Hafs reading, matching the Quran.com text layout.',
+  description: 'Ayah-by-ayah Uthmanic Hafs reading, matching the Quran.com text layout.',
 };
 
 export default async function UthmaniPage({

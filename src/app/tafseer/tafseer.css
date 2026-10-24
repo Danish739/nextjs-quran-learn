@@ -1,664 +1,139 @@
-﻿/* =====================================================
-   TAFSEER PAGE — Quran Explanation Section
-   Amber/Gold Theme Matching Dua Design System
-   ===================================================== */
-
-/* ── Page Container ── */
-.tafseer-page {
-  min-height: 100vh;
-  background: var(--bg-base);
-  font-family: var(--font-sans);
-  color: var(--text-primary);
-}
-
-/* ── Hero Banner ── */
-.tafseer-hero {
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(135deg, #92400e 0%, #b45309 30%, #d97706 60%, #f59e0b 100%);
-  padding: clamp(2.5rem, 5vw, 4rem) clamp(1.5rem, 4vw, 3rem);
-}
-
-.tafseer-hero-pattern {
-  position: absolute;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M40 0L80 40L40 80L0 40L40 0z' fill='none' stroke='%23ffffff' stroke-opacity='0.06' stroke-width='1'/%3E%3C/svg%3E");
-  pointer-events: none;
-}
-
-.tafseer-hero-glow {
-  position: absolute;
-  right: -80px;
-  top: -80px;
-  width: 400px;
-  height: 400px;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
-  pointer-events: none;
-}
-
-.tafseer-hero-content {
-  position: relative;
-  z-index: 1;
-  max-width: 800px;
-  margin: 0 auto;
-  text-align: center;
-}
-
-.tafseer-hero-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 18px;
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: white;
-  margin-bottom: 28px;
-}
-
-.tafseer-hero-arabic {
-  font-family: "UthmanicHafs", serif;
-  font-size: clamp(1.4rem, 3.5vw, 2.2rem);
-  line-height: 2;
-  direction: rtl;
-  text-align: center;
-  color: white;
-  margin: 0 0 12px;
-  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.15);
-}
-
-.tafseer-hero-transliteration {
-  font-size: clamp(0.85rem, 2vw, 1rem);
-  font-style: italic;
-  color: rgba(255, 255, 255, 0.85);
-  margin: 0 0 10px;
-  line-height: 1.6;
-}
-
-.tafseer-hero-translation {
-  font-size: clamp(0.9rem, 2vw, 1rem);
-  color: rgba(255, 255, 255, 0.9);
-  margin: 0 0 8px;
-  line-height: 1.7;
-  max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
-  font-style: italic;
-}
-
-.tafseer-hero-ref {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.7);
-  letter-spacing: 0.08em;
-  margin-bottom: 28px;
-}
-
-.tafseer-hero-actions {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-.tafseer-hero-btn-primary,
-.tafseer-hero-btn-secondary {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 28px;
-  border-radius: 12px;
-  font-weight: 700;
-  font-size: 14px;
-  cursor: pointer;
-  font-family: inherit;
-  transition: all 0.2s ease;
-  border: none;
-  text-decoration: none;
-}
-
-.tafseer-hero-btn-primary {
-  background: white;
-  color: #92400e;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-}
-
-.tafseer-hero-btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-  color: #92400e;
-}
-
-.tafseer-hero-btn-secondary {
-  background: rgba(255, 255, 255, 0.15);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  backdrop-filter: blur(8px);
-}
-
-.tafseer-hero-btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.25);
-  color: white;
-}
-
-/* ── Main Layout ── */
-.tafseer-layout {
-  display: grid;
-  grid-template-columns: 300px 1fr;
-  min-height: calc(100vh - 280px);
-}
-
-/* ── Sidebar ── */
-.tafseer-sidebar {
-  background: var(--bg-surface);
-  border-right: 1px solid var(--border-default);
-  padding: 24px 16px;
-  overflow-y: auto;
-  max-height: calc(100vh - 100px);
-  position: sticky;
-  top: 0;
-  scrollbar-width: thin;
-}
-
-.tafseer-sidebar-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
-  padding: 0 8px;
-}
-
-.tafseer-sidebar-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin: 0;
-}
-
-.tafseer-sidebar-count {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-muted);
-  background: var(--bg-elevated);
-  padding: 3px 10px;
-  border-radius: 999px;
-  border: 1px solid var(--border-default);
-}
-
-.tafseer-sidebar-divider {
-  height: 1px;
-  background: var(--border-default);
-  margin: 12px 8px;
-}
-
-/* ── Filter Button (sidebar) ── */
-.tafseer-filter-btn {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  width: 100%;
-  padding: 12px 14px;
-  border: 1px solid transparent;
-  border-radius: 14px;
-  background: transparent;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: inherit;
-  color: var(--text-primary);
-  position: relative;
-  text-align: left;
-  margin-bottom: 4px;
-}
-
-.tafseer-filter-btn:hover {
-  background: var(--bg-elevated);
-  border-color: var(--border-default);
-}
-
-.tafseer-filter-btn.active {
-  background: var(--brand-primary-soft);
-  border-color: rgba(245, 158, 11, 0.15);
-}
-
-.tafseer-filter-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.tafseer-filter-icon .material-symbols-outlined {
-  font-size: 20px;
-}
-
-.tafseer-filter-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-  flex: 1;
-}
-
-.tafseer-filter-name {
-  font-size: 13.5px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.tafseer-filter-meta {
-  font-size: 11px;
-  color: var(--text-muted);
-}
-
-.tafseer-filter-active-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--brand-primary);
-  flex-shrink: 0;
-}
-
-/* ── Mobile Sidebar Toggle ── */
-.tafseer-sidebar-toggle {
-  display: none;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 20px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-default);
-  border-radius: 14px;
-  font-weight: 600;
-  font-size: 14px;
-  color: var(--text-primary);
-  cursor: pointer;
-  font-family: inherit;
-  margin: 16px;
-  transition: all 0.2s;
-}
-
-.tafseer-sidebar-toggle:hover {
-  background: var(--bg-elevated);
-}
-
-/* ── Content Area ── */
-.tafseer-content {
-  padding: 32px clamp(20px, 3vw, 40px);
-  overflow-y: auto;
-  max-height: calc(100vh - 100px);
-}
-
-/* ── Toolbar ── */
-.tafseer-toolbar {
-  margin-bottom: 28px;
-}
-
-.tafseer-search-wrapper {
-  position: relative;
-  margin-bottom: 16px;
-}
-
-.tafseer-search-icon {
-  position: absolute;
-  left: 18px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-muted);
-  font-size: 22px;
-  pointer-events: none;
-  z-index: 2;
-}
-
-.tafseer-search-input {
-  width: 100% !important;
-  padding: 16px 50px 16px 56px !important;
-  background: var(--bg-card) !important;
-  border: 1px solid var(--border-default) !important;
-  border-radius: 16px !important;
-  font-size: 15px !important;
-  color: var(--text-primary) !important;
-  font-family: inherit;
-  transition: all 0.2s;
-  box-sizing: border-box;
+/* Tafseer index — tz- prefixed */
+.tz {
+  --tz-ink: var(--text-primary, #10261f);
+  --tz-muted: var(--text-muted, #6b7a75);
+  --tz-card: var(--bg-card, #fff);
+  --tz-line: var(--border-default, #e3ebe7);
+  --tz-accent: var(--brand-primary, #0f7a5c);
+  --tz-soft: color-mix(in srgb, var(--tz-accent) 9%, var(--tz-card));
+  --tz-gold: #c8962a;
+  color: var(--tz-ink);
+  padding-bottom: 80px;
+}
+.tz-wrap { max-width: 1160px; margin: 0 auto; padding: 0 20px; }
+
+/* hero */
+.tz-hero {
+  padding: 108px 0 56px;
+  color: #fff;
+  background:
+    radial-gradient(800px 320px at 85% -10%, rgba(240, 200, 100, 0.22), transparent 60%),
+    linear-gradient(145deg, #0d5c4b, #0a4034 60%, #072e26);
+}
+.tz-kicker { display: block; font-size: 1.5rem; color: #f0d28a; margin-bottom: 4px; }
+.tz-hero h1 { margin: 0 0 10px; font-size: clamp(2rem, 5vw, 3.2rem); line-height: 1.1; font-weight: 800; color: #fff; letter-spacing: -0.01em; }
+.tz-hero p { max-width: 560px; margin: 0 0 26px; color: rgba(255, 255, 255, 0.84); line-height: 1.65; font-size: 1.05rem; }
+
+.tz-search {
+  display: flex; align-items: center; gap: 10px; max-width: 620px;
+  padding: 6px 8px 6px 18px; border-radius: 999px; background: #fff;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.25);
+}
+.tz-search > .material-symbols-outlined { color: #6b7a75; }
+.tz-search input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; font: inherit; font-size: 1rem; padding: 12px 0; color: #10261f; }
+.tz-search button { display: inline-flex; border: 0; border-radius: 50%; width: 38px; height: 38px; align-items: center; justify-content: center; background: #eef3f1; color: #405650; cursor: pointer; }
+.tz-search:focus-within { box-shadow: 0 0 0 4px rgba(240, 210, 138, 0.5), 0 14px 40px rgba(0, 0, 0, 0.25); }
+
+.tz-stats { display: flex; gap: 30px; list-style: none; margin: 28px 0 0; padding: 0; }
+.tz-stats li { display: flex; flex-direction: column; }
+.tz-stats b { font-size: 1.5rem; color: #f0d28a; }
+.tz-stats span { font-size: 0.8rem; color: rgba(255, 255, 255, 0.7); }
+
+.tz-body { padding-top: 28px; }
+
+/* continue */
+.tz-continue {
+  display: flex; align-items: center; gap: 14px; padding: 14px 18px; margin-bottom: 20px;
+  border-radius: 18px; text-decoration: none; color: inherit;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--tz-gold) 16%, var(--tz-card)), var(--tz-card));
+  border: 1px solid color-mix(in srgb, var(--tz-gold) 40%, transparent);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.tz-continue:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08); }
+.tz-continue-icon { color: var(--tz-gold); font-size: 28px; }
+.tz-continue-text { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.tz-continue-text small { color: var(--tz-muted); font-size: 0.78rem; }
+.tz-continue-text b { font-size: 1.05rem; }
+.tz-continue-ar { font-size: 1.5rem; color: var(--tz-accent); }
+
+/* commentaries */
+.tz-comms { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 30px; }
+.tz-comm { display: flex; gap: 12px; padding: 16px; border-radius: 16px; background: var(--tz-card); border: 1px solid var(--tz-line); }
+.tz-comm-icon { flex: none; width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; border-radius: 12px; background: var(--tz-soft); color: var(--tz-accent); }
+.tz-comm b { display: block; font-size: 0.95rem; }
+.tz-comm small { color: var(--tz-accent); font-weight: 700; font-size: 0.7rem; letter-spacing: 0.04em; }
+.tz-comm p { margin: 6px 0 0; font-size: 0.8rem; line-height: 1.5; color: var(--tz-muted); }
+
+/* controls */
+.tz-controls { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; position: sticky; top: 66px; z-index: 5; padding: 10px 0; background: color-mix(in srgb, var(--bg-base, #f6f8f7) 92%, transparent); backdrop-filter: blur(10px); }
+.tz-chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; max-width: 100%; }
+.tz-chips::-webkit-scrollbar { display: none; }
+.tz-chips button {
+  flex: none; display: inline-flex; align-items: center; gap: 6px; padding: 9px 14px;
+  border-radius: 999px; border: 1.5px solid var(--tz-line); background: var(--tz-card); color: var(--tz-ink);
+  font: inherit; font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: all 0.18s ease;
+}
+.tz-chips button .material-symbols-outlined { font-size: 18px; }
+.tz-chips button small { font-size: 0.72rem; opacity: 0.65; font-weight: 700; }
+.tz-chips button:hover { border-color: var(--tz-accent); }
+.tz-chips button.on { background: var(--tz-accent); border-color: var(--tz-accent); color: #fff; }
+.tz-sort { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; border: 1.5px solid var(--tz-line); background: var(--tz-card); color: var(--tz-muted); }
+.tz-sort select { border: 0; outline: 0; background: transparent; font: inherit; font-size: 0.85rem; font-weight: 600; color: var(--tz-ink); cursor: pointer; }
+
+.tz-count { margin: 6px 2px 14px; font-size: 0.85rem; color: var(--tz-muted); }
+
+/* grid */
+.tz-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.tz-card {
+  position: relative; display: flex; align-items: center; gap: 14px; padding: 16px;
+  border-radius: 18px; background: var(--tz-card); border: 1px solid var(--tz-line);
+  text-decoration: none; color: inherit; overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  animation: tz-in 0.4s ease both;
+}
+.tz-card::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--tz-accent); opacity: 0; transition: opacity 0.2s ease; }
+.tz-card:hover { transform: translateY(-3px); border-color: var(--tz-accent); box-shadow: 0 14px 32px rgba(0, 0, 0, 0.09); }
+.tz-card:hover::after { opacity: 1; }
+@keyframes tz-in { from { opacity: 0; transform: translateY(10px); } }
+
+.tz-num {
+  flex: none; width: 46px; height: 46px; display: inline-flex; align-items: center; justify-content: center;
+  background: var(--tz-soft); color: var(--tz-accent); font-size: 0.95rem;
+  clip-path: polygon(50% 0, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
+}
+.tz-card-main { display: flex; flex-direction: column; flex: 1; min-width: 0; gap: 2px; }
+.tz-name { font-weight: 800; font-size: 1rem; }
+.tz-meaning { font-size: 0.82rem; color: var(--tz-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tz-meta { display: flex; align-items: center; gap: 10px; margin-top: 6px; font-size: 0.75rem; color: var(--tz-muted); }
+.tz-type { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 999px; font-weight: 700; }
+.tz-type .material-symbols-outlined { font-size: 13px; }
+.tz-type.meccan { background: color-mix(in srgb, #d97706 14%, transparent); color: #b45309; }
+.tz-type.medinan { background: color-mix(in srgb, #0f7a5c 14%, transparent); color: #0f7a5c; }
+.tz-ar { flex: none; font-size: 1.6rem; color: var(--tz-accent); text-align: right; }
+
+/* empty */
+.tz-empty { padding: 70px 16px; text-align: center; color: var(--tz-muted); }
+.tz-empty .material-symbols-outlined { font-size: 54px; }
+.tz-empty h3 { margin: 8px 0 4px; color: var(--tz-ink); }
+.tz-empty button { margin-top: 14px; padding: 10px 18px; border: 0; border-radius: 999px; background: var(--tz-accent); color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+
+html.rr-dark .tz, .dark .tz { --tz-gold: #e2b658; }
+html.rr-dark .tz-type.meccan, .dark .tz-type.meccan { color: #f5b861; }
+html.rr-dark .tz-type.medinan, .dark .tz-type.medinan { color: #5fd3ad; }
+
+@media (max-width: 960px) {
+  .tz-grid { grid-template-columns: repeat(2, 1fr); }
+  .tz-comms { grid-template-columns: repeat(2, 1fr); }
 }
-
-.tafseer-search-input:focus {
-  border-color: var(--brand-primary) !important;
-  box-shadow: 0 0 0 3px var(--brand-primary-soft) !important;
-  outline: none;
-}
-
-.tafseer-search-input::placeholder {
-  color: var(--text-muted);
-}
-
-.tafseer-search-clear {
-  position: absolute;
-  right: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-default);
-  border-radius: 8px;
-  padding: 4px;
-  cursor: pointer;
-  color: var(--text-muted);
-  display: flex;
-  transition: all 0.15s;
-}
-
-.tafseer-search-clear:hover {
-  color: var(--text-primary);
-  background: var(--bg-card-hover);
-}
-
-/* ── Content Header ── */
-.tafseer-content-header {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  padding-bottom: 20px;
-  margin-bottom: 24px;
-  border-bottom: 1px solid var(--border-default);
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.tafseer-content-title {
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin: 0 0 4px;
-}
-
-.tafseer-content-subtitle {
-  font-size: 13px;
-  color: var(--text-muted);
-  margin: 0;
-}
-
-/* ── Surah Grid ── */
-.tafseer-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
-  padding-bottom: 40px;
-}
-
-/* ── Surah Card ── */
-.tafseer-card {
-  position: relative;
-  background: var(--bg-card);
-  border: 1px solid var(--border-default);
-  border-radius: 20px;
-  padding: 22px 22px 16px;
-  transition: all 0.25s ease;
-  overflow: hidden;
-  cursor: pointer;
-  text-decoration: none;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  animation: tafseer-fadeInUp 0.4s ease forwards;
-  opacity: 0;
-}
-
-.tafseer-card:hover {
-  border-color: var(--border-strong);
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-2px);
-  text-decoration: none;
-}
-
-.tafseer-card-accent {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 4px;
-  height: 100%;
-  background: var(--brand-primary);
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.tafseer-card:hover .tafseer-card-accent {
-  opacity: 1;
-}
-
-/* Card Top Row */
-.tafseer-card-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.tafseer-card-number {
-  width: 38px;
-  height: 38px;
-  border-radius: 11px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
-  font-weight: 800;
-  flex-shrink: 0;
-  background: var(--brand-primary-soft);
-  color: var(--brand-primary);
-}
-
-.tafseer-card-arabic {
-  font-family: "UthmanicHafs", serif;
-  font-size: 22px;
-  color: var(--text-arabic);
-  direction: rtl;
-  line-height: 1.4;
-  flex-shrink: 0;
-}
-
-/* Card Body */
-.tafseer-card-body {
-  flex: 1;
-}
-
-.tafseer-card-name {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin: 0 0 3px;
-}
-
-.tafseer-card-meaning {
-  font-size: 12.5px;
-  color: var(--text-muted);
-  margin: 0 0 8px;
-}
-
-.tafseer-card-desc {
-  font-size: 12.5px;
-  color: var(--text-secondary);
-  line-height: 1.65;
-  margin: 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-/* Card Footer */
-.tafseer-card-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-top: 12px;
-  border-top: 1px solid var(--border-subtle);
-}
-
-.tafseer-card-type {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-}
-
-.tafseer-card-type.meccan {
-  color: var(--brand-primary);
-}
-
-.tafseer-card-type.medinan {
-  color: var(--text-muted);
-}
-
-.tafseer-card-verses {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-muted);
-}
-
-.tafseer-card-cta {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--brand-primary);
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-/* ── Empty State ── */
-.tafseer-empty {
-  text-align: center;
-  padding: 80px 20px;
-}
-
-.tafseer-empty h3 {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin: 0 0 8px;
-}
-
-.tafseer-empty p {
-  font-size: 14px;
-  color: var(--text-muted);
-  margin: 0 0 24px;
-}
-
-.tafseer-empty-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 28px;
-  background: var(--brand-primary);
-  color: var(--text-inverse);
-  border: none;
-  border-radius: 12px;
-  font-weight: 700;
-  font-size: 14px;
-  cursor: pointer;
-  font-family: inherit;
-  transition: all 0.2s;
-}
-
-.tafseer-empty-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px var(--brand-primary-glow);
-}
-
-/* ── Show More Button ── */
-.tafseer-show-more {
-  display: flex;
-  justify-content: center;
-  margin-top: 8px;
-  padding-bottom: 40px;
-}
-
-.tafseer-show-more-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 32px;
-  background: var(--bg-card);
-  color: var(--text-primary);
-  border: 1px solid var(--border-default);
-  border-radius: 14px;
-  font-weight: 600;
-  font-size: 14px;
-  cursor: pointer;
-  font-family: inherit;
-  transition: all 0.2s;
-}
-
-.tafseer-show-more-btn:hover {
-  border-color: var(--brand-primary);
-  color: var(--brand-primary);
-  background: var(--brand-primary-soft);
-}
-
-/* ── Animations ── */
-@keyframes tafseer-fadeInUp {
-  from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-/* ── Responsive ── */
-@media (max-width: 860px) {
-  .tafseer-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .tafseer-sidebar {
-    display: none;
-    position: fixed;
-    inset: 0;
-    z-index: 200;
-    max-height: 100vh;
-    padding: 24px 16px 40px;
-    overflow-y: auto;
-    border-right: none;
-    box-shadow: 4px 0 32px rgba(0, 0, 0, 0.12);
-  }
-
-  .tafseer-sidebar.open {
-    display: block;
-  }
-
-  .tafseer-sidebar-toggle {
-    display: flex;
-  }
-
-  .tafseer-content {
-    max-height: unset;
-  }
-}
-
 @media (max-width: 600px) {
-  .tafseer-content {
-    padding: 20px 16px;
-  }
-
-  .tafseer-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .tafseer-content-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+  .tz-hero { padding: 92px 0 40px; }
+  .tz-grid { grid-template-columns: 1fr; }
+  .tz-comms { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; margin-inline: -20px; padding: 0 20px 4px; }
+  .tz-comms::-webkit-scrollbar { display: none; }
+  .tz-comm { flex: 0 0 78%; scroll-snap-align: start; }
+  .tz-stats { gap: 22px; }
+  .tz-controls { top: 60px; }
+  .tz-sort { display: none; }
+  .tz-ar { font-size: 1.4rem; }
 }
+@media (prefers-reduced-motion: reduce) { .tz-card, .tz-continue { animation: none; transition: none; } }

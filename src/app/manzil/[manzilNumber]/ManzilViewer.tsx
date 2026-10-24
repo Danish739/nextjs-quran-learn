@@ -145,7 +145,7 @@ export default function ManzilViewer({ manzilNumber }: ManzilViewerProps) {
       }
     };
     audioRef.current.onerror = () => {
-      setErrorMessage('Audio not available for this verse.');
+      setErrorMessage('Audio not available for this ayah.');
       setCurrentIndex(prev => (prev !== null && prev + 1 < ayahs.length ? prev + 1 : null));
     };
     // Highlight currently playing verse (UI logic can use currentIndex)

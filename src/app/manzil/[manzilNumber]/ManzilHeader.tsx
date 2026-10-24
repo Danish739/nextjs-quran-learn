@@ -98,7 +98,7 @@ export default function ManzilHeader({
 
       <div className="manzil-stats">
         <div className="stat-item">
-          <div className="stat-label">Verses</div>
+          <div className="stat-label">Ayahs</div>
           <div className="stat-value">{totalVerses}</div>
         </div>
         <div className="stat-item">

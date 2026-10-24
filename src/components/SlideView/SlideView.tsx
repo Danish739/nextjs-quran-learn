@@ -76,10 +76,10 @@ export default function SlideView({
           }));
           setVerses(combinedVerses);
         } else {
-          throw new Error('Failed to fetch verses');
+          throw new Error('Failed to fetch ayahs');
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load verses');
+        setError(err instanceof Error ? err.message : 'Failed to load ayahs');
       } finally {
         setIsLoading(false);
       }
@@ -245,7 +245,7 @@ export default function SlideView({
           className="nav-button prev" 
           onClick={goToPreviousVerse}
           disabled={currentVerseIndex === 0}
-          aria-label="Previous verse"
+          aria-label="Previous ayah"
         >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M15 19l-7-7 7-7" />
@@ -255,7 +255,7 @@ export default function SlideView({
           className="nav-button next" 
           onClick={goToNextVerse}
           disabled={currentVerseIndex === verses.length - 1}
-          aria-label="Next verse"
+          aria-label="Next ayah"
         >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M9 5l7 7-7 7" />

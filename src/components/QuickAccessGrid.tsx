@@ -28,9 +28,9 @@ const TILES: Tile[] = [
   { key: 'hifz', label: 'Memorize', sub: 'Hifz Program', ar: 'حفظ', icon: 'psychology', href: '/memorize-quran', from: '#c084fc', to: '#7e22ce', anim: 'pulse' },
   { key: 'radio', label: 'Quran Radio', sub: '24/7 Recitation', ar: 'إذاعة', icon: 'radio', href: '/radio', from: '#f87171', to: '#b91c1c', badge: 'LIVE', anim: 'wave' },
   { key: 'wbw', label: 'Word by Word', sub: 'Arabic Learning', ar: 'كلمة', icon: 'translate', href: '/read-quran/1?mode=word-by-word', from: '#22d3ee', to: '#0e7490', anim: 'swap' },
-  { key: 'tafseer', label: 'Tafseer', sub: 'Verse Explanations', ar: 'تفسير', icon: 'local_library', href: '/tafseer', from: '#a78bfa', to: '#5b21b6', anim: 'float' },
+  { key: 'tafseer', label: 'Tafseer', sub: 'Ayah Explanations', ar: 'تفسير', icon: 'local_library', href: '/tafseer', from: '#a78bfa', to: '#5b21b6', anim: 'float' },
   { key: 'dua', label: 'Duas', sub: 'Daily Supplications', ar: 'دعاء', icon: 'volunteer_activism', href: '/dua', from: '#f472b6', to: '#be185d', anim: 'raise' },
-  { key: 'tra', label: 'Translation Audio', sub: 'Hear the Quran verse by verse in your language', ar: 'ترجمة', icon: 'record_voice_over', href: '/translation-audio', from: '#2dd4bf', to: '#0f766e', anim: 'pulse', wide: true, chips: ['English', 'اردو', 'فارسی', 'Azərbaycanca', 'Bosanski'] },
+  { key: 'tra', label: 'Translation Audio', sub: 'Hear the Quran ayah by ayah in your language', ar: 'ترجمة', icon: 'record_voice_over', href: '/translation-audio', from: '#2dd4bf', to: '#0f766e', anim: 'pulse', wide: true, chips: ['English', 'اردو', 'فارسی', 'Azərbaycanca', 'Bosanski'] },
 ];
 
 /** Tracks the cursor for the 3D tilt + spotlight, without re-rendering React */

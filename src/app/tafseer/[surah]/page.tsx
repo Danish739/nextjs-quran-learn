@@ -149,6 +149,12 @@ export default function TafseerSurahPage({ params }: PageProps) {
     const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
+        if (surahNum >= 1 && surahNum <= 114) {
+            try { localStorage.setItem('tafseer-last-surah', String(surahNum)); } catch { /* ignore */ }
+        }
+    }, [surahNum]);
+
+    useEffect(() => {
         if (!surahNum || surahNum < 1 || surahNum > 114) return;
         let alive = true;
         setLoading(true);
@@ -400,7 +406,7 @@ export default function TafseerSurahPage({ params }: PageProps) {
                                     >
                                         {/* Arabic text + verse number */}
                                         <div className="ts-verse-top">
-                                            <div className="ts-verse-num" aria-label={`Verse ${verse.num}`}>{verse.num}</div>
+                                            <div className="ts-verse-num" aria-label={`Ayah ${verse.num}`}>{verse.num}</div>
                                             <div className="ts-arabic-block">
                                                 <p className={`ts-arabic${verse.words.length ? ' is-qcf' : ''}`} lang="ar">
                                                     {verse.words.length ? verse.words.map((w, i) => (
@@ -431,7 +437,7 @@ export default function TafseerSurahPage({ params }: PageProps) {
                                             <button
                                                 className="ts-tafseer-btn"
                                                 onClick={() => setModalVerseNum(verse.num)}
-                                                aria-label={`Open Tafseer for verse ${verse.num}`}
+                                                aria-label={`Open Tafseer for ayah ${verse.num}`}
                                             >
                                                 <BookOpen size={14} />
                                                 Show Tafseer

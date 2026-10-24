@@ -10,7 +10,7 @@ interface RukuLayoutProps {
 
 const RukuLayout = ({ rukuNumber, children, edition, description }: RukuLayoutProps) => {
   const pageTitle = `Quran Ruku ${rukuNumber} | Read & Listen Online`;
-  const metaDescription = description || `Read Ruku ${rukuNumber} of the Quran in Arabic and English with verse-by-verse audio.`;
+  const metaDescription = description || `Read Ruku ${rukuNumber} of the Quran in Arabic and English with ayah-by-ayah audio.`;
   const canonicalUrl = `https://yourdomain.com/quran/ruku/${rukuNumber}`;
 
   return (

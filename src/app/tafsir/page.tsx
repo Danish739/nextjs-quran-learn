@@ -33,7 +33,7 @@ const TafsirPage = () => (
           <h1>Understanding The Quran <br /><span>Through Tafsir</span></h1>
           <p className="lead">Explore the deeper meanings of the Quran with comprehensive explanations from renowned scholars</p>
           <div className="search-container">
-            <input type="text" placeholder="Search by Surah, verse, or keyword..." />
+            <input type="text" placeholder="Search by Surah, ayah, or keyword..." />
             <button><i className="fas fa-search"></i></button>
           </div>
         </div>
@@ -139,7 +139,7 @@ const TafsirPage = () => (
                 <i className="fas fa-balance-scale"></i>
               </div>
               <h3>Compare Interpretations</h3>
-              <p>View multiple scholars' explanations side-by-side to gain a broader understanding of each verse.</p>
+              <p>View multiple scholars' explanations side-by-side to gain a broader understanding of each ayah.</p>
             </div>
 
             <div className="feature-card">
@@ -175,22 +175,22 @@ const TafsirPage = () => (
           <div className="topics-grid">
             <a href="/tafsir/surah-al-fatiha" className="topic-card">
               <h3>Surah Al-Fatiha</h3>
-              <p>The Opening - 7 verses</p>
+              <p>The Opening - 7 ayahs</p>
             </a>
 
             <a href="/tafsir/ayat-al-kursi" className="topic-card">
               <h3>Ayat al-Kursi</h3>
-              <p>The Throne Verse (2:255)</p>
+              <p>The Throne Ayah (2:255)</p>
             </a>
 
             <a href="/tafsir/surah-al-kahf" className="topic-card">
               <h3>Surah Al-Kahf</h3>
-              <p>The Cave - 110 verses</p>
+              <p>The Cave - 110 ayahs</p>
             </a>
 
             <a href="/tafsir/surah-yasin" className="topic-card">
               <h3>Surah Ya-Sin</h3>
-              <p>Ya Sin - 83 verses</p>
+              <p>Ya Sin - 83 ayahs</p>
             </a>
 
             <a href="/tafsir/last-ten-surahs" className="topic-card">

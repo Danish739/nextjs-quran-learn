@@ -172,7 +172,7 @@ export default function HizbViewerClient({ ayahs, hizb }: { ayahs: Ayah[]; hizb:
         <div className="juz-stats" style={{ display: 'flex', justifyContent: 'center', gap: '3rem', marginBottom: '1.5rem' }}>
           <div>
             <div style={{ fontSize: '2rem', fontWeight: 700 }}>{totalAyahs}</div>
-            <div style={{ fontSize: '1rem', color: '#666' }}>Total Verses</div>
+            <div style={{ fontSize: '1rem', color: '#666' }}>Total Ayahs</div>
           </div>
           <div>
             <div style={{ fontSize: '2rem', fontWeight: 700 }}>{hizb}/60</div>

@@ -124,7 +124,7 @@ export default function QuranAudioPlayerUI({
       if (onAyahChange) onAyahChange(ayahNumber);
     } catch (error) {
       console.error(`Error playing ayah ${ayahNumber}:`, error);
-      setError(`Could not play verse ${ayahNumber}. Please try another reciter.`);
+      setError(`Could not play ayah ${ayahNumber}. Please try another reciter.`);
     } finally {
       setIsLoading(false);
     }
@@ -218,7 +218,7 @@ export default function QuranAudioPlayerUI({
           )}
           
           <div className="ayah-selector">
-            <label>Select Verse:</label>
+            <label>Select Ayah:</label>
             <div className="ayah-numbers">
               {Array.from({ length: Math.min(20, surah.numberOfAyahs) }, (_, i) => (
                 <button 

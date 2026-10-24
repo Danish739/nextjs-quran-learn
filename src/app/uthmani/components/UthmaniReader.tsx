@@ -169,7 +169,7 @@ async function fetchVerses(id: number): Promise<Verse[]> {
       `&fields=text_uthmani,code_v2&word_fields=code_v2,text_uthmani,char_type_name,line_number,page_number` +
       `&translation_fields=text&per_page=50&page=${page}`;
     const res = await fetch(url);
-    if (!res.ok) throw new Error('Failed to load verses');
+    if (!res.ok) throw new Error('Failed to load ayahs');
     const data = await res.json();
     for (const verse of data.verses || []) {
       collected.push({

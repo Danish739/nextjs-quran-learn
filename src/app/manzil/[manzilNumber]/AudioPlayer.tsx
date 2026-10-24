@@ -18,7 +18,7 @@ export default function AudioPlayer({ surahNumber, verseNumber, onPlaying, onPau
   const playerId = `player-${surahNumber}-${verseNumber}`;
   
   // Create iframe URL with verse parameters
-  const iframeUrl = `/audio-players/verse-player.html?surah=${surahNumber}&verse=${verseNumber}`;
+  const iframeUrl = `/audio-players/verse-player.html?surah=${surahNumber}&ayah=${verseNumber}`;
   
   // Listen for messages from the iframe
   useEffect(() => {
@@ -45,7 +45,7 @@ export default function AudioPlayer({ surahNumber, verseNumber, onPlaying, onPau
         id={playerId}
         src={iframeUrl}
         className={styles.playerFrame}
-        title={`Audio player for surah ${surahNumber} verse ${verseNumber}`}
+        title={`Audio player for surah ${surahNumber} ayah ${verseNumber}`}
         allow="autoplay"
         loading="lazy"
       />

@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import './tafseer.css';
 
@@ -129,194 +129,185 @@ const SURAHS = [
             };
             const d = BASE[n];
             if (!d) return null;
-            return { num: n, ...d, desc: `${d.meaning} — ${d.v} verses from ${d.t} period.` };
+            return { num: n, ...d, desc: `${d.meaning} — ${d.v} ayahs from ${d.t} period.` };
         }).filter(Boolean) as any[]
 ).sort((a, b) => a.num - b.num);
 
 const FEATURED = [1, 2, 18, 36, 55, 67, 112, 113, 114];
+const LAST_KEY = 'tafseer-last-surah';
 
-const FILTERS = [
-  { id: 'All',     label: 'All Surahs',    icon: 'library_books',  desc: '114 surahs', color: '#f59e0b' },
-  { id: 'Meccan',  label: 'Meccan',        icon: 'wb_sunny',       desc: 'Revealed in Makkah', color: '#d97706' },
-  { id: 'Medinan', label: 'Medinan',       icon: 'location_city',  desc: 'Revealed in Madinah', color: '#b45309' },
-  { id: 'Popular', label: 'Popular',       icon: 'star',           desc: 'Most read surahs', color: '#92400e' },
+const COMMENTARIES = [
+  { name: 'Ibn Kathir', tag: 'English', text: 'Classical, hadith-based commentary by Hafiz Ibn Kathir.', icon: 'menu_book' },
+  { name: 'ابن كثير', tag: 'العربية', text: 'The original Arabic text of Tafsir Ibn Kathir.', icon: 'translate', rtl: true },
+  { name: "Ma'arif al-Qur'an", tag: 'English', text: 'Mufti Muhammad Shafi Usmani: scholarship with modern lessons.', icon: 'local_library' },
+  { name: 'Tazkirul Quran', tag: 'English', text: 'Maulana Wahiduddin Khan: a reflective, contemporary reading.', icon: 'lightbulb' },
+];
+
+type Filter = 'All' | 'Meccan' | 'Medinan' | 'Popular';
+type Sort = 'order' | 'long' | 'short';
+
+const FILTERS: { id: Filter; label: string; icon: string }[] = [
+  { id: 'All', label: 'All', icon: 'apps' },
+  { id: 'Popular', label: 'Popular', icon: 'star' },
+  { id: 'Meccan', label: 'Meccan', icon: 'wb_sunny' },
+  { id: 'Medinan', label: 'Medinan', icon: 'location_city' },
 ];
 
 const ARABIC_FONT = "'UthmanicHafs', serif";
 
 export default function TafseerIndexPage() {
-    const [search, setSearch] = useState('');
-    const [activeFilter, setActiveFilter] = useState('All');
-    const [showAll, setShowAll] = useState(false);
-    const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState<Filter>('All');
+  const [sort, setSort] = useState<Sort>('order');
+  const [last, setLast] = useState<number | null>(null);
 
-    const filtered = useMemo(() => {
-        const q = search.toLowerCase();
-        return SURAHS.filter(s => {
-            const matchQ = !q || s.name.toLowerCase().includes(q) || s.ar.includes(search) || s.meaning.toLowerCase().includes(q) || String(s.num) === search;
-            const matchT = activeFilter === 'All'
-              ? true
-              : activeFilter === 'Popular'
-              ? FEATURED.includes(s.num)
-              : s.t === activeFilter;
-            return matchQ && matchT;
-        });
-    }, [search, activeFilter]);
+  useEffect(() => {
+    try {
+      const n = Number(localStorage.getItem(LAST_KEY));
+      if (n >= 1 && n <= 114) setLast(n);
+    } catch { /* ignore */ }
+  }, []);
 
-    const displayed = showAll || search ? filtered : filtered.slice(0, 24);
-    const activeFilterData = FILTERS.find(f => f.id === activeFilter) ?? FILTERS[0];
+  const counts = useMemo(() => ({
+    All: SURAHS.length,
+    Popular: SURAHS.filter(s => FEATURED.includes(s.num)).length,
+    Meccan: SURAHS.filter(s => s.t === 'Meccan').length,
+    Medinan: SURAHS.filter(s => s.t === 'Medinan').length,
+  }), []);
 
-    return (
-      <div className="tafseer-page">
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const list = SURAHS.filter(s => {
+      const matchQ = !q || s.name.toLowerCase().includes(q) || s.ar.includes(search.trim()) || s.meaning.toLowerCase().includes(q) || String(s.num) === q;
+      const matchT = filter === 'All' ? true : filter === 'Popular' ? FEATURED.includes(s.num) : s.t === filter;
+      return matchQ && matchT;
+    });
+    if (sort === 'long') return [...list].sort((a, b) => b.v - a.v);
+    if (sort === 'short') return [...list].sort((a, b) => a.v - b.v);
+    return list;
+  }, [search, filter, sort]);
 
-        {/* ── Main Layout ── */}
-        <div className="tafseer-layout">
+  const lastSurah = last ? SURAHS.find(s => s.num === last) : null;
+  const clear = () => { setSearch(''); setFilter('All'); setSort('order'); };
 
-          {/* Mobile sidebar toggle */}
-          <button className="tafseer-sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
-            <span className="material-symbols-outlined">{sidebarOpen ? 'close' : 'menu'}</span>
-            Filter
-          </button>
+  return (
+    <main className="tz">
+      {/* ── Hero ── */}
+      <section className="tz-hero">
+        <div className="tz-wrap">
+          <span className="tz-kicker font-arabic">تفسير القرآن</span>
+          <h1>Understand every ayah</h1>
+          <p>Read the Quran with explanations from classical and contemporary scholars, ayah by ayah, in English and Arabic.</p>
 
-          {/* ── Sidebar ── */}
-          <aside className={`tafseer-sidebar ${sidebarOpen ? 'open' : ''}`}>
-            <div className="tafseer-sidebar-header">
-              <h3 className="tafseer-sidebar-title">
-                <span className="material-symbols-outlined" style={{ fontSize: 20 }}>filter_list</span>
-                Browse By
-              </h3>
-              <span className="tafseer-sidebar-count">114</span>
-            </div>
+          <div className="tz-search">
+            <span className="material-symbols-outlined">search</span>
+            <input
+              type="search"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search surah name or number"
+              aria-label="Search surahs"
+            />
+            {search && (
+              <button onClick={() => setSearch('')} aria-label="Clear search"><span className="material-symbols-outlined">close</span></button>
+            )}
+          </div>
 
-            <div className="tafseer-sidebar-divider" />
+          <ul className="tz-stats">
+            <li><b>114</b><span>surahs</span></li>
+            <li><b>6,236</b><span>ayahs</span></li>
+            <li><b>4</b><span>commentaries</span></li>
+          </ul>
+        </div>
+      </section>
 
+      <div className="tz-wrap tz-body">
+        {/* ── Continue ── */}
+        {lastSurah && !search && (
+          <Link href={`/tafseer/${lastSurah.num}`} className="tz-continue">
+            <span className="tz-continue-icon material-symbols-outlined">bookmark</span>
+            <span className="tz-continue-text">
+              <small>Continue where you left off</small>
+              <b>{lastSurah.num}. {lastSurah.name}</b>
+            </span>
+            <span className="tz-continue-ar" style={{ fontFamily: ARABIC_FONT }}>{lastSurah.ar}</span>
+            <span className="material-symbols-outlined">arrow_forward</span>
+          </Link>
+        )}
+
+        {/* ── Commentaries ── */}
+        {!search && (
+          <section aria-label="Available commentaries" className="tz-comms">
+            {COMMENTARIES.map(c => (
+              <div key={c.name} className="tz-comm">
+                <span className="tz-comm-icon material-symbols-outlined">{c.icon}</span>
+                <div>
+                  <b dir={c.rtl ? 'rtl' : undefined}>{c.name}</b>
+                  <small>{c.tag}</small>
+                  <p>{c.text}</p>
+                </div>
+              </div>
+            ))}
+          </section>
+        )}
+
+        {/* ── Filters ── */}
+        <div className="tz-controls">
+          <div className="tz-chips" role="tablist" aria-label="Filter surahs">
             {FILTERS.map(f => (
-              <button
-                key={f.id}
-                className={`tafseer-filter-btn ${activeFilter === f.id ? 'active' : ''}`}
-                onClick={() => { setActiveFilter(f.id); setSidebarOpen(false); setShowAll(false); }}
-              >
-                <div className="tafseer-filter-icon" style={{ background: `${f.color}18`, color: f.color }}>
-                  <span className="material-symbols-outlined">{f.icon}</span>
-                </div>
-                <div className="tafseer-filter-info">
-                  <span className="tafseer-filter-name">{f.label}</span>
-                  <span className="tafseer-filter-meta">{f.desc}</span>
-                </div>
-                {activeFilter === f.id && <span className="tafseer-filter-active-dot" />}
+              <button key={f.id} role="tab" aria-selected={filter === f.id} className={filter === f.id ? 'on' : ''} onClick={() => setFilter(f.id)}>
+                <span className="material-symbols-outlined">{f.icon}</span>
+                {f.label}
+                <small>{counts[f.id]}</small>
               </button>
             ))}
-
-            <div className="tafseer-sidebar-divider" />
-
-            <div style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 18, color: 'var(--brand-primary)' }}>info</span>
-              <span style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                Verse-by-verse explanations from classic scholars
-              </span>
-            </div>
-          </aside>
-
-          {/* ── Content ── */}
-          <main className="tafseer-content">
-
-            {/* Search */}
-            <div className="tafseer-toolbar">
-              <div className="tafseer-search-wrapper">
-                <span className="material-symbols-outlined tafseer-search-icon">search</span>
-                <input
-                  type="text"
-                  className="tafseer-search-input"
-                  value={search}
-                  onChange={e => { setSearch(e.target.value); setShowAll(false); }}
-                  placeholder="Search surah by name, number or meaning…"
-                />
-                {search && (
-                  <button className="tafseer-search-clear" onClick={() => setSearch('')}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 18 }}>close</span>
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Content Header */}
-            <div className="tafseer-content-header">
-              <div>
-                <h2 className="tafseer-content-title">
-                  {search ? 'Search Results' : activeFilterData.label}
-                </h2>
-                <p className="tafseer-content-subtitle">
-                  {search
-                    ? `${filtered.length} surah${filtered.length !== 1 ? 's' : ''} found for "${search}"`
-                    : `${filtered.length} surah${filtered.length !== 1 ? 's' : ''} — ${activeFilterData.desc}`}
-                </p>
-              </div>
-            </div>
-
-            {/* Empty state */}
-            {filtered.length === 0 && (
-              <div className="tafseer-empty">
-                <span className="material-symbols-outlined" style={{ fontSize: 56, color: 'var(--text-muted)', display: 'block', marginBottom: 16 }}>search_off</span>
-                <h3>No surahs found</h3>
-                <p>Try a different search term or select another filter</p>
-                <button className="tafseer-empty-btn" onClick={() => { setSearch(''); setActiveFilter('All'); }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>restart_alt</span>
-                  Clear Search
-                </button>
-              </div>
-            )}
-
-            {/* Surah Grid */}
-            {filtered.length > 0 && (
-              <div className="tafseer-grid">
-                {displayed.map((s, idx) => (
-                  <Link
-                    key={s.num}
-                    href={`/tafseer/${s.num}`}
-                    className="tafseer-card"
-                    style={{ animationDelay: `${Math.min(idx * 30, 300)}ms` }}
-                  >
-                    <div className="tafseer-card-accent" />
-
-                    <div className="tafseer-card-top">
-                      <div className="tafseer-card-number">{s.num}</div>
-                      <span className="tafseer-card-arabic" style={{ fontFamily: ARABIC_FONT }}>{s.ar}</span>
-                    </div>
-
-                    <div className="tafseer-card-body">
-                      <h3 className="tafseer-card-name">{s.name}</h3>
-                      <p className="tafseer-card-meaning">{s.meaning}</p>
-                      {s.desc && <p className="tafseer-card-desc">{s.desc}</p>}
-                    </div>
-
-                    <div className="tafseer-card-footer">
-                      <span className={`tafseer-card-type ${s.t === 'Meccan' ? 'meccan' : 'medinan'}`}>
-                        <span className="material-symbols-outlined" style={{ fontSize: 12 }}>{s.t === 'Meccan' ? 'wb_sunny' : 'location_city'}</span>
-                        {s.t}
-                      </span>
-                      <span className="tafseer-card-verses">{s.v} verses</span>
-                      <span className="tafseer-card-cta">
-                        Read
-                        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>arrow_forward</span>
-                      </span>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-
-            {/* Show More */}
-            {!search && filtered.length > 24 && (
-              <div className="tafseer-show-more">
-                <button className="tafseer-show-more-btn" onClick={() => setShowAll(v => !v)}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 18, transform: showAll ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>expand_more</span>
-                  {showAll ? 'Show Less' : `Show All ${filtered.length} Surahs`}
-                </button>
-              </div>
-            )}
-
-          </main>
+          </div>
+          <label className="tz-sort">
+            <span className="material-symbols-outlined">swap_vert</span>
+            <select value={sort} onChange={e => setSort(e.target.value as Sort)} aria-label="Sort surahs">
+              <option value="order">Mushaf order</option>
+              <option value="long">Longest first</option>
+              <option value="short">Shortest first</option>
+            </select>
+          </label>
         </div>
+
+        <p className="tz-count" aria-live="polite">
+          {search
+            ? <>{filtered.length} result{filtered.length === 1 ? '' : 's'} for “<b>{search.trim()}</b>”</>
+            : <>Showing <b>{filtered.length}</b> {filter === 'All' ? 'surahs' : `${filter.toLowerCase()} surahs`}</>}
+        </p>
+
+        {/* ── Grid ── */}
+        {filtered.length === 0 ? (
+          <div className="tz-empty">
+            <span className="material-symbols-outlined">search_off</span>
+            <h3>No surahs found</h3>
+            <p>Try another name, number or meaning.</p>
+            <button onClick={clear}>Clear search and filters</button>
+          </div>
+        ) : (
+          <div className="tz-grid">
+            {filtered.map((s, i) => (
+              <Link key={s.num} href={`/tafseer/${s.num}`} className="tz-card" style={{ animationDelay: `${Math.min(i, 12) * 25}ms` }}>
+                <span className="tz-num"><b>{s.num}</b></span>
+                <span className="tz-card-main">
+                  <span className="tz-name">{s.name}</span>
+                  <span className="tz-meaning">{s.meaning}</span>
+                  <span className="tz-meta">
+                    <span className={`tz-type ${s.t === 'Meccan' ? 'meccan' : 'medinan'}`}>
+                      <span className="material-symbols-outlined">{s.t === 'Meccan' ? 'wb_sunny' : 'location_city'}</span>
+                      {s.t}
+                    </span>
+                    <span>{s.v} ayahs</span>
+                  </span>
+                </span>
+                <span className="tz-ar" lang="ar" style={{ fontFamily: ARABIC_FONT }}>{s.ar}</span>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
-    );
+    </main>
+  );
 }

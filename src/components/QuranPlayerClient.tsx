@@ -204,7 +204,7 @@ export default function QuranPlayerClient() {
       setVerses(verses || []);
       setPlaylist(verses?.map((v: Verse) => ({
         url: v.audio,
-        title: `Verse ${v.numberInSurah}`,
+        title: `Ayah ${v.numberInSurah}`,
         surah: surahNum,
         ayah: v.numberInSurah
       })) || []);
@@ -411,7 +411,7 @@ export default function QuranPlayerClient() {
           {isLoading ? (
             <div className="loading-state">
               <div className="loading-spinner"></div>
-              <span>Loading verses...</span>
+              <span>Loading ayahs...</span>
             </div>
           ) : verses.length > 0 ? (
             <VersePlayer

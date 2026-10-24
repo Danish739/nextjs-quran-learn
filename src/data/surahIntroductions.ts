@@ -41,7 +41,7 @@ const surahIntroductions: Record<number, SurahIntroduction> = {
       content: [
         "Revealed in Mecca during the early period of prophethood.",
         "It was among the first complete chapters revealed to Prophet Muhammad ﷺ.",
-        "Known as 'Umm al-Kitab' (Mother of the Book) and 'As-Sab' al-Mathani' (The Seven Oft-Repeated Verses)."
+        "Known as 'Umm al-Kitab' (Mother of the Book) and 'As-Sab' al-Mathani' (The Seven Oft-Repeated Ayahs)."
       ]
     },
     significance: {
@@ -77,20 +77,20 @@ const surahIntroductions: Record<number, SurahIntroduction> = {
       content: [
         "Revealed gradually in Medina during the formation of the first Muslim community.",
         "Addresses the Jewish tribes of Medina and responds to their theological questions.",
-        "Named after the story of the cow sacrificed by the Israelites (verses 67-73)."
+        "Named after the story of the cow sacrificed by the Israelites (ayahs 67-73)."
       ]
     },
     significance: {
       title: "Significance",
       content: [
-        "Contains Ayat al-Kursi (verse 255), considered one of the greatest verses of the Quran.",
+        "Contains Ayat al-Kursi (ayah 255), considered one of the greatest ayahs of the Quran.",
         "Establishes fundamental Islamic laws regarding prayer, fasting, charity, and pilgrimage.",
         "Provides detailed guidance on family law, business transactions, and inheritance."
       ]
     },
     virtues: [
       "The Prophet ﷺ said: 'Do not turn your houses into graves. Indeed, Satan flees from the house in which Surah Al-Baqarah is recited' (Sahih Muslim).",
-      "The last two verses provide protection from evil when recited at night.",
+      "The last two ayahs provide protection from evil when recited at night.",
       "Known as 'Fustat al-Quran' (the tent of the Quran) due to its comprehensive nature."
     ],
     context: "This Surah laid the foundation for Islamic civilization in Medina."
@@ -119,7 +119,7 @@ const surahIntroductions: Record<number, SurahIntroduction> = {
       title: "Significance",
       content: [
         "Establishes the Islamic position on Jesus and Mary, affirming Jesus as a prophet while rejecting divinity.",
-        "Contains important verses about steadfastness and learning from historical examples.",
+        "Contains important ayahs about steadfastness and learning from historical examples.",
         "Emphasizes the unity of divine messages throughout history."
       ]
     },
@@ -158,7 +158,7 @@ const surahIntroductions: Record<number, SurahIntroduction> = {
       ]
     },
     virtues: [
-      "Contains fundamental verses establishing justice and fairness in society.",
+      "Contains fundamental ayahs establishing justice and fairness in society.",
       "Provides comprehensive guidance on protecting the rights of women and orphans.",
       "Known for its detailed legislation on family and social matters."
     ],
@@ -180,7 +180,7 @@ const surahIntroductions: Record<number, SurahIntroduction> = {
       title: "Historical Context",
       content: [
         "Revealed during the final years of the Prophet's life, around the Farewell Pilgrimage.",
-        "Contains the verse declaring the completion of the religion (5:3).",
+        "Contains the ayah declaring the completion of the religion (5:3).",
         "Addresses the practical challenges of governing a multi-religious society in Medina."
       ]
     },
@@ -193,7 +193,7 @@ const surahIntroductions: Record<number, SurahIntroduction> = {
       ]
     },
     virtues: [
-      "Contains the verse of completion of the religion (5:3).",
+      "Contains the ayah of completion of the religion (5:3).",
       "Provides comprehensive guidance on halal and haram in food and drinks.",
       "Establishes principles of justice and testimony in Islamic law."
     ],
@@ -263,7 +263,7 @@ const surahIntroductions: Record<number, SurahIntroduction> = {
       ]
     },
     virtues: [
-      "Contains verses requiring prostration (verse 206).",
+      "Contains ayahs requiring prostration (ayah 206).",
       "The Prophet ﷺ frequently recited this surah in Friday and Eid prayers.",
       "Provides profound lessons about the nature of human temptation and redemption."
     ],
@@ -329,12 +329,12 @@ const surahIntroductions: Record<number, SurahIntroduction> = {
       content: [
         "The only surah that doesn't begin with Bismillah, reflecting its severe tone.",
         "Establishes principles for treaty obligations and relations with hostile groups.",
-        "Contains the verse of jizyah (9:29) regulating relations with People of the Book."
+        "Contains the ayah of jizyah (9:29) regulating relations with People of the Book."
       ]
     },
     virtues: [
       "Known as 'Al-Fadhihah' (The Exposer) for revealing hypocrites' characteristics.",
-      "Contains important verses about repentance and returning to Allah.",
+      "Contains important ayahs about repentance and returning to Allah.",
       "Provides clear guidelines for distinguishing between believers and hypocrites."
     ],
     context: "This Surah purified the Muslim community by exposing hypocrisy and establishing clear principles for external relations."
@@ -369,7 +369,7 @@ const surahIntroductions: Record<number, SurahIntroduction> = {
     },
     virtues: [
       "The Prophet ﷺ said: 'Whoever recites Surah Yunus will be given rewards equal to the number of people who believed in Yunus or rejected him' (Majma' al-Bayan).",
-      "Known for its profound verses about Allah's mercy and signs in creation.",
+      "Known for its profound ayahs about Allah's mercy and signs in creation.",
       "Provides comfort through the story of Yunus and Allah's acceptance of repentance."
     ],
     context: "This Surah emphasizes divine mercy and the importance of believing before it's too late."
@@ -460,7 +460,7 @@ const surahIntroductions: Record<number, SurahIntroduction> = {
       title: "Historical Context",
       content: [
         "Revealed in early Medina, addressing both Muslims and the remaining polytheists.",
-        "Named after the thunder that glorifies Allah with His praise (verse 13).",
+        "Named after the thunder that glorifies Allah with His praise (ayah 13).",
         "Addresses objections from disbelievers about prophethood and revelation."
       ]
     },
@@ -473,7 +473,7 @@ const surahIntroductions: Record<number, SurahIntroduction> = {
       ]
     },
     virtues: [
-      "Contains profound verses about the nature of revelation and divine signs.",
+      "Contains profound ayahs about the nature of revelation and divine signs.",
       "Emphasizes the connection between faith and recognizing Allah's signs in creation.",
       "Known for its powerful description of thunder and natural phenomena glorifying Allah."
     ],
@@ -573,13 +573,13 @@ const surahIntroductions: Record<number, SurahIntroduction> = {
       title: "Significance",
       content: [
         "Comprehensively details Allah's blessings in nature as proofs of His existence and mercy.",
-        "Contains the verse: 'And your Lord inspired the bee...' (16:68-69) showing divine wisdom.",
+        "Contains the ayah: 'And your Lord inspired the bee...' (16:68-69) showing divine wisdom.",
         "Emphasizes the importance of gratitude and the consequences of ingratitude."
       ]
     },
     virtues: [
       "Known as 'Surah of Blessings' for its extensive detailing of divine favors.",
-      "Contains the famous 'verse of invitation' calling to wisdom and good instruction (16:125).",
+      "Contains the famous 'ayah of invitation' calling to wisdom and good instruction (16:125).",
       "Emphasizes the importance of reflecting on natural phenomena as signs of Allah."
     ],
     context: "This Surah directs attention to Allah's signs in creation as evidence for monotheism."
@@ -613,8 +613,8 @@ const surahIntroductions: Record<number, SurahIntroduction> = {
       ]
     },
     virtues: [
-      "Contains Ayat al-Kursi's equivalent in virtue according to some scholars (verse 111).",
-      "Includes the beautiful verse: 'And say: My Lord, cause me to enter in a goodly entrance...' (17:80).",
+      "Contains Ayat al-Kursi's equivalent in virtue according to some scholars (ayah 111).",
+      "Includes the beautiful ayah: 'And say: My Lord, cause me to enter in a goodly entrance...' (17:80).",
       "Known for its comprehensive moral guidance and spiritual teachings."
     ],
     context: "This Surah marks the spiritual ascension of the Prophet and contains core ethical teachings."
@@ -648,7 +648,7 @@ const surahIntroductions: Record<number, SurahIntroduction> = {
       ]
     },
     virtues: [
-      "The Prophet ﷺ said: 'Whoever memorizes ten verses from the beginning of Surah Al-Kahf will be protected from the Dajjal' (Sahih Muslim).",
+      "The Prophet ﷺ said: 'Whoever memorizes ten ayahs from the beginning of Surah Al-Kahf will be protected from the Dajjal' (Sahih Muslim).",
       "Reciting it on Friday brings light between two Fridays.",
       "Contains the fundamental principle: 'So whoever hopes for the meeting with his Lord...' (18:110)."
     ],
@@ -705,7 +705,7 @@ const surahIntroductions: Record<number, SurahIntroduction> = {
       title: "Historical Context",
       content: [
         "Revealed during a period of intense persecution in Mecca.",
-        "The opening verses directly address and comfort the Prophet.",
+        "The opening ayahs directly address and comfort the Prophet.",
         "Umar ibn al-Khattab accepted Islam after hearing this surah recited by his sister."
       ]
     },
@@ -720,7 +720,7 @@ const surahIntroductions: Record<number, SurahIntroduction> = {
     virtues: [
       "Known as 'the name of the Prophet' as Taha is one of his names.",
       "The recitation of this surah led to Umar ibn al-Khattab's conversion to Islam.",
-      "Contains the beautiful verse: 'Indeed, I am Allah. There is no deity except Me, so worship Me...' (20:14)."
+      "Contains the beautiful ayah: 'Indeed, I am Allah. There is no deity except Me, so worship Me...' (20:14)."
     ],
     context: "This Surah provided spiritual comfort and strength during periods of intense difficulty."
   },
@@ -754,7 +754,7 @@ const surahIntroductions: Record<number, SurahIntroduction> = {
     },
     virtues: [
       "The Prophet ﷺ said: 'Whoever recites Surah Al-Anbiya, Allah will make the accounting easy for him on Day of Judgment' (Al-Durr al-Manthur).",
-      "Contains the verse: 'We did not send you except as a mercy to the worlds' (21:107).",
+      "Contains the ayah: 'We did not send you except as a mercy to the worlds' (21:107).",
       "Known for its comprehensive coverage of prophetic stories and lessons."
     ],
     context: "This Surah strengthens faith through prophetic narratives and affirms resurrection."
@@ -774,7 +774,7 @@ const surahIntroductions: Record<number, SurahIntroduction> = {
     historicalContext: {
       title: "Historical Context",
       content: [
-        "Contains both Meccan and Medinan verses, revealed over different periods.",
+        "Contains both Meccan and Medinan ayahs, revealed over different periods.",
         "Addresses the institution of Hajj and its spiritual significance.",
         "Revealed when permission for defensive fighting was granted to Muslims."
       ]
@@ -789,7 +789,7 @@ const surahIntroductions: Record<number, SurahIntroduction> = {
     },
     virtues: [
       "The Prophet ﷺ said: 'Whoever recites Surah Al-Hajj will get the reward of Hajj and Umrah according to the number of people who performed Hajj and Umrah' (Thawab al-A'mal).",
-      "Contains two prostrations of recitation (verses 18 and 77).",
+      "Contains two prostrations of recitation (ayahs 18 and 77).",
       "Known for its comprehensive coverage of worship and jihad."
     ],
     context: "This Surah establishes the rites of Hajj and principles of defensive warfare."
@@ -823,7 +823,7 @@ const surahIntroductions: Record<number, SurahIntroduction> = {
       ]
     },
     virtues: [
-      "The Prophet ﷺ found great comfort in reciting this surah, especially its opening verses.",
+      "The Prophet ﷺ found great comfort in reciting this surah, especially its opening ayahs.",
       "Contains the beautiful description of believer's qualities that lead to success.",
       "Known for its powerful arguments about creation and resurrection."
     ],
@@ -852,13 +852,13 @@ const surahIntroductions: Record<number, SurahIntroduction> = {
     significance: {
       title: "Significance",
       content: [
-        "Contains the verse of Light (Ayat an-Nur) describing divine guidance.",
+        "Contains the ayah of Light (Ayat an-Nur) describing divine guidance.",
         "Establishes laws of modesty, hijab, and gender interaction.",
         "Provides guidelines for household etiquette and privacy."
       ]
     },
     virtues: [
-      "Contains the magnificent 'Verse of Light' (24:35) describing divine guidance.",
+      "Contains the magnificent 'Ayah of Light' (24:35) describing divine guidance.",
       "The Prophet ﷺ said: 'Teach your women Surah An-Nur' (Abu Dawud).",
       "Provides comprehensive guidance for maintaining moral society."
     ],
@@ -964,7 +964,7 @@ const surahIntroductions: Record<number, SurahIntroduction> = {
     },
     virtues: [
       "The Prophet ﷺ said: 'Whoever recites Surah An-Naml will be credited with ten good deeds for every believer and every denier of Solomon, the hoopoe, and the Queen of Sheba' (Al-Durr al-Manthur).",
-      "Contains the verse: 'My Lord, indeed I have wronged myself, and I submit with Solomon to Allah' (27:44).",
+      "Contains the ayah: 'My Lord, indeed I have wronged myself, and I submit with Solomon to Allah' (27:44).",
       "Known for its beautiful narrative of the Queen's eventual submission."
     ],
     context: "This Surah demonstrates how true knowledge leads to recognition of Allah's sovereignty."
@@ -999,7 +999,7 @@ const surahIntroductions: Record<number, SurahIntroduction> = {
     },
     virtues: [
       "The Prophet ﷺ said: 'Whoever recites Surah Al-Qasas will get the reward of ten good deeds for every believer and disbeliever in the time of Moses' (Thawab al-A'mal).",
-      "Contains the comforting verse: 'And do not call to any other god with Allah' (28:88).",
+      "Contains the comforting ayah: 'And do not call to any other god with Allah' (28:88).",
       "Provides hope and consolation during times of oppression."
     ],
     context: "This Surah provided hope to early Muslims through Moses' similar experiences."
@@ -1034,7 +1034,7 @@ const surahIntroductions: Record<number, SurahIntroduction> = {
     },
     virtues: [
       "The Prophet ﷺ said: 'Whoever recites Surah Al-Ankabut will be given rewards equal to the number of all believers and hypocrites' (Al-Durr al-Manthur).",
-      "Contains the verse: 'And those who strive in Our cause - We will surely guide them to Our paths' (29:69).",
+      "Contains the ayah: 'And those who strive in Our cause - We will surely guide them to Our paths' (29:69).",
       "Provides strength and patience during times of testing."
     ],
     context: "This Surah prepares believers for the tests that purify and strengthen faith."
@@ -1069,7 +1069,7 @@ const surahIntroductions: Record<number, SurahIntroduction> = {
     },
     virtues: [
       "The Prophet ﷺ recited this surah in Maghrib prayer according to some narrations.",
-      "Contains the famous verse: 'So direct your face toward the religion, inclining to truth' (30:30).",
+      "Contains the famous ayah: 'So direct your face toward the religion, inclining to truth' (30:30).",
       "Known for its prophecy that strengthened the believers' faith when fulfilled."
     ],
     context: "This Surah contained prophecies that demonstrated the Quran's divine origin."
@@ -1126,7 +1126,7 @@ const surahIntroductions: Record<number, SurahIntroduction> = {
       content: [
         "Revealed during the middle Meccan period.",
         "Addresses the disbelievers' denial of resurrection and revelation.",
-        "Named 'The Prostration' for the mandatory sajdah in verse 15."
+        "Named 'The Prostration' for the mandatory sajdah in ayah 15."
       ]
     },
     significance: {
@@ -1168,12 +1168,12 @@ const surahIntroductions: Record<number, SurahIntroduction> = {
       title: "Significance",
       content: [
         "Establishes the Prophet's wives as 'Mothers of the Believers' with special responsibilities.",
-        "Contains the verse of purification regarding the Prophet's household.",
+        "Contains the ayah of purification regarding the Prophet's household.",
         "Addresses the adoption system and establishes biological family ties."
       ]
     },
     virtues: [
-      "Contains the 'Verse of Purification' (33:33) about the Prophet's household.",
+      "Contains the 'Ayah of Purification' (33:33) about the Prophet's household.",
       "The Prophet ﷺ said: 'Whoever recites Surah Al-Ahzab and teaches it to his family, he will be saved from the punishment of the grave' (Thawab al-A'mal).",
       "Establishes important social reforms in early Muslim society."
     ],
@@ -1379,12 +1379,12 @@ const surahIntroductions: Record<number, SurahIntroduction> = {
       content: [
         "Emphasizes that worship must be purely for Allah without any partners.",
         "Describes the grouping of people in the Hereafter based on their beliefs.",
-        "Contains the beautiful verse: 'Say, O My servants who have transgressed against themselves...' (39:53)."
+        "Contains the beautiful ayah: 'Say, O My servants who have transgressed against themselves...' (39:53)."
       ]
     },
     virtues: [
       "The Prophet ﷺ said: 'Whoever recites Surah Az-Zumar, Allah will honor him in this world and the next' (Al-Durr al-Manthur).",
-      "Contains the comprehensive verse of forgiveness giving hope to sinners.",
+      "Contains the comprehensive ayah of forgiveness giving hope to sinners.",
       "Known for its powerful emphasis on pure monotheism."
     ],
     context: "This Surah establishes the seriousness of shirk and exclusivity of tawhid."
@@ -1435,7 +1435,7 @@ const surahIntroductions: Record<number, SurahIntroduction> = {
       verses: 54,
       type: "Makki"
     },
-    overview: "Surah Fussilat, also known as 'Ha-Meem As-Sajdah', emphasizes the detailed revelation of the Quran and contains a mandatory prostration verse.",
+    overview: "Surah Fussilat, also known as 'Ha-Meem As-Sajdah', emphasizes the detailed revelation of the Quran and contains a mandatory prostration ayah.",
     historicalContext: {
       title: "Historical Context",
       content: [
@@ -1447,7 +1447,7 @@ const surahIntroductions: Record<number, SurahIntroduction> = {
     significance: {
       title: "Significance",
       content: [
-        "Contains a mandatory prostration in verse 38.",
+        "Contains a mandatory prostration in ayah 38.",
         "Emphasizes that the Quran is a detailed explanation of all things.",
         "Describes the gradual revelation of the Quran as a mercy to humanity."
       ]
@@ -1475,7 +1475,7 @@ const surahIntroductions: Record<number, SurahIntroduction> = {
       title: "Historical Context",
       content: [
         "Revealed during the late Meccan period.",
-        "Named 'The Consultation' after the principle established in verse 38.",
+        "Named 'The Consultation' after the principle established in ayah 38.",
         "Addresses the unity of divine message through different prophets."
       ]
     },
@@ -1484,7 +1484,7 @@ const surahIntroductions: Record<number, SurahIntroduction> = {
       content: [
         "Establishes the principle of consultation (shura) in Muslim affairs.",
         "Emphasizes that all prophets brought the same essential message.",
-        "Contains the beautiful names of Allah in the opening verses."
+        "Contains the beautiful names of Allah in the opening ayahs."
       ]
     },
     virtues: [
@@ -1861,7 +1861,7 @@ const surahIntroductions: Record<number, SurahIntroduction> = {
       content: [
         "Revealed during the early Meccan period.",
         "Named 'The Star' referring to the oath at the beginning.",
-        "Contains the first verses that required prostration during recitation."
+        "Contains the first ayahs that required prostration during recitation."
       ]
     },
     significance: {
@@ -2009,7 +2009,7 @@ const surahIntroductions: Record<number, SurahIntroduction> = {
       content: [
         "Emphasizes spending wealth in Allah's cause for eternal reward.",
         "Describes the temporary nature of worldly life.",
-        "Contains the verse about Allah sending messengers with clear proofs."
+        "Contains the ayah about Allah sending messengers with clear proofs."
       ]
     },
     virtues: [
@@ -2083,7 +2083,7 @@ const surahIntroductions: Record<number, SurahIntroduction> = {
       ]
     },
     virtues: [
-      "The Prophet ﷺ said: 'Whoever recites the last three verses of Surah Al-Hashr, Allah will send seventy thousand angels to send blessings upon him until evening' (Tirmidhi).",
+      "The Prophet ﷺ said: 'Whoever recites the last three ayahs of Surah Al-Hashr, Allah will send seventy thousand angels to send blessings upon him until evening' (Tirmidhi).",
       "Contains the comprehensive description of Allah's attributes.",
       "Known for its powerful ending with Allah's beautiful names."
     ],
@@ -2363,7 +2363,7 @@ const surahIntroductions: Record<number, SurahIntroduction> = {
       ]
     },
     virtues: [
-      "The Prophet ﷺ said: 'There is a surah in the Quran of thirty verses that will intercede for its reciter until he is forgiven: Surah Al-Mulk' (Tirmidhi).",
+      "The Prophet ﷺ said: 'There is a surah in the Quran of thirty ayahs that will intercede for its reciter until he is forgiven: Surah Al-Mulk' (Tirmidhi).",
       "The Prophet recommended reciting it every night before sleep.",
       "Known as 'The Protector' for its saving quality from grave punishment."
     ],
@@ -2569,7 +2569,7 @@ const surahIntroductions: Record<number, SurahIntroduction> = {
       content: [
         "Instructs the Prophet to stand in prayer at night.",
         "Commands patience with the disbelievers' rejection.",
-        "Later verses modified the initial night prayer instructions."
+        "Later ayahs modified the initial night prayer instructions."
       ]
     },
     virtues: [
@@ -3364,7 +3364,7 @@ const surahIntroductions: Record<number, SurahIntroduction> = {
     historicalContext: {
       title: "Historical Context",
       content: [
-        "The first five verses were the very first revelation in Cave Hira.",
+        "The first five ayahs were the very first revelation in Cave Hira.",
         "Named 'The Clot' referring to early stage of human creation.",
         "Marks the beginning of prophethood and Islamic revelation."
       ]
@@ -3588,7 +3588,7 @@ const surahIntroductions: Record<number, SurahIntroduction> = {
       ]
     },
     virtues: [
-      "The Prophet ﷺ said: 'Surah At-Takathur is equivalent to one thousand verses' in its warning against materialism.",
+      "The Prophet ﷺ said: 'Surah At-Takathur is equivalent to one thousand ayahs' in its warning against materialism.",
       "Contains powerful criticism of worldly competition.",
       "Known for its direct address to human weakness for accumulation."
     ],

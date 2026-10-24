@@ -617,7 +617,7 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
         const newBookmarks = isBookmarked ? bookmarks.filter(b => b !== verseKey) : [...bookmarks, verseKey];
         setBookmarks(newBookmarks);
         localStorage.setItem('quran-bookmarks', JSON.stringify(newBookmarks));
-        showToast(isBookmarked ? 'Bookmark removed' : 'Verse bookmarked!');
+        showToast(isBookmarked ? 'Bookmark removed' : 'Ayah bookmarked!');
     }, [bookmarks]);
 
     const copyVerse = useCallback((verse: VerseWithTranslation) => {

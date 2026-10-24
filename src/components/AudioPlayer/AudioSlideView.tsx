@@ -170,7 +170,7 @@ export default function AudioSlideView({ surahNumber, onClose }: AudioSlideViewP
       setTotalAyahs(arabicData.data.surah?.numberOfAyahs || 0);
     } catch (e) {
       console.error(e);
-      setError('Failed to load verse audio. Please try another reciter.');
+      setError('Failed to load ayah audio. Please try another reciter.');
     } finally {
       setIsLoading(false);
     }
@@ -307,7 +307,7 @@ export default function AudioSlideView({ surahNumber, onClose }: AudioSlideViewP
                 exit={{ opacity: 0 }}
               >
                 <div className={styles.loading_spinner}></div>
-                <div className={styles.loading_text}>Loading verse...</div>
+                <div className={styles.loading_text}>Loading ayah...</div>
               </motion.div>
             )}
             {error && (
@@ -359,14 +359,14 @@ export default function AudioSlideView({ surahNumber, onClose }: AudioSlideViewP
                   <button
                     onClick={handlePrevious}
                     disabled={currentAyahIndex <= 1}
-                    aria-label="Previous verse"
+                    aria-label="Previous ayah"
                   >
                     ❮
                   </button>
                   <button
                     onClick={handleNext}
                     disabled={currentAyahIndex >= totalAyahs}
-                    aria-label="Next verse"
+                    aria-label="Next ayah"
                   >
                     ❯
                   </button>
@@ -392,7 +392,7 @@ export default function AudioSlideView({ surahNumber, onClose }: AudioSlideViewP
             className={styles.control_button}
             onClick={handlePrevious} 
             disabled={currentAyahIndex <= 1 || isLoading}
-            aria-label="Previous verse"
+            aria-label="Previous ayah"
           >
             ⮜
           </button>
@@ -408,7 +408,7 @@ export default function AudioSlideView({ surahNumber, onClose }: AudioSlideViewP
             className={styles.control_button}
             onClick={handleNext} 
             disabled={currentAyahIndex >= totalAyahs || isLoading}
-            aria-label="Next verse"
+            aria-label="Next ayah"
           >
             ⮞
           </button>

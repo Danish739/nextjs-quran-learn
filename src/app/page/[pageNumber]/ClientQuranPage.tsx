@@ -197,7 +197,7 @@ function ClientQuranPage({ pageNumber, translationEdition, audioEdition, ayahs }
                 <div className="qp-stats" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 32, marginBottom: 20 }}>
                   <div style={{ textAlign: 'center' }}>
                     <div style={{ fontSize: 24, fontWeight: 700, color: C.green }}>{ayahs.length}</div>
-                    <div style={{ fontSize: 11, color: C.muted, fontWeight: 500 }}>Verses</div>
+                    <div style={{ fontSize: 11, color: C.muted, fontWeight: 500 }}>Ayahs</div>
                   </div>
                   <div className="qp-stat-divider" style={{ width: 1, height: 36, background: C.cardBorder }} />
                   <div style={{ textAlign: 'center' }}>

@@ -477,7 +477,7 @@ export default function EmbryologyPage() {
                                     <div className="verse-box">
                                         <div className="verse-label">
                                             <BookOpen size={16} />
-                                            <span>Quranic Verse</span>
+                                            <span>Quranic Ayah</span>
                                         </div>
                                         <p className="verse-text">"{stage.verse}"</p>
                                         <p className="verse-reference">{stage.reference}</p>

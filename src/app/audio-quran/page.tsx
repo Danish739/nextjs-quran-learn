@@ -456,7 +456,7 @@ export default function AudioQuranPage() {
                         <th style={{ padding: "14px 24px", width: 56 }}>#</th>
                         <th style={{ padding: "14px 24px" }}>Surah Name</th>
                         <th className="aq-hide-mobile" style={{ padding: "14px 24px" }}>Revelation</th>
-                        <th className="aq-hide-mobile" style={{ padding: "14px 24px" }}>Verses</th>
+                        <th className="aq-hide-mobile" style={{ padding: "14px 24px" }}>Ayahs</th>
                         <th style={{ padding: "14px 24px", textAlign: "right" }}>Listen</th>
                       </tr>
                     </thead>

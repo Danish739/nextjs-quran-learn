@@ -4,7 +4,7 @@ import './styles/read-quran.css';
 
 export const metadata: Metadata = {
     title: 'Read Quran | Learn Quran - Noble Quran with Translations',
-    description: 'Read the Holy Quran online with translations, audio recitations, and beautiful Arabic text. Explore all 114 Surahs with verse-by-verse translations.',
+    description: 'Read the Holy Quran online with translations, audio recitations, and beautiful Arabic text. Explore all 114 Surahs with ayah-by-ayah translations.',
     keywords: 'read quran, quran online, quran translation, quran audio, surah, ayah, arabic quran',
     openGraph: {
         title: 'Read Quran | Learn Quran',

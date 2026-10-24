@@ -89,7 +89,7 @@ export default function ScrollReadView({
         setVerses(mapped);
       } catch (err: any) {
         // Provide more context for easier debugging
-        setError(err?.message || String(err) || 'Unknown error while fetching verses');
+        setError(err?.message || String(err) || 'Unknown error while fetching ayahs');
       } finally {
         setLoading(false);
       }

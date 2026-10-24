@@ -151,7 +151,7 @@ export default function HizbClientPage({ hizbId, ayahs, error }: { hizbId: numbe
           <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-2xl font-bold">Hizb {hizbId}</h1>
-            <p className="text-sm text-gray-600">Arabic text, translation and verse-by-verse audio</p>
+            <p className="text-sm text-gray-600">Arabic text, translation and ayah-by-ayah audio</p>
           </div>
           <div className="flex items-center gap-3">
             <button

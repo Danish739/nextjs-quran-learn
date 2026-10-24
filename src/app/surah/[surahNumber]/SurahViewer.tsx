@@ -191,7 +191,7 @@ export default function SurahViewer({ surahNumber }: SurahViewerProps) {
             // Attempt retry if we haven't exceeded max retries
             if (retryCount < maxRetries) {
               retryCount++;
-              setErrorMessage(`Retrying verse ${ayahNumber}... (${retryCount}/${maxRetries})`);
+              setErrorMessage(`Retrying ayah ${ayahNumber}... (${retryCount}/${maxRetries})`);
               
               // Wait a moment before retrying
               await new Promise(resolve => setTimeout(resolve, 1500));
@@ -204,9 +204,9 @@ export default function SurahViewer({ surahNumber }: SurahViewerProps) {
             
             // Special message for verse 1, which is particularly problematic
             if (ayahNumber === 1) {
-              setErrorMessage(`Note: Audio for the first verse may not be available. Try other verses.`);
+              setErrorMessage(`Note: Audio for the first ayah may not be available. Try other ayahs.`);
             } else {
-              setErrorMessage(`Could not play verse ${ayahNumber}. Please try again later.`);
+              setErrorMessage(`Could not play ayah ${ayahNumber}. Please try again later.`);
             }
             
             setLoadingVerse(null);
@@ -253,7 +253,7 @@ export default function SurahViewer({ surahNumber }: SurahViewerProps) {
         
         if (attempts < maxAttempts) {
           // Show retry message
-          setErrorMessage(`Retrying verse ${ayahNumber}... (${attempts}/${maxAttempts})`);
+          setErrorMessage(`Retrying ayah ${ayahNumber}... (${attempts}/${maxAttempts})`);
           
           // Wait a moment before retrying
           await new Promise(resolve => setTimeout(resolve, 1500));
@@ -271,7 +271,7 @@ export default function SurahViewer({ surahNumber }: SurahViewerProps) {
         } else {
           // Give up after max attempts
           console.error(`Failed to play verse ${ayahNumber} after ${maxAttempts} attempts`);
-          setErrorMessage(`Could not play verse ${ayahNumber}. Try again later or choose a different verse.`);
+          setErrorMessage(`Could not play ayah ${ayahNumber}. Try again later or choose a different ayah.`);
           setLoadingVerse(null);
           
           // Clear error message after a few seconds
@@ -295,7 +295,7 @@ export default function SurahViewer({ surahNumber }: SurahViewerProps) {
         // The error handler will take care of retries
         // This catch block handles errors not caught by the onError callback
         console.error(`Unexpected error playing verse ${ayahNumber}:`, error);
-        setErrorMessage(`Could not play verse ${ayahNumber}. Please try again later.`);
+        setErrorMessage(`Could not play ayah ${ayahNumber}. Please try again later.`);
         setLoadingVerse(null);
         
         // Clear error message after a few seconds
@@ -306,7 +306,7 @@ export default function SurahViewer({ surahNumber }: SurahViewerProps) {
     } catch (outerError) {
       // This catches any errors outside the main try block
       console.error(`Critical error in playVerse for verse ${ayahNumber}:`, outerError);
-      setErrorMessage(`Could not play verse ${ayahNumber}. Please try again later.`);
+      setErrorMessage(`Could not play ayah ${ayahNumber}. Please try again later.`);
       setLoadingVerse(null);
       
       // Clear error message after a few seconds
@@ -421,7 +421,7 @@ export default function SurahViewer({ surahNumber }: SurahViewerProps) {
                     className={`translation-verse-audio-btn${playingVerse === ayah.numberInSurah ? ' playing' : ''} ${loadingVerse === ayah.numberInSurah ? 'loading' : ''}`}
                     onClick={() => playVerse(ayah.numberInSurah, index)}
                     disabled={loadingVerse !== null && loadingVerse !== ayah.numberInSurah}
-                    aria-label={playingVerse === ayah.numberInSurah ? `Pause verse ${ayah.numberInSurah}` : `Play verse ${ayah.numberInSurah}`}
+                    aria-label={playingVerse === ayah.numberInSurah ? `Pause ayah ${ayah.numberInSurah}` : `Play ayah ${ayah.numberInSurah}`}
                   >
                     {loadingVerse === ayah.numberInSurah ? '' : playingVerse === ayah.numberInSurah ? '⏸' : '▶'}
                   </button>

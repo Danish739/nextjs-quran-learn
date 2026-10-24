@@ -24,8 +24,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     
     return {
       title: `${surah.englishName} (${surah.name}) - Quran`,
-      description: `Read Surah ${surah.englishName} - ${surah.englishNameTranslation}. ${surah.numberOfAyahs} verses, revealed in ${surah.revelationType}.`,
-      keywords: `quran, surah ${surah.englishName.toLowerCase()}, ${surah.englishNameTranslation.toLowerCase()}, ${surah.revelationType.toLowerCase()}, ayah, verse`,
+      description: `Read Surah ${surah.englishName} - ${surah.englishNameTranslation}. ${surah.numberOfAyahs} ayahs, revealed in ${surah.revelationType}.`,
+      keywords: `quran, surah ${surah.englishName.toLowerCase()}, ${surah.englishNameTranslation.toLowerCase()}, ${surah.revelationType.toLowerCase()}, ayah, ayahs`,
     };
   } catch (error) {
     return {

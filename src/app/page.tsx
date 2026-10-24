@@ -185,7 +185,7 @@ const FEATURED_ACTIONS = [
   { icon: 'auto_stories', label: 'Mushaf Reader', sub: 'Read page by page', href: '/quran-pages' },
   { icon: 'music_note', label: 'Quran Player', sub: 'Listen & recite', href: '/quran-player' },
   { icon: 'volunteer_activism', label: 'Dua', sub: 'Daily supplications', href: '/dua' },
-  { icon: 'format_quote', label: 'Hadees', sub: "Prophet's sayings ﷺ", href: '/hadees' },
+  { icon: 'format_quote', label: 'Hadith', sub: "Prophet's sayings ﷺ", href: '/hadees' },
 ];
 
 const FEATURES = [
@@ -194,7 +194,7 @@ const FEATURES = [
   { icon: 'ads_click', label: 'Memorize', sub: 'Hifz Program', href: '/memorize-quran', color: '#a855f7' },
   { icon: 'radio', label: 'Quran Radio', sub: '24/7 Recitation', href: '/radio', color: '#ef4444' },
   { icon: 'translate', label: 'Word by Word', sub: 'Arabic Learning', href: '/read-quran/1?mode=word-by-word', color: '#06b6d4' },
-  { icon: 'book_2', label: 'Tafseer', sub: 'Verse Explanations', href: '/tafseer', color: '#8b5cf6' },
+  { icon: 'book_2', label: 'Tafseer', sub: 'Ayah Explanations', href: '/tafseer', color: '#8b5cf6' },
 ];
 
 const AYAHS_OF_DAY = [

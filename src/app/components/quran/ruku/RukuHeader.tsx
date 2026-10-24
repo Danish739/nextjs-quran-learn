@@ -33,7 +33,7 @@ export default function RukuHeader({
       </div>
       <div className={styles['ruku-stats']}>
         <div className={styles['stat-item']}>
-          <div className={styles['stat-label']}>Total Verses:</div>
+          <div className={styles['stat-label']}>Total Ayahs:</div>
           <div className={styles['stat-value']}>{totalVerses}</div>
         </div>
         <div className={styles['stat-item']}>

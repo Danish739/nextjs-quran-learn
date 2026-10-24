@@ -207,7 +207,7 @@ export default function TranslationAudioClient() {
         <div className="ta-wrap">
           <span className="ta-kicker">ترجمة · Translation audio</span>
           <h1>Hear the Quran in <em>your language</em></h1>
-          <p>Verse-by-verse translation audio, optionally after each Arabic ayah, with the text on screen so you can follow along.</p>
+          <p>Ayah-by-ayah translation audio, optionally after each Arabic ayah, with the text on screen so you can follow along.</p>
         </div>
       </section>
 

@@ -192,7 +192,7 @@ export async function getVerses(
         const translationJson = await response.json();
 
         if (!translationJson.verses) {
-            throw new Error('Failed to fetch verses');
+            throw new Error('Failed to fetch ayahs');
         }
 
         const verses: VerseWithTranslation[] = translationJson.verses.map((verse: any) => {
@@ -265,7 +265,7 @@ export async function getVersesWithWords(
         const data = await response.json();
 
         if (!data.verses) {
-            throw new Error('Failed to fetch verses with words');
+            throw new Error('Failed to fetch ayahs with words');
         }
 
         const verses: VerseWithTranslation[] = data.verses.map((verse: any) => {

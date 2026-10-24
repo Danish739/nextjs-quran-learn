@@ -19,8 +19,8 @@ const TILES = [
   { icon: 'home', label: 'Home', href: '/', color: '#64748b' },
 ];
 
-/** Reader-style pages where a floating button would cover the content */
-const HIDDEN_PREFIXES = ['/radio/', '/hizb/', '/manzil/', '/juz/', '/surah/', '/ruku/', '/read-quran/', '/page/', '/quran-pages', '/login', '/signup'];
+/** The floating button belongs to the home page only; everywhere else it would cover content. */
+const SHOW_ON = '/';
 
 export default function QuickAccessWidget() {
   const pathname = usePathname() ?? '';
@@ -43,7 +43,7 @@ export default function QuickAccessWidget() {
     };
   }, [open]);
 
-  if (HIDDEN_PREFIXES.some(p => pathname.startsWith(p))) return null;
+  if (pathname !== SHOW_ON) return null;
 
   return (
     <div ref={rootRef}>

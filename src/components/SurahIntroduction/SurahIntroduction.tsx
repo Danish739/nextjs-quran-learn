@@ -49,7 +49,7 @@ export default function SurahIntroduction({ surahData, isOpen, onClose }: SurahI
         <div className="intro-content">
           <div className="meta-info">
             <div className="meta-item">
-              <span className="meta-label">Number of verses:</span>
+              <span className="meta-label">Number of ayahs:</span>
               <span className="meta-value">{surahData.numberOfAyahs}</span>
             </div>
             <div className="meta-item">
