@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { X, ChevronLeft, ChevronRight, Copy, Check, RefreshCw, Minus, Plus } from 'lucide-react';
 import { getAyahTafsir, type AyahTafsir } from '../lib/api';
+import { loadQcfFontsForPages, qcfFontFamily } from '../lib/qcf';
 
 interface Verse {
     id: number;
@@ -11,6 +12,8 @@ interface Verse {
     text_uthmani?: string;
     text_qpc_hafs?: string;
     translations?: { text: string }[];
+    /** Mushaf glyph words (QCF v2), the same data Read Quran renders from */
+    words?: { id?: number; code_v2?: string; page_number?: number; char_type_name?: string }[];
 }
 
 interface Chapter {
@@ -74,6 +77,8 @@ const SCHOLARS = [
 ] as const;
 
 type ScholarKey = (typeof SCHOLARS)[number]['key'];
+
+const escapeGlyph = (v: string) => v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 const SIZE_KEY = 'tafseer-text-size';
 const SIZES = [15, 16, 17, 19, 21];
@@ -236,6 +241,12 @@ export default function TafseerModal({
 
     const html = useMemo(() => (data ? cleanTafsirHtml(data.html) : ''), [data]);
 
+    // Same Mushaf page fonts Read Quran uses for this ayah
+    const glyphWords = useMemo(() => verse?.words?.filter(w => w.code_v2) ?? [], [verse]);
+    useEffect(() => {
+        if (isOpen && glyphWords.length) loadQcfFontsForPages(glyphWords.map(w => w.page_number ?? 1));
+    }, [isOpen, glyphWords]);
+
     if (!verse || !chapter) return null;
 
     const arabic = cleanArabicText(
@@ -243,7 +254,7 @@ export default function TafseerModal({
             ? removeBismillah(verse.text_uthmani ?? '')
             : (verse.text_uthmani ?? '')
     );
-    const translation = verse.translations?.[0]?.text?.replace(/<[^>]+>/g, '') ?? '';
+    const translation = verse.translations?.[0]?.text?.replace(/<sup[\s\S]*?<\/sup>/gi, '').replace(/<[^>]+>/g, '') ?? '';
 
     const group = data?.verseKeys ?? [];
     const spansMany = group.length > 1;
@@ -305,7 +316,22 @@ export default function TafseerModal({
                         </button>
                         {showVerse && (
                             <>
-                                <p className="tf-verse-ar font-arabic" dir="rtl" lang="ar">{arabic}</p>
+                                {glyphWords.length ? (
+                                    <p className="tf-verse-ar is-qcf" dir="rtl" lang="ar">
+                                        {glyphWords.map((w, i) => (
+                                            <span key={w.id ?? i}>
+                                                <span
+                                                    className={w.char_type_name === 'end' ? 'tf-qcf-end' : undefined}
+                                                    style={{ fontFamily: `${qcfFontFamily(w.page_number ?? 1)}, UthmanicHafs, serif` }}
+                                                    dangerouslySetInnerHTML={{ __html: escapeGlyph(w.code_v2!) }}
+                                                />
+                                                {i < glyphWords.length - 1 ? ' ' : ''}
+                                            </span>
+                                        ))}
+                                    </p>
+                                ) : (
+                                    <p className="tf-verse-ar font-arabic" dir="rtl" lang="ar">{arabic}</p>
+                                )}
                                 {translation && <p className="tf-verse-tr">{translation}</p>}
                             </>
                         )}

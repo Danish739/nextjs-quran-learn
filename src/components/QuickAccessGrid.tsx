@@ -14,6 +14,9 @@ interface Tile {
   from: string;
   to: string;
   badge?: string;
+  /** full-width featured tile with language chips */
+  wide?: boolean;
+  chips?: string[];
   /** per-tile icon animation */
   anim: 'flip' | 'spin' | 'pulse' | 'wave' | 'swap' | 'float' | 'tilt' | 'raise';
 }
@@ -27,6 +30,7 @@ const TILES: Tile[] = [
   { key: 'wbw', label: 'Word by Word', sub: 'Arabic Learning', ar: 'كلمة', icon: 'translate', href: '/read-quran/1?mode=word-by-word', from: '#22d3ee', to: '#0e7490', anim: 'swap' },
   { key: 'tafseer', label: 'Tafseer', sub: 'Verse Explanations', ar: 'تفسير', icon: 'local_library', href: '/tafseer', from: '#a78bfa', to: '#5b21b6', anim: 'float' },
   { key: 'dua', label: 'Duas', sub: 'Daily Supplications', ar: 'دعاء', icon: 'volunteer_activism', href: '/dua', from: '#f472b6', to: '#be185d', anim: 'raise' },
+  { key: 'tra', label: 'Translation Audio', sub: 'Hear the Quran verse by verse in your language', ar: 'ترجمة', icon: 'record_voice_over', href: '/translation-audio', from: '#2dd4bf', to: '#0f766e', anim: 'pulse', wide: true, chips: ['English', 'اردو', 'فارسی', 'Azərbaycanca', 'Bosanski'] },
 ];
 
 /** Tracks the cursor for the 3D tilt + spotlight, without re-rendering React */
@@ -73,6 +77,11 @@ function TileInner({ t }: { t: Tile }) {
         <b>{t.label}</b>
         <span>{t.sub}</span>
       </div>
+      {t.chips && (
+        <div className="qg-chips" aria-hidden="true">
+          {t.chips.map(c => <i key={c}>{c}</i>)}
+        </div>
+      )}
     </>
   );
 }
@@ -115,7 +124,7 @@ export default function QuickAccessGrid({ onNavigate }: { onNavigate: () => void
             ['--i' as string]: i,
           };
           const common = {
-            className: `qg-tile qg-${t.key}`,
+            className: `qg-tile qg-${t.key}${t.wide ? ' qg-wide' : ''}`,
             style,
             onPointerMove: onMove,
             onPointerLeave: onLeave,

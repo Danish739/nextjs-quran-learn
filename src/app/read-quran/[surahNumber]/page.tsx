@@ -1234,7 +1234,7 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
             <TafseerModal
                 isOpen={tafseerModalVerse !== null}
                 onClose={closeTafseer}
-                verse={verses.find(v => v.verse_number === tafseerModalVerse) ?? null}
+                verse={(versesWithWords.find(v => v.verse_number === tafseerModalVerse) ?? verses.find(v => v.verse_number === tafseerModalVerse)) ?? null}
                 chapter={chapter}
                 allVerses={verses}
                 onNavigate={(verseNumber) => setTafseerModalVerse(verseNumber)}

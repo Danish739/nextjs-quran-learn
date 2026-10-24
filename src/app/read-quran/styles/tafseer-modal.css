@@ -200,6 +200,8 @@ html.rr-dark .tf-tab.on small { color: #06231a; }
     text-align: center;
     color: var(--tf-ink);
 }
+.tf-verse-ar.is-qcf { line-height: 2; word-spacing: 0.05em; font-feature-settings: normal; }
+.tf-qcf-end { color: var(--tf-accent); }
 .tf-verse-tr {
     margin: 0;
     font-size: 0.92rem;

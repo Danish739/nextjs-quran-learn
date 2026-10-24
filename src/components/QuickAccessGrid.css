@@ -383,8 +383,41 @@
   }
 }
 
+/* ── Wide featured tile (Translation Audio) ── */
+.qg-wide {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 18px;
+  min-height: 0;
+}
+.qg-wide .qg-top { flex: none; }
+.qg-wide .qg-text { flex: 1; min-width: 0; }
+.qg-wide .qg-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+  max-width: 46%;
+  margin-right: 36px;
+  transform: translateZ(20px);
+}
+.qg-wide .qg-chips i {
+  font-style: normal;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--to);
+  background: color-mix(in srgb, var(--from) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--from) 30%, transparent);
+}
+.qg-wide .qg-top .qg-arrow { position: absolute; top: 18px; right: 18px; }
+
 /* ── Responsive ── */
 @media (max-width: 900px) {
+  .qg-wide .qg-chips { display: none; }
   .qg-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;

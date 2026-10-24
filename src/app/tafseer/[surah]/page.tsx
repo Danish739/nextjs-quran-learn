@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ChevronLeft, ChevronRight, BookOpen, Search, ChevronDown, X } from 'lucide-react';
 import TafseerModal from '@/app/read-quran/components/TafseerModal';
 import '@/app/read-quran/styles/tafseer-modal.css';
+import { loadQcfFontsForPages, qcfFontFamily } from '@/app/read-quran/lib/qcf';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface SurahMeta {
@@ -127,6 +128,11 @@ const ALL_SURAHS: SurahMeta[] = [
     { num: 114, ar: 'الناس', name: 'An-Nas', meaning: 'The Mankind', v: 6, t: 'Meccan' },
 ];
 
+interface GlyphWord { id?: number; code_v2: string; page_number?: number; char_type_name?: string }
+interface VerseRow { num: number; key: string; arabic: string; words: GlyphWord[]; translation: string }
+
+const escapeGlyph = (v: string) => v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
 interface PageProps { params: Promise<{ surah: string }> }
 
 export default function TafseerSurahPage({ params }: PageProps) {
@@ -134,66 +140,45 @@ export default function TafseerSurahPage({ params }: PageProps) {
     const surahNum = parseInt(surahParam);
     const meta = ALL_SURAHS.find(s => s.num === surahNum);
 
-    const [verses, setVerses] = useState<{ num: number; arabic: string; translation: string; key: string }[]>([]);
+    const [verses, setVerses] = useState<VerseRow[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(false);
+    const [attempt, setAttempt] = useState(0);
     const [modalVerseNum, setModalVerseNum] = useState<number | null>(null);
     const [showSurahPicker, setShowSurahPicker] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
 
-    const toArabicNumeral = (num: number): string => {
-        const d = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
-        return num.toString().split('').map(c => d[parseInt(c)]).join('');
-        return text
-            .replace(/[\n\r\t]+/g, ' ')
-            .replace(/\u06E1/g, '\u0652')
-            .replace(/[\uFBB2-\uFBC2]/g, '')
-            .replace(/\s{2,}/g, ' ')
-            .trim();
-    };
-
-    // Strip the Bismillah prefix from verse 1 text for surahs that have it shown separately
-    const stripBismillah = (text: string): string => {
-        const bare = (s: string) => s.replace(/[\u064B-\u065F\u0610-\u061A\u06D6-\u06FF]/g, '');
-        if (/^بسم\s+[اٱ]لله\s+[اٱ]لرحمن\s+[اٱ]لرحيم/.test(bare(text.trimStart()))) {
-            return text.split(/\s+/).slice(4).join(' ').trim();
-        }
-        return text;
-    };
-
     useEffect(() => {
         if (!surahNum || surahNum < 1 || surahNum > 114) return;
+        let alive = true;
         setLoading(true);
+        setError(false);
         setVerses([]);
         setModalVerseNum(null);
 
-        // Fetch IndoPak text from QuranCDN (same source as read-quran) + translation from alquran.cloud in parallel
-        Promise.all([
-            fetch(`https://api.qurancdn.com/api/v4/quran/verses/indopak?chapter_number=${surahNum}&per_page=300`).then(r => r.json()),
-            fetch(`https://api.alquran.cloud/v1/surah/${surahNum}/en.sahih`).then(r => r.json()),
-        ])
-            .then(([indopakJson, enJson]) => {
-                if (enJson.code !== 200) throw new Error('API error');
-                const arVerses: any[] = indopakJson?.verses || [];
-                const enAyahs: any[] = enJson.data?.ayahs || [];
-                const hasBismillah = surahNum !== 1 && surahNum !== 9;
-                const enMap = new Map(enAyahs.map((a: any) => [a.numberInSurah, a.text]));
-                setVerses(arVerses.map((a: any) => {
-                    const rawText = a.text_indopak || '';
-                    const verseNum: number = a.verse_number ?? a.numberInSurah ?? 0;
-                    const cleaned = cleanIndopakText(
-                        hasBismillah && verseNum === 1 ? stripBismillah(rawText) : rawText
-                    );
-                    return {
-                        num: verseNum,
-                        arabic: cleaned,
-                        translation: enMap.get(verseNum) || '',
-                        key: `${surahNum}:${verseNum}`,
-                    };
+        // One request: Mushaf glyph words (same data + fonts as Read Quran) with Sahih International
+        const url =
+            `https://api.quran.com/api/v4/verses/by_chapter/${surahNum}?language=en&words=true&mushaf=1&translations=20` +
+            `&fields=text_uthmani,code_v2&word_fields=code_v2,page_number,char_type_name&per_page=300`;
+        fetch(url)
+            .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+            .then(json => {
+                if (!alive) return;
+                const rows: VerseRow[] = (json.verses ?? []).map((v: any) => ({
+                    num: v.verse_number,
+                    key: v.verse_key,
+                    arabic: v.text_uthmani ?? '',
+                    words: (v.words ?? []).filter((w: any) => w.code_v2),
+                    translation: String(v.translations?.[0]?.text ?? '').replace(/<sup[\s\S]*?<\/sup>/gi, '').replace(/<[^>]+>/g, '').trim(),
                 }));
+                if (rows.length === 0) throw new Error('empty');
+                loadQcfFontsForPages(rows.flatMap(r => r.words.map(w => w.page_number ?? 1)));
+                setVerses(rows);
             })
-            .catch(console.error)
-            .finally(() => setLoading(false));
-    }, [surahNum]);
+            .catch(() => alive && setError(true))
+            .finally(() => alive && setLoading(false));
+        return () => { alive = false; };
+    }, [surahNum, attempt]);
 
     const prevSurah = surahNum > 1 ? ALL_SURAHS.find(s => s.num === surahNum - 1) : null;
     const nextSurah = surahNum < 114 ? ALL_SURAHS.find(s => s.num === surahNum + 1) : null;
@@ -260,6 +245,8 @@ export default function TafseerSurahPage({ params }: PageProps) {
         .ts-verse-num{width:38px;height:38px;border-radius:50%;border:1.5px solid var(--brand-primary);background:var(--brand-primary-soft);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--brand-primary);flex-shrink:0;margin-top:6px;font-family:'Lexend',sans-serif}
         .ts-arabic-block{flex:1;direction:rtl;text-align:right}
         .ts-arabic{font-family: "UthmanicHafs", serif;font-size:26px;line-height:2;color:var(--text-arabic)}
+        .ts-arabic.is-qcf{line-height:2.1;word-spacing:0.05em;font-feature-settings:normal}
+        .ts-qcf-end{color:var(--brand-primary)}
         @media(max-width:640px){.ts-arabic{font-size:21px}}
 
         /* ── TRANSLATION ── */
@@ -387,8 +374,15 @@ export default function TafseerSurahPage({ params }: PageProps) {
                         </div>
                     )}
 
+                    {!loading && error && (
+                        <div style={{ textAlign: 'center', padding: '48px 16px', color: 'var(--text-muted)' }}>
+                            <p style={{ marginBottom: 12 }}>Couldn’t load this surah. Check your connection and try again.</p>
+                            <button className="ts-tafseer-btn" onClick={() => setAttempt(a => a + 1)}>Retry</button>
+                        </div>
+                    )}
+
                     {/* Verse list */}
-                    {!loading && (
+                    {!loading && !error && (
                         <>
                             {/* Bismillah */}
                             {meta.num !== 1 && meta.num !== 9 && (
@@ -408,8 +402,17 @@ export default function TafseerSurahPage({ params }: PageProps) {
                                         <div className="ts-verse-top">
                                             <div className="ts-verse-num" aria-label={`Verse ${verse.num}`}>{verse.num}</div>
                                             <div className="ts-arabic-block">
-                                                <p className="ts-arabic">
-                                                    {verse.arabic} {'\u06DD' + toArabicNumeral(verse.num)}
+                                                <p className={`ts-arabic${verse.words.length ? ' is-qcf' : ''}`} lang="ar">
+                                                    {verse.words.length ? verse.words.map((w, i) => (
+                                                        <span key={w.id ?? i}>
+                                                            <span
+                                                                className={w.char_type_name === 'end' ? 'ts-qcf-end' : undefined}
+                                                                style={{ fontFamily: `${qcfFontFamily(w.page_number ?? 1)}, UthmanicHafs, serif` }}
+                                                                dangerouslySetInnerHTML={{ __html: escapeGlyph(w.code_v2) }}
+                                                            />
+                                                            {i < verse.words.length - 1 ? ' ' : ''}
+                                                        </span>
+                                                    )) : verse.arabic}
                                                 </p>
                                             </div>
                                         </div>
@@ -535,6 +538,7 @@ export default function TafseerSurahPage({ params }: PageProps) {
                     verse_number: modalVerse.num,
                     verse_key: modalVerse.key,
                     text_uthmani: modalVerse.arabic,
+                    words: modalVerse.words,
                     translations: [{ text: modalVerse.translation }],
                 } : null;
                 const allVerseObjs = verses.map(v => ({
@@ -542,6 +546,7 @@ export default function TafseerSurahPage({ params }: PageProps) {
                     verse_number: v.num,
                     verse_key: v.key,
                     text_uthmani: v.arabic,
+                    words: v.words,
                     translations: [{ text: v.translation }],
                 }));
                 const chapterObj = meta ? {
