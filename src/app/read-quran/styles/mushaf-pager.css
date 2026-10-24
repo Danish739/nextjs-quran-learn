@@ -517,3 +517,34 @@
     stroke-dashoffset: 0;
   }
 }
+
+/* ── Mushaf page on small screens ───────────────────────────
+   The shared Uthmani stylesheet sizes glyphs from the viewport *height*
+   and makes lines flow inline on mobile, so full 15-line pages overflow.
+   Here every line keeps its exact Mushaf line, and the glyph size is derived
+   from the available *width* (a Madani line is ≈ 17.6 × the font size wide). */
+@media (max-width: 767px) {
+  .mp .mp-page.uth-big.uth-ar {
+    text-align: initial;
+  }
+  .mp .mp-page .uth-ar-page {
+    padding: 0;
+  }
+  .mp .mp-page .uth-ar-lines {
+    width: 100%;
+  }
+  .mp .mp-page .uth-ar-line {
+    display: block;
+    width: calc(100vw - 20px);
+    max-width: 100%;
+    margin-inline: auto;
+  }
+  .mp .mp-page .uth-ar-words {
+    --mp-fs: min(3.5vh, calc((100vw - 20px) / 17.6));
+    font-size: var(--mp-fs);
+    line-height: calc(var(--mp-fs) * 1.8);
+  }
+  .mp .mp-page .uth-ar-word {
+    white-space: nowrap;
+  }
+}
