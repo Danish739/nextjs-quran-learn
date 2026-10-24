@@ -450,7 +450,7 @@ export default function TajweedClient() {
             <p>Every rule is color-coded on the real text of the Quran with a live recitation, so you can learn by looking and listening.</p>
             <div className="tj-cta">
               <a href="#rules" className="tj-btn tj-btn-gold">Explore the rules</a>
-              <Link href="/mushaf-reader" className="tj-btn tj-btn-ghost">Read with tajweed colors</Link>
+              <Link href="/read-quran/1" className="tj-btn tj-btn-ghost">Read with tajweed colors</Link>
             </div>
             <ul className="tj-stats">
               <li><b>14</b><span>colored rules</span></li>
@@ -544,7 +544,7 @@ export default function TajweedClient() {
           <div className="tj-final">
             <h3>Ready to recite with confidence?</h3>
             <p>Open any surah in the reader and switch to the Tajweed script.</p>
-            <Link href="/mushaf-reader" className="tj-btn tj-btn-gold">Start reading</Link>
+            <Link href="/read-quran/1" className="tj-btn tj-btn-gold">Start reading</Link>
           </div>
         </div>
       </section>
