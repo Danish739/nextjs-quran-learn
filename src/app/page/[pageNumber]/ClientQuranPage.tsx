@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { loadQcfFontsForPages, qcfFontFamily } from "@/app/read-quran/lib/qcf";
 
 const TOTAL_PAGES = 604;
 
@@ -12,6 +13,10 @@ type Ayah = {
   numberInSurah: number;
   audioUrl?: string;
 };
+
+type GlyphWord = { id?: number; code_v2: string; page_number?: number; char_type_name?: string };
+
+const escapeGlyph = (v: string) => v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 type ClientQuranPageProps = {
   pageNumber: number;
@@ -92,6 +97,29 @@ function ClientQuranPage({ pageNumber, translationEdition, audioEdition, ayahs }
   const stopFlag = useRef(false);
 
   const progressPercent = Math.round((pageNumber / totalPages) * 100);
+
+  // Mushaf glyph words for this page: the same data and page fonts Read Quran draws with
+  const [glyphs, setGlyphs] = useState<Record<string, GlyphWord[]>>({});
+  useEffect(() => {
+    let alive = true;
+    setGlyphs({});
+    fetch(`https://api.quran.com/api/v4/verses/by_page/${pageNumber}?words=true&mushaf=1&word_fields=code_v2,page_number,char_type_name&per_page=50`)
+      .then(r => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+      .then(json => {
+        if (!alive) return;
+        const map: Record<string, GlyphWord[]> = {};
+        const pages: number[] = [];
+        for (const v of json.verses ?? []) {
+          const words: GlyphWord[] = (v.words ?? []).filter((w: GlyphWord) => w.code_v2);
+          map[v.verse_key] = words;
+          words.forEach(w => pages.push(w.page_number ?? pageNumber));
+        }
+        loadQcfFontsForPages(pages);
+        setGlyphs(map);
+      })
+      .catch(() => { /* plain Uthmani text stays as the fallback */ });
+    return () => { alive = false; };
+  }, [pageNumber]);
 
   // Sync dark mode from <html>
   useEffect(() => {
@@ -182,7 +210,7 @@ function ClientQuranPage({ pageNumber, translationEdition, audioEdition, ayahs }
                 </div>
 
                 {/* Arabic title */}
-                <div className="font-arabic" style={{ fontSize: 'clamp(28px, 7vw, 42px)', color: C.green, fontWeight: 700, lineHeight: 1.3, marginBottom: 4 }}>
+                <div className="font-arabic" style={{ fontSize: 'clamp(28px, 7vw, 42px)', color: C.green, fontWeight: 400, lineHeight: 1.3, marginBottom: 4 }}>
                   صفحة {pageNumber}
                 </div>
 
@@ -299,7 +327,7 @@ function ClientQuranPage({ pageNumber, translationEdition, audioEdition, ayahs }
                             {ay.numberInSurah}
                           </div>
                           <div>
-                            <span style={{ fontSize: 13, fontWeight: 600, color: C.text }}>Verse {ay.numberInSurah}</span>
+                            <span style={{ fontSize: 13, fontWeight: 600, color: C.text }}>Ayah {ay.numberInSurah}</span>
                             <span style={{ fontSize: 11, color: C.muted, marginLeft: 8 }}>#{ay.number}</span>
                           </div>
                         </div>
@@ -312,10 +340,22 @@ function ClientQuranPage({ pageNumber, translationEdition, audioEdition, ayahs }
                         <div className="font-arabic" style={{
                           fontSize: 'clamp(22px, 5vw, 28px)',
                           color: C.text, direction: 'rtl', textAlign: 'right',
-                          lineHeight: 2.1, marginBottom: 16, paddingBottom: 16,
+                          lineHeight: 2.1, wordSpacing: '0.05em', fontFeatureSettings: 'normal', marginBottom: 16, paddingBottom: 16,
                           borderBottom: `1px solid ${dark ? '#1e3a2a44' : '#f1f5f9'}`,
                         }}>
-                          {ay.arabic}
+                          {(() => {
+                            const words = glyphs[`${ay.surahNumber}:${ay.numberInSurah}`];
+                            if (!words || words.length === 0) return ay.arabic;
+                            return words.map((w, i) => (
+                              <span key={w.id ?? i}>
+                                <span
+                                  style={{ fontFamily: `${qcfFontFamily(w.page_number ?? pageNumber)}, UthmanicHafs, serif`, ...(w.char_type_name === 'end' ? { color: C.green } : {}) }}
+                                  dangerouslySetInnerHTML={{ __html: escapeGlyph(w.code_v2) }}
+                                />
+                                {i < words.length - 1 ? ' ' : ''}
+                              </span>
+                            ));
+                          })()}
                         </div>
 
                         {/* Translation */}
