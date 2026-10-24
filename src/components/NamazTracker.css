@@ -186,6 +186,19 @@
   .nt-pcard .nt-opt { padding: 0 2px; gap: 3px; }
   .nt-pcard .nt-opt svg { width: 13px; height: 13px; }
 
+  .nt-m-bar.is-month:has(.nt-m-bar-title:first-child) { padding: 0 4px 0 16px; }
+  .nt-m-icon:disabled { color: #b8bfba; cursor: default; }
+
+  .nt-ask { border-radius: 16px; padding: 16px; background: #e6f2ea; border-color: #b9d9c6; }
+  .nt-ask h2 { font-size: 20px; font-weight: 800; color: #0b5d43; }
+  .nt-ask p { margin-top: 4px; font-size: 14px; color: #4b5650; }
+  .nt-ask .nt-primary { margin-top: 12px; }
+
+  .nt-other-date { display: flex; gap: 8px; }
+  .nt-other-btn { position: relative; flex: 1 1 auto; min-height: 48px; border-radius: 12px; border: 1px solid #d3d8d0; background: #ffffff; color: #0b5d43; font-size: 15px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 8px; overflow: hidden; }
+  .nt-other-btn input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; border: 0; padding: 0; cursor: pointer; -webkit-appearance: none; appearance: none; }
+  .nt .nt-back-today { flex: none; min-height: 48px; padding: 0 16px; border-radius: 12px; border: none; background: #0b5d43; color: #ffffff; font-size: 14px; font-weight: 800; cursor: pointer; }
+
   .nt-m-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
   .nt-m-stats > div { background: #ffffff; border: 1px solid #e1e5de; border-radius: 14px; padding: 10px 12px; }
   .nt-m-stats b { display: block; font-size: 20px; font-weight: 800; color: #16231c; }

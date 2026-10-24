@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import './NamazTracker.css';
 
 const PRAYERS = [
@@ -139,7 +139,9 @@ export default function NamazTracker() {
   const [today, setToday] = useState<Date | null>(null);
   const [cursor, setCursor] = useState<Date | null>(null);
   const [selected, setSelected] = useState('');
-  const [mobileView, setMobileView] = useState<'today' | 'month'>('today');
+  /** mobile opens on the calendar; tapping a day opens its check-in */
+  const [mobileView, setMobileView] = useState<'today' | 'month'>('month');
+  const dateInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const now = new Date();
@@ -149,6 +151,8 @@ export default function NamazTracker() {
     try { setLog(loadLog()); } catch {}
     setLoaded(true);
   }, []);
+
+  useEffect(() => { window.scrollTo(0, 0); }, [mobileView]);
 
   useEffect(() => {
     if (!loaded) return;
@@ -202,9 +206,15 @@ export default function NamazTracker() {
   const range = hijriRange(new Date(year, month, 1), new Date(year, month, daysInMonth));
   const isCurrentMonth = year === today.getFullYear() && month === today.getMonth();
   const shift = (n: number) => setCursor(new Date(year, month + n, 1));
-  const goToday = () => {
-    setCursor(new Date(today.getFullYear(), today.getMonth(), 1));
-    setSelected(todayKey);
+  const goToDate = (k: string) => {
+    const d = fromKey(k);
+    setCursor(new Date(d.getFullYear(), d.getMonth(), 1));
+    setSelected(k);
+  };
+  const goToday = () => goToDate(todayKey);
+  /** the transparent date input sits over the button, so a tap opens the native picker; showPicker covers desktop browsers */
+  const openPicker = () => {
+    try { dateInput.current?.showPicker(); } catch {}
   };
 
   const days = Array.from({ length: daysInMonth }, (_, i) => {
@@ -423,11 +433,9 @@ export default function NamazTracker() {
       <div className="nt-mobile">
         {mobileView === 'today' ? (
           <>
-            <header className="nt-m-bar is-today">
-              <h1>Namaz</h1>
-              <button type="button" className="nt-m-icon" onClick={() => setMobileView('month')} aria-label="Month calendar">
-                <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4.5" width="18" height="17" rx="3" /><path d="M3 9.5h18" /><path d="M8 2.5v4" /><path d="M16 2.5v4" /></svg>
-              </button>
+            <header className="nt-m-bar is-month">
+              <button type="button" className="nt-m-icon" onClick={() => setMobileView('month')} aria-label="Back to calendar"><Chevron dir="left" /></button>
+              <div className="nt-m-bar-title"><h1>Namaz</h1></div>
             </header>
 
             <div className="nt-m-body">
@@ -459,28 +467,46 @@ export default function NamazTracker() {
               </ol>
 
               <div className="nt-m-rows">{rows(true)}</div>
+
+              <div className="nt-other-date">
+                <span className="nt-other-btn">
+                  <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4.5" width="18" height="17" rx="3" /><path d="M3 9.5h18" /><path d="M8 2.5v4" /><path d="M16 2.5v4" /></svg>
+                  Mark for another date
+                  <input
+                    ref={dateInput}
+                    type="date"
+                    aria-label="Mark for another date"
+                    max={todayKey}
+                    value={selected}
+                    onClick={openPicker}
+                    onChange={e => { if (e.target.value && e.target.value <= todayKey) goToDate(e.target.value); }}
+                  />
+                </span>
+                {selected !== todayKey && (
+                  <button type="button" className="nt-back-today" onClick={goToday}>Back to today</button>
+                )}
+              </div>
             </div>
           </>
         ) : (
           <>
             <header className="nt-m-bar is-month">
-              <button type="button" className="nt-m-icon" onClick={() => { goToday(); setMobileView('today'); }} aria-label="Back to today">
-                <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
-              </button>
               <div className="nt-m-bar-title">
                 <h1>{monthLabel}</h1>
                 {range && <p>{range}</p>}
               </div>
+              <button type="button" className="nt-m-icon" onClick={() => shift(-1)} aria-label="Previous month"><Chevron dir="left" /></button>
+              <button type="button" className="nt-m-icon" onClick={() => shift(1)} disabled={isCurrentMonth} aria-label="Next month"><Chevron dir="right" /></button>
             </header>
 
             <div className="nt-m-body">
-              <div className="nt-m-stats">
-                <div><b className="nt-brand">{pct}</b><span>Completed</span></div>
-                <div><b>{streak}</b><span>Day streak</span></div>
-                <div><b>{jamaat}</b><span>In jamaat</span></div>
-              </div>
-
-              {monthSummary}
+              <section className="nt-card nt-ask">
+                <h2>How is your namaz going?</h2>
+                <p>Tap a day on the calendar to mark its five prayers.</p>
+                <button type="button" className="nt-primary" onClick={() => { goToday(); setMobileView('today'); }}>
+                  Mark today’s prayers
+                </button>
+              </section>
 
               <section className="nt-card nt-m-cal" aria-label="Calendar">
                 <div className="nt-m-grid">
@@ -506,6 +532,14 @@ export default function NamazTracker() {
                   ))}
                 </ul>
               </section>
+
+              <div className="nt-m-stats">
+                <div><b className="nt-brand">{pct}</b><span>Completed</span></div>
+                <div><b>{streak}</b><span>Day streak</span></div>
+                <div><b>{jamaat}</b><span>In jamaat</span></div>
+              </div>
+
+              {monthSummary}
 
               <section className="nt-card nt-qaza" aria-labelledby="nt-mqaza-title">
                 <div className="nt-qaza-head">
