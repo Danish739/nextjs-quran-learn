@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import NextPrayerCard, { useReminders } from './NextPrayerCard';
 import './NamazTracker.css';
 
 const PRAYERS = [
@@ -142,6 +143,7 @@ export default function NamazTracker() {
   /** mobile opens on the calendar; tapping a day opens its check-in */
   const [mobileView, setMobileView] = useState<'today' | 'month'>('month');
   const dateInput = useRef<HTMLInputElement>(null);
+  const reminders = useReminders();
 
   useEffect(() => {
     const now = new Date();
@@ -324,11 +326,19 @@ export default function NamazTracker() {
             <h1>Namaz Tracker</h1>
             <p>Mark each of the five daily prayers after you pray. Your log is private and only you can see it.</p>
           </div>
-          <button type="button" className="nt-remind">
+          <button
+            type="button"
+            className="nt-remind"
+            onClick={() => reminders.on
+              ? document.getElementById('nt-next')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+              : reminders.turnOn()}
+          >
             <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B5D43" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg>
-            Prayer reminders
+            {reminders.on ? 'Reminders on' : 'Prayer reminders'}
           </button>
         </div>
+
+        <NextPrayerCard id="nt-next" />
 
         <div className="nt-stats">
           <div><p>Completed this month</p><b className="nt-brand">{pct}</b><span>{done} of {total} prayers since 1 {monthName}</span></div>
@@ -500,6 +510,8 @@ export default function NamazTracker() {
             </header>
 
             <div className="nt-m-body">
+              <NextPrayerCard />
+
               <section className="nt-card nt-ask">
                 <h2>How is your namaz going?</h2>
                 <p>Tap a day on the calendar to mark its five prayers.</p>

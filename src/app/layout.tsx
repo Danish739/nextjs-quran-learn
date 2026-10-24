@@ -9,6 +9,7 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import './globals.css';
 import ClientWrapper from '@/components/ClientWrapper';
 import QuickAccessWidget from '@/components/QuickAccessWidget';
+import PrayerReminders from '@/components/PrayerReminders';
 
 export const metadata: Metadata = {
   title: 'Learn Quran - Learn the Noble Quran | Interactive Quranic Education',
@@ -152,6 +153,7 @@ export default function RootLayout({
           </div>
           <Footer />
           <QuickAccessWidget />
+          <PrayerReminders />
         </ThemeProvider>
       </body>
     </html>

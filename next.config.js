@@ -48,7 +48,8 @@ const nextConfig = {
           },
           {
             key: 'Permissions-Policy',
-            value: 'geolocation=()'
+            // self: our own pages may ask for location (prayer times); embedded third parties may not
+            value: 'geolocation=(self), microphone=(), camera=()'
           }
         ],
       },

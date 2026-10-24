@@ -1,0 +1,43 @@
+/* Next prayer + reminders card — Namaz Tracker palette */
+
+.np {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 24px;
+  padding: 20px 24px; border-radius: 20px; box-sizing: border-box;
+  background: linear-gradient(135deg, #0b5d43 0%, #08422f 100%); color: #ffffff;
+}
+.np p { margin: 0; }
+.np-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.np-label { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #b9e4cc; }
+.np-pulse { width: 8px; height: 8px; border-radius: 50%; background: #5fd3a5; box-shadow: 0 0 0 0 rgba(95, 211, 165, 0.7); animation: np-pulse 2s infinite; }
+@keyframes np-pulse { 70% { box-shadow: 0 0 0 8px rgba(95, 211, 165, 0); } 100% { box-shadow: 0 0 0 0 rgba(95, 211, 165, 0); } }
+.np-name { display: flex; align-items: baseline; gap: 12px; }
+.np-name b { font-size: 30px; line-height: 1.1; font-weight: 800; color: #ffffff; }
+.np-name [lang='ar'] { font-family: var(--nt-font-ar, 'Amiri'), serif; font-size: 28px; line-height: 1; color: #f2d48e; }
+.np .np-when { font-size: 15px; color: #d6eee1; }
+.np-when b { color: #ffffff; font-weight: 800; }
+.np-tab { font-variant-numeric: tabular-nums; }
+.np .np-loc { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 4px; font-size: 13px; color: #b9e4cc; }
+.np-link { padding: 0; border: none; background: none; color: #f2d48e !important; font: inherit; font-weight: 700; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.np-link:disabled { opacity: 0.7; cursor: default; }
+.np-skel { width: 180px; height: 52px; border-radius: 10px; background: rgba(255, 255, 255, 0.12); }
+
+.np-remind { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; max-width: 360px; }
+.np .np-bell { display: inline-flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 20px; border-radius: 12px; border: none; background: #ffffff; color: #0b5d43; font-size: 15px; font-weight: 800; cursor: pointer; }
+.np .np-bell:disabled { opacity: 0.6; cursor: default; }
+.np-on-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+.np-on { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 12px; border-radius: 999px; background: rgba(95, 211, 165, 0.18); color: #ffffff; font-size: 14px; font-weight: 800; }
+.np select { min-height: 40px; padding: 0 10px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.3); background: rgba(255, 255, 255, 0.08); color: #ffffff; font: inherit; font-size: 14px; font-weight: 700; }
+.np select option { color: #16231c; }
+.np .np-off { min-height: 40px; padding: 0 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.3); background: transparent; color: #ffffff; font-size: 14px; font-weight: 700; cursor: pointer; }
+.np .np-hint { font-size: 12px; line-height: 1.4; color: #b9e4cc; text-align: right; }
+.np .np-error { flex-basis: 100%; font-size: 13px; color: #ffd2cc; }
+
+@media (max-width: 767px) {
+  .np { padding: 16px; border-radius: 16px; gap: 14px; }
+  .np-name b { font-size: 26px; }
+  .np-name [lang='ar'] { font-size: 24px; }
+  .np-remind { align-items: stretch; max-width: none; width: 100%; }
+  .np .np-bell { justify-content: center; width: 100%; }
+  .np-on-row { justify-content: flex-start; }
+  .np .np-hint { text-align: left; }
+}

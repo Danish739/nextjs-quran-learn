@@ -19,7 +19,8 @@ export function middleware(request: NextRequest) {
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
 
   // Control browser features and APIs
-  response.headers.set('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+  // geolocation=(self): this site may ask for location (prayer times); embedded third parties may not
+  response.headers.set('Permissions-Policy', 'geolocation=(self), microphone=(), camera=()');
 
   // ✅ Performance Headers
   // Enable compression
