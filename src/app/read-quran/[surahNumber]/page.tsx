@@ -861,14 +861,6 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
                                 <span className="rr-btn-label">Ayah</span>
                             </button>
                         )}
-                        <button
-                            className={`rr-icon-btn${audioEnabled ? ' on' : ''}`}
-                            onClick={() => { if (audioEnabled) { stopAudio(); setAudioEnabled(false); } else setAudioEnabled(true); }}
-                            title={audioEnabled ? 'Close player' : 'Listen'}
-                        >
-                            <span className="material-symbols-outlined">headphones</span>
-                            <span className="rr-btn-label">Listen</span>
-                        </button>
                         <button className="rr-icon-btn rr-theme-btn" onClick={toggleReaderTheme} title={readerDark ? 'Day mode' : 'Night mode'} aria-label={readerDark ? 'Switch to day mode' : 'Switch to night mode'}>
                             <span className="material-symbols-outlined">{readerDark ? 'light_mode' : 'dark_mode'}</span>
                         </button>
