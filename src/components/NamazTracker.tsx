@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import NextPrayerCard, { useReminders } from './NextPrayerCard';
 import NamazInsights from './NamazInsights';
 import {
@@ -132,7 +132,6 @@ export default function NamazTracker() {
   const [selected, setSelected] = useState('');
   /** mobile opens on the calendar; tapping a day opens its check-in */
   const [mobileView, setMobileView] = useState<'today' | 'month'>('month');
-  const dateInput = useRef<HTMLInputElement>(null);
   const reminders = useReminders();
   const [insightsOpen, setInsightsOpen] = useState(false);
   const closeInsights = useCallback(() => setInsightsOpen(false), []);
@@ -206,10 +205,6 @@ export default function NamazTracker() {
     setSelected(k);
   };
   const goToday = () => goToDate(todayKey);
-  /** the transparent date input sits over the button, so a tap opens the native picker; showPicker covers desktop browsers */
-  const openPicker = () => {
-    try { dateInput.current?.showPicker(); } catch {}
-  };
 
   const days = Array.from({ length: daysInMonth }, (_, i) => {
     const date = new Date(year, month, i + 1);
@@ -471,24 +466,10 @@ export default function NamazTracker() {
 
               <div className="nt-m-rows">{rows(true)}</div>
 
-              <div className="nt-other-date">
-                <span className="nt-other-btn">
-                  <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4.5" width="18" height="17" rx="3" /><path d="M3 9.5h18" /><path d="M8 2.5v4" /><path d="M16 2.5v4" /></svg>
-                  Mark for another date
-                  <input
-                    ref={dateInput}
-                    type="date"
-                    aria-label="Mark for another date"
-                    max={todayKey}
-                    value={selected}
-                    onClick={openPicker}
-                    onChange={e => { if (e.target.value && e.target.value <= todayKey) goToDate(e.target.value); }}
-                  />
-                </span>
-                {selected !== todayKey && (
-                  <button type="button" className="nt-back-today" onClick={goToday}>Back to today</button>
-                )}
-              </div>
+              <button type="button" className="nt-other-btn" onClick={() => setMobileView('month')}>
+                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4.5" width="18" height="17" rx="3" /><path d="M3 9.5h18" /><path d="M8 2.5v4" /><path d="M16 2.5v4" /></svg>
+                Mark for another date
+              </button>
             </div>
           </>
         ) : (
