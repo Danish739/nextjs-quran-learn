@@ -40,6 +40,21 @@ interface PrayerApiResponse {
   };
 }
 
+async function fetchJsonWithTimeout<T>(url: string, timeoutMs = 8000): Promise<T> {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    if (!response.ok) {
+      throw new Error(`Request failed with status ${response.status}`);
+    }
+    return await response.json() as T;
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+}
+
 const PRAYER_NAMES: { key: keyof PrayerTimesData; label: string; icon: string }[] = [
   { key: 'Fajr', label: 'Fajr', icon: 'routine' },
   { key: 'Sunrise', label: 'Sunrise', icon: 'wb_twilight' },
@@ -322,8 +337,9 @@ export default function HomePage() {
       // No `method` → Aladhan picks the calculation method used in that region
       const d = new Date();
       const date = `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
-      const res = await fetch(`https://api.aladhan.com/v1/timings/${date}?latitude=${lat}&longitude=${lng}`);
-      const json: PrayerApiResponse = await res.json();
+      const json = await fetchJsonWithTimeout<PrayerApiResponse>(
+        `https://api.aladhan.com/v1/timings/${date}?latitude=${lat}&longitude=${lng}`
+      );
       if (source !== 'gps' && preciseRef.current) return;
       const t = json.data.timings;
       setPrayerTimes({ Fajr: t.Fajr, Sunrise: t.Sunrise, Dhuhr: t.Dhuhr, Asr: t.Asr, Maghrib: t.Maghrib, Isha: t.Isha });
@@ -336,8 +352,16 @@ export default function HomePage() {
       let name = label ?? '';
       if (!name) {
         try {
-          const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=10`);
-          const geoJson = await geoRes.json();
+          const geoJson = await fetchJsonWithTimeout<{
+            address?: {
+              city?: string;
+              town?: string;
+              village?: string;
+              county?: string;
+              state?: string;
+              country?: string;
+            };
+          }>(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=10`);
           const city = geoJson.address?.city || geoJson.address?.town || geoJson.address?.village || geoJson.address?.county || geoJson.address?.state || '';
           const country = geoJson.address?.country || '';
           name = city ? `${city}, ${country}` : country || 'Your Location';
@@ -393,8 +417,12 @@ export default function HomePage() {
 
     // 2. Approximate location from IP (no permission needed)
     if (!hasCache) {
-      fetch('https://get.geojs.io/v1/ip/geo.json')
-        .then(r => r.json())
+      fetchJsonWithTimeout<{
+        latitude?: string;
+        longitude?: string;
+        city?: string;
+        country?: string;
+      }>('https://get.geojs.io/v1/ip/geo.json')
         .then(ip => {
           const lat = parseFloat(ip.latitude);
           const lng = parseFloat(ip.longitude);

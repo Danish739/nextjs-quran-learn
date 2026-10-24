@@ -919,7 +919,7 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
                                                 );
                                             })
                                         ) : (
-                                            <p className="rr-arabic font-arabic" style={{ fontSize }}>{verseArabic(verse)}</p>
+                                            <p className="rr-arabic font-arabic" style={{ ['--ar' as string]: `${fontSize}px` }}>{verseArabic(verse)}</p>
                                         )}
                                     </div>
                                     {showTranslation && (
@@ -966,7 +966,7 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
                                                 </button>
                                             </div>
                                         </div>
-                                        <p className={`rr-arabic${glyphWords.length ? ' is-qcf' : ' font-arabic'}`} lang="ar" style={{ fontSize }} onClick={() => { setAudioEnabled(true); playVerse(verse.verse_number, true); }}>
+                                        <p className={`rr-arabic${glyphWords.length ? ' is-qcf' : ' font-arabic'}`} lang="ar" style={{ ['--ar' as string]: `${fontSize}px` }} onClick={() => { setAudioEnabled(true); playVerse(verse.verse_number, true); }}>
                                             {glyphWords.length ? (
                                                 <QcfAyah words={glyphWords} />
                                             ) : (

@@ -1588,3 +1588,247 @@ html.rr-lock body {
     scroll-behavior: auto;
   }
 }
+
+
+/* ── Ayah text size: user setting via --ar, scaled down on small screens ── */
+.rr-arabic {
+  font-size: var(--ar, 32px);
+}
+
+/* ══════════════ Phone layout (≤ 640px) ══════════════ */
+@media (max-width: 640px) {
+  /* compact two-row top bar */
+  .rr-bar {
+    padding: 8px 10px 8px;
+    row-gap: 8px;
+    column-gap: 4px;
+  }
+  .rr-bar-left {
+    gap: 4px;
+    min-width: 0;
+  }
+  .rr-bar-right {
+    gap: 0;
+  }
+  .rr-icon-btn {
+    min-width: 36px;
+    height: 36px;
+    padding: 0 6px;
+  }
+  .rr-surah-btn {
+    height: 40px;
+    padding: 0 8px 0 4px;
+    gap: 8px;
+    min-width: 0;
+  }
+  .rr-surah-num {
+    width: 28px;
+    height: 30px;
+    font-size: 11.5px;
+  }
+  .rr-surah-btn-text b {
+    font-size: 14px;
+  }
+  .rr-modes {
+    padding: 3px;
+    border-radius: 12px;
+  }
+  .rr-modes button {
+    height: 32px;
+    padding: 0 6px;
+    gap: 4px;
+    font-size: 12.5px;
+  }
+  .rr-modes button .material-symbols-outlined {
+    font-size: 17px;
+  }
+
+  /* reading column */
+  .rr-column {
+    padding: 12px 10px 130px;
+  }
+  .rr-column.wide {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  /* surah header: compact, Arabic name beside the Listen button */
+  .rr-hero {
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 16px 16px 14px;
+    border-radius: 20px;
+  }
+  .rr-hero::after {
+    display: none;
+  }
+  .rr-hero-kicker {
+    margin-bottom: 4px;
+    font-size: 10px;
+  }
+  .rr-hero h1 {
+    font-size: 24px;
+  }
+  .rr-hero-meaning {
+    margin: 2px 0 10px;
+    font-size: 13.5px;
+  }
+  .rr-hero-chips {
+    gap: 5px;
+  }
+  .rr-hero-chips > span {
+    padding: 3px 8px;
+    font-size: 11px;
+  }
+  .rr-hero-chips .material-symbols-outlined {
+    font-size: 13px;
+  }
+  .rr-hero-ar {
+    font-size: 34px;
+  }
+  .rr-hero-play {
+    height: 36px;
+    padding: 0 14px 0 10px;
+    font-size: 13px;
+  }
+
+  .rr-bismillah {
+    margin: 4px 0 14px;
+  }
+  .rr-bismillah img {
+    height: 34px;
+  }
+
+  /* ayah cards */
+  .rr-verse {
+    margin-bottom: 10px;
+    padding: 12px 12px 10px;
+    border-radius: 16px;
+  }
+  .rr-verse-top {
+    margin-bottom: 2px;
+  }
+  .rr-vnum {
+    min-width: 30px;
+    height: 32px;
+    font-size: 11.5px;
+  }
+  .rr-actions {
+    gap: 0;
+  }
+  .rr-act {
+    min-width: 30px;
+    height: 30px;
+    padding: 0 6px;
+  }
+  .rr-act .material-symbols-outlined {
+    font-size: 17px;
+  }
+  .rr-arabic {
+    font-size: calc(var(--ar, 32px) * 0.78);
+    line-height: 2;
+    padding: 2px 0;
+  }
+  .rr-translation {
+    margin-top: 8px;
+    padding-top: 8px;
+    font-size: 14.5px;
+    line-height: 1.75;
+  }
+
+  /* word by word: smaller tiles that wrap evenly */
+  .rr-wbw-words {
+    gap: 6px;
+  }
+  .rr-word {
+    min-width: 0;
+    flex: 0 1 auto;
+    padding: 6px 8px 6px;
+    border-radius: 12px;
+  }
+  .rr-word-ar,
+  .rr-word-ar.is-qcf {
+    font-size: 22px;
+    line-height: 1.6;
+  }
+  .rr-word-en {
+    max-width: 96px;
+    font-size: 10.5px;
+  }
+
+  /* page strip + navigation */
+  .mp {
+    padding: 0 2px;
+  }
+  .mp-bar {
+    padding: 6px 4px;
+    gap: 4px;
+  }
+  .mp-arrow {
+    width: 32px;
+    height: 32px;
+  }
+  .mp-strip button {
+    min-width: 30px;
+    height: 30px;
+    font-size: 12.5px;
+  }
+  .mp-meta {
+    margin: 2px 0;
+    font-size: 11.5px;
+  }
+  .mp-nav {
+    gap: 8px;
+  }
+  .mp-nav-btn {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  /* floating player */
+  .rr-player {
+    width: calc(100% - 16px);
+    bottom: 8px;
+    padding: 8px 8px 8px 12px;
+    border-radius: 18px;
+  }
+  .rr-pbtn {
+    width: 32px;
+    height: 32px;
+  }
+  .rr-pbtn.main {
+    width: 42px;
+    height: 42px;
+  }
+  .rr-player-info b {
+    font-size: 13px;
+  }
+
+  /* settings drawer full width */
+  .rr-drawer {
+    width: 100%;
+  }
+}
+
+/* very narrow phones */
+@media (max-width: 370px) {
+  .rr-modes button .material-symbols-outlined {
+    display: none;
+  }
+  .rr-surah-btn-text b {
+    max-width: 110px;
+  }
+}
+
+/* keep the surah header text light on its emerald card (global h1 colours were bleeding in) */
+.rr .rr-hero h1,
+.rr .rr-hero-kicker,
+.rr .rr-hero-meaning {
+  color: #fff;
+}
+.rr .rr-hero-kicker {
+  color: rgba(240, 227, 196, 0.8);
+}
+.rr .rr-hero-meaning {
+  color: rgba(255, 255, 255, 0.82);
+}
