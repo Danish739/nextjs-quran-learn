@@ -218,8 +218,10 @@ export default function NamazTracker() {
     };
   });
 
-  // month stats, counted up to today
-  let logged = 0, done = 0, jamaat = 0;
+  // month stats, from day 1 up to today: every day owes 5 prayers, marked or not
+  const elapsed = days.filter(d => !d.future).length;
+  const total = elapsed * 5;
+  let logged = 0, done = 0, jamaat = 0, madeUp = 0, missed = 0;
   const per = PRAYERS.map(() => ({ on: 0, logged: 0 }));
   days.forEach(({ entry, future }) => {
     if (future || !entry) return;
@@ -229,10 +231,33 @@ export default function NamazTracker() {
       logged++; per[i].logged++;
       if (prayed(c)) done++;
       if (c === 'J') jamaat++;
+      if (c === 'Q') madeUp++;
+      if (c === 'M') missed++;
       if (onDay(c)) per[i].on++;
     });
   });
-  const pct = logged ? `${Math.round((done / logged) * 100)}%` : '–';
+  const unmarked = total - logged;
+  const pct = total ? `${Math.round((done / total) * 100)}%` : '–';
+  const share = (n: number) => `${total ? (n / total) * 100 : 0}%`;
+  const monthSummary = (
+    <section className="nt-card nt-month" aria-labelledby="nt-month-title">
+      <div className="nt-month-head">
+        <h2 id="nt-month-title">{monthName} so far</h2>
+        <span>{elapsed} {elapsed === 1 ? 'day' : 'days'} × 5 prayers</span>
+      </div>
+      <div className="nt-month-bar" aria-hidden="true">
+        <i className="c-O" style={{ width: share(done - madeUp) }} />
+        <i className="c-Q" style={{ width: share(madeUp) }} />
+        <i className="c-M" style={{ width: share(missed) }} />
+      </div>
+      <dl className="nt-month-grid">
+        <div><dt>Total namaz</dt><dd>{total}</dd></div>
+        <div><dt>Prayed</dt><dd className="nt-brand">{done}</dd>{madeUp > 0 && <span>incl. {madeUp} qaza</span>}</div>
+        <div><dt>Missed</dt><dd className="nt-red">{missed}</dd></div>
+        <div><dt>Not marked</dt><dd>{unmarked}</dd></div>
+      </dl>
+    </section>
+  );
   const rates = per.map(x => (x.logged ? x.on / x.logged : 0));
   const weakest = logged ? rates.indexOf(Math.min(...rates)) : -1;
   const tip = weakest >= 0
@@ -296,7 +321,7 @@ export default function NamazTracker() {
         </div>
 
         <div className="nt-stats">
-          <div><p>Completed this month</p><b className="nt-brand">{pct}</b><span>{done} of {logged} logged prayers</span></div>
+          <div><p>Completed this month</p><b className="nt-brand">{pct}</b><span>{done} of {total} prayers since 1 {monthName}</span></div>
           <div><p>Current streak</p><b>{streak} {streak === 1 ? 'day' : 'days'}</b><span>All five prayed, every day</span></div>
           <div><p>Prayed in jamaat</p><b>{jamaat}</b><span>{done ? Math.round((jamaat / done) * 100) : 0}% of completed prayers</span></div>
           <div><p>Qaza to make up</p><b className="nt-red">{qazaList.length}</b><span>Missed prayers not yet made up</span></div>
@@ -371,6 +396,8 @@ export default function NamazTracker() {
                 <button type="button" className="nt-primary" onClick={() => markRest(selected)}>Mark the rest as prayed on time</button>
               )}
             </section>
+
+            {monthSummary}
 
             <section className="nt-card nt-insight" aria-labelledby="nt-ins-title">
               <div>
@@ -452,6 +479,8 @@ export default function NamazTracker() {
                 <div><b>{streak}</b><span>Day streak</span></div>
                 <div><b>{jamaat}</b><span>In jamaat</span></div>
               </div>
+
+              {monthSummary}
 
               <section className="nt-card nt-m-cal" aria-label="Calendar">
                 <div className="nt-m-grid">

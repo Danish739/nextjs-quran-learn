@@ -14,6 +14,10 @@
   --m: #ffffff;   --m-bc: #b3362b; --m-chip: #f8e1de; --m-fg: #8e2a20; --m-cb: #b3362b;
   --n: #d7dcd5;   --n-bc: #d7dcd5; --n-chip: #eef0ec; --n-fg: #4b5650; --n-cb: #d3d8d0;
 
+  /* global headings read these; keep them dark on this light page even in site dark mode */
+  --text-primary: #16231c;
+  --text-secondary: #5a6760;
+
   min-height: 100vh;
   background: #f3f5f0;
   color: #16231c;
@@ -123,6 +127,23 @@
 .nt-count { font-size: 13px; font-weight: 700; color: #4b5650; text-align: right; font-variant-numeric: tabular-nums; }
 .nt .nt-tip { margin-top: 4px; padding: 12px 14px; border-radius: 12px; background: #fff7e6; color: #5c3d00; font-size: 13px; line-height: 1.5; }
 
+/* ---------- month totals ---------- */
+.nt-month { display: flex; flex-direction: column; gap: 14px; }
+.nt-month-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.nt-month-head h2 { font-size: 18px; font-weight: 800; color: #16231c; }
+.nt-month-head span { font-size: 13px; font-weight: 600; color: #5a6760; }
+.nt-month-bar { display: flex; height: 10px; border-radius: 5px; background: #d7dcd5; overflow: hidden; }
+.nt-month-bar i { display: block; height: 100%; background: var(--s); }
+.nt-month-bar i.c-M { background: #b3362b; }
+.nt-month-grid { margin: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.nt-month-grid > div { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 12px; background: #f3f5f0; }
+.nt-month-grid dt { font-size: 12px; font-weight: 700; color: #5a6760; }
+.nt-month-grid dd { margin: 0; font-size: 22px; line-height: 1.15; font-weight: 800; color: #16231c; font-variant-numeric: tabular-nums; }
+.nt-month-grid dd.nt-brand { color: #0b5d43; }
+.nt-month-grid dd.nt-red { color: #8e2a20; }
+.nt-month-grid span { font-size: 11px; font-weight: 600; color: #5a6760; }
+.nt-side .nt-month-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
 /* ---------- mobile ---------- */
 .nt-mobile { display: none; }
 
@@ -169,6 +190,11 @@
   .nt-m-stats > div { background: #ffffff; border: 1px solid #e1e5de; border-radius: 14px; padding: 10px 12px; }
   .nt-m-stats b { display: block; font-size: 20px; font-weight: 800; color: #16231c; }
   .nt-m-stats span { display: block; margin-top: 2px; font-size: 12px; font-weight: 600; color: #5a6760; }
+
+  .nt-month { border-radius: 16px; padding: 12px 14px; gap: 10px; }
+  .nt-month-head h2 { font-size: 16px; }
+  .nt-month-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .nt-month-grid dd { font-size: 20px; }
 
   .nt-m-cal { border-radius: 16px; padding: 12px 10px; display: flex; flex-direction: column; gap: 6px; }
   .nt-m-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
