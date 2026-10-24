@@ -120,6 +120,7 @@ export default function MemorizeQuranPage() {
     const [showTranslation, setShowTranslation] = useState(true);
     const [planOpen, setPlanOpen] = useState(true);
     const [focus, setFocus] = useState(false);
+    const [playerHidden, setPlayerHidden] = useState(false);
     const [complete, setComplete] = useState<{ ayahs: number; repeats: number } | null>(null);
     const [toast, setToast] = useState('');
     const [undo, setUndo] = useState<{ key: string; snapshot: HifzStore; text: string } | null>(null);
@@ -154,6 +155,8 @@ export default function MemorizeQuranPage() {
         [allVerses, fromVerse, toVerse]
     );
     useEffect(() => { versesRef.current = verses; }, [verses]);
+    // a fresh surah or range always starts with the player visible
+    useEffect(() => { setPlayerHidden(false); }, [chapter?.id, fromVerse, toVerse]);
 
     const updateStore = useCallback((fn: (s: HifzStore) => HifzStore) => {
         setStore(prev => {
@@ -305,6 +308,7 @@ export default function MemorizeQuranPage() {
     }
 
     const playFrom = (index: number) => {
+        setPlayerHidden(false);
         haltAudio();
         setComplete(null);
         setCurrentIndex(index);
@@ -323,6 +327,12 @@ export default function MemorizeQuranPage() {
         } else {
             playFrom(currentIndex >= 0 ? currentIndex : 0);
         }
+    };
+
+    // The cross on the player: stop and hide it; playing any ayah brings it back
+    const closePlayer = () => {
+        stopPlayback();
+        setPlayerHidden(true);
     };
 
     const step = (delta: number) => {
@@ -908,7 +918,7 @@ export default function MemorizeQuranPage() {
             </div>
 
             {/* ── Floating player ── */}
-            {verses.length > 0 && !focus && (
+            {verses.length > 0 && !focus && !playerHidden && (
                 <div className="hz-player" role="region" aria-label="Recitation player">
                     <div className="hz-player-info">
                         <b>{current ? `Ayah ${current.number}` : `Ayah ${fromVerse}–${toVerse}`}<span> · {reciterName}</span></b>
@@ -925,6 +935,9 @@ export default function MemorizeQuranPage() {
                         <button className="hz-pbtn" onClick={() => step(1)} disabled={currentIndex >= verses.length - 1} aria-label="Next ayah"><span className="material-symbols-outlined">skip_next</span></button>
                         <button className={`hz-pbtn${loopEnabled ? ' on' : ''}`} onClick={() => setLoopEnabled(l => !l)} aria-label="Loop range" aria-pressed={loopEnabled}><span className="material-symbols-outlined">repeat</span></button>
                     </div>
+                    <button className="hz-player-close" onClick={closePlayer} aria-label="Close player" title="Close player">
+                        <span className="material-symbols-outlined">close</span>
+                    </button>
                 </div>
             )}
 

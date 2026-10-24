@@ -588,7 +588,7 @@ export default function QuranPlayerPage() {
                         return (
                           <div key={l.id} className={`sp-card sp-lang-card${on ? " on" : ""}`} onClick={() => startTranslation(l.id, shownTrMode)}>
                             <div className="sp-lang-art" dir={l.dir} style={{ background: RICH_GRADIENTS[(i * 3 + 1) % RICH_GRADIENTS.length] }}>
-                              <span>{l.native}</span>
+                              <span className={l.dir === 'rtl' ? 'font-arabic' : undefined}>{l.native}</span>
                               {on && <em>{isPlaying ? "Playing" : "On"}</em>}
                             </div>
                             <div className="sp-card-title">{l.name}</div>

@@ -434,6 +434,12 @@ textarea::placeholder {
 }
 
 /* ============ ARABIC TEXT HELPER ============ */
+/* The one Arabic face of the app (same as Read Quran). base.css used to hold this rule but is never loaded. */
+.font-arabic {
+  font-family: var(--font-arabic, "UthmanicHafs", serif);
+  font-weight: normal;
+}
+
 .arabic {
   font-family: var(--font-arabic);
   direction: rtl;
@@ -987,4 +993,10 @@ textarea::placeholder {
 .app-shell > div {
   flex: 1;
   min-width: 0;
+}
+
+/* One Arabic face everywhere: anything marked lang="ar" uses the same Hafs font as Read Quran.
+   (UthmanicHafsText = same file minus the Arabic comma, which Hafs draws as an ornament.) */
+:lang(ar) {
+  font-family: "UthmanicHafsText", serif;
 }

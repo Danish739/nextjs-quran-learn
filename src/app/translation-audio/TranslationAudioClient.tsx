@@ -193,7 +193,7 @@ export default function TranslationAudioClient() {
             {LANGS.map(l => (
               <button key={l.id} role="radio" aria-checked={l.id === langId} className={`ta-lang${l.id === langId ? ' on' : ''}`} onClick={() => setLangId(l.id)}>
                 <strong>{l.name}</strong>
-                <span dir={l.dir}>{l.native}</span>
+                <span dir={l.dir} className={l.dir === 'rtl' ? 'font-arabic' : undefined}>{l.native}</span>
                 <small>{l.reciter}</small>
               </button>
             ))}

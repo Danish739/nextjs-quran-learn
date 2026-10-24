@@ -445,7 +445,7 @@ export default function TajweedClient() {
         <div className="tj-hero-glow" aria-hidden="true" />
         <div className="tj-wrap tj-hero-grid">
           <div className="tj-hero-text">
-            <span className="tj-eyebrow">علم التجويد · The science of recitation</span>
+            <span className="tj-eyebrow"><span lang="ar" className="font-arabic">علم التجويد</span> · The science of recitation</span>
             <h1>See tajweed. <em>Hear it.</em> Learn it.</h1>
             <p>Every rule is color-coded on the real text of the Quran with a live recitation, so you can learn by looking and listening.</p>
             <div className="tj-cta">
@@ -470,7 +470,7 @@ export default function TajweedClient() {
           </div>
           <div className="tj-intro-copy">
             <p>
-              <span lang="ar" className="tj-ar-inline">التجويد</span> comes from the root ج-و-د, “to make better”. It is the set of rules for pronouncing every letter from its proper point, with its proper qualities.
+              <span lang="ar" className="tj-ar-inline">التجويد</span> comes from the root <span lang="ar" className="font-arabic">ج-و-د</span>, “to make better”. It is the set of rules for pronouncing every letter from its proper point, with its proper qualities.
             </p>
             <p>It preserves the recitation as it was taught to the Prophet ﷺ, and it protects the meaning of the words.</p>
             <ul className="tj-pillars">

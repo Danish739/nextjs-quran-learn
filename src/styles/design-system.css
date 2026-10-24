@@ -215,10 +215,9 @@
 :root {
   /* Font families */
   --font-sans:
-    "Figtree", "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    "Figtree", "Inter", "UthmanicHafsText", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   --font-arabic: "UthmanicHafs", serif;
-  --font-mono: "JetBrains Mono", "Fira Code"UthmanicHafs", serifliga" 1,
-    "calt" 1;
+  --font-mono: "JetBrains Mono", "Fira Code", monospace;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   color: var(--text-arabic);

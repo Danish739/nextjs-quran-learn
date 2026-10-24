@@ -1791,3 +1791,16 @@
 .hz-rate-btn.hard.is-selected { background: #d97706; }
 .hz-rate-btn.good.is-selected { background: var(--brand-primary); }
 .hz-rate-btn.easy.is-selected { background: #0e7490; }
+
+/* close (cross) on the floating player */
+.hz-player-close {
+  position: absolute; top: -10px; right: -6px;
+  width: 28px; height: 28px; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  border: 0; border-radius: 50%; cursor: pointer;
+  background: #fff; color: #0a4a3b; line-height: 1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.28);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+.hz-player-close .material-symbols-outlined { font-size: 18px; line-height: 1; }
+.hz-player-close:hover { transform: scale(1.1); background: #f1f5f3; }

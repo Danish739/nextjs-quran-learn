@@ -79,7 +79,7 @@ function TileInner({ t }: { t: Tile }) {
       </div>
       {t.chips && (
         <div className="qg-chips" aria-hidden="true">
-          {t.chips.map(c => <i key={c}>{c}</i>)}
+          {t.chips.map(c => <i key={c} className={/[؀-ۿ]/.test(c) ? 'font-arabic' : undefined}>{c}</i>)}
         </div>
       )}
     </>

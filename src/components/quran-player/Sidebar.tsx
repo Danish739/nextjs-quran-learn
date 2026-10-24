@@ -113,7 +113,7 @@ export function Sidebar({
                 const on = translation?.langId === l.id;
                 return (
                   <div key={l.id} className={`sp-library-item${on ? " active" : ""}`} onClick={() => onSelectTranslation(l.id)}>
-                    <div className="sp-library-item-art sp-tr-art" dir={l.dir}>{l.native.slice(0, 3)}</div>
+                    <div className={`sp-library-item-art sp-tr-art${l.dir === 'rtl' ? ' font-arabic' : ''}`} dir={l.dir}>{l.native.slice(0, 3)}</div>
                     <div className="sp-library-item-info">
                       <div className={`sp-library-item-name${on ? " playing" : ""}`}>{l.name}</div>
                       <div className="sp-library-item-meta">{l.reciter}</div>
