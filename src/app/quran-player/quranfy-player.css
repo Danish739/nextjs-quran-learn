@@ -2339,3 +2339,35 @@ body:has(.quranfy-player-page) .nv__icon[aria-label^="Switch to"] {
 .sp-tr-badge { flex: none; padding: 2px 8px; border-radius: 999px; background: var(--sp-green); color: #000; font-size: 11px; font-weight: 800; }
 .sp-tr-off { margin: 8px 4px 0; padding: 8px 14px; border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 999px; background: transparent; color: var(--sp-text-primary); font-size: 12px; font-weight: 600; cursor: pointer; }
 .sp-tr-off:hover { border-color: #fff; }
+
+
+/* ---- Home: filter chips + horizontal shelves (desktop and mobile) ---- */
+.sp-home-chips { display: flex; gap: 8px; padding: 18px 24px 0; overflow-x: auto; scrollbar-width: none; }
+.sp-home-chips::-webkit-scrollbar { display: none; }
+.sp-home-chip { flex: none; padding: 8px 18px; border: 0; border-radius: 9999px; background: rgba(255, 255, 255, 0.1); color: var(--sp-text-primary); font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s ease; }
+.sp-home-chip:hover { background: rgba(255, 255, 255, 0.16); }
+.sp-home-chip.active { background: var(--sp-green); color: #000; }
+
+.sp-shelf { display: flex; gap: 16px; overflow-x: auto; margin: 0 -24px; padding: 0 24px 6px; scroll-snap-type: x proximity; scroll-padding-left: 24px; scrollbar-width: none; }
+.sp-shelf::-webkit-scrollbar { display: none; }
+.sp-shelf > .sp-card { flex: 0 0 176px; scroll-snap-align: start; }
+
+.sp-tr-seg-main { max-width: 420px; margin: 0 0 16px; }
+
+.sp-lang-card.on { background: var(--sp-bg-card-hover); box-shadow: inset 0 0 0 2px var(--sp-green); }
+.sp-lang-art { position: relative; aspect-ratio: 1 / 1; margin-bottom: 14px; border-radius: 6px; display: flex; align-items: center; justify-content: center; padding: 10px; text-align: center; color: #fff; font-size: clamp(22px, 3vw, 30px); font-weight: 800; line-height: 1.15; overflow: hidden; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); }
+.sp-lang-art em { position: absolute; left: 8px; bottom: 8px; padding: 2px 8px; border-radius: 999px; background: var(--sp-green); color: #000; font-size: 11px; font-style: normal; font-weight: 800; }
+
+@media (max-width: 768px) {
+  .sp-home-chips { padding: 14px 16px 0; }
+  .sp-shelf { margin: 0 -16px; padding: 0 16px 6px; scroll-padding-left: 16px; gap: 12px; }
+  .sp-shelf > .sp-card { flex-basis: 150px; }
+  .sp-section { padding-left: 16px; padding-right: 16px; }
+  .sp-section-title { font-size: 20px; }
+}
+
+/* equal-width shelf cards, long language names wrap instead of widening the card */
+.sp-shelf { align-items: flex-start; }
+.sp-shelf > .sp-card { width: 176px; min-width: 0; box-sizing: border-box; }
+.sp-lang-art { font-size: clamp(18px, 2vw, 24px); overflow-wrap: anywhere; }
+@media (max-width: 768px) { .sp-shelf > .sp-card { width: 150px; } }

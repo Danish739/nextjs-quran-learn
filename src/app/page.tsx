@@ -9,7 +9,7 @@ import LearnSteps from '@/components/LearnSteps';
 import TodayPanel from '@/components/TodayPanel';
 import QuickAccessGrid from '@/components/QuickAccessGrid';
 import TasbeehCounter from '@/components/TasbeehCounter';
-import SurahExplorer from '@/components/SurahExplorer';
+import GetStarted from '@/components/GetStarted';
 import PrayerStrip from '@/components/PrayerStrip';
 
 // ── Prayer Times Types ──
@@ -216,6 +216,8 @@ const STATS = [
 // Search / Quick Start / Navigate bar — hidden for now
 const SHOW_HEADER = false;
 
+const VERSE_PAGE_SIZE = 20;
+
 export default function HomePage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [query, setQuery] = useState('');
@@ -294,6 +296,7 @@ export default function HomePage() {
   const [locationSource, setLocationSource] = useState<'gps' | 'ip' | 'default'>('default');
   const [locationError, setLocationError] = useState('');
   const preciseRef = useRef(false);
+  const locatedRef = useRef(false);
 
   const loadPrayer = useCallback(async (lat: number, lng: number, source: 'gps' | 'ip' | 'default', label?: string) => {
     // A precise fix must never be overwritten by a slower approximate one
@@ -314,6 +317,9 @@ export default function HomePage() {
       setGregorianDate(`${g.day} ${g.month.en} ${g.year}`);
       setLocationSource(source);
       setPrayerLoading(false);
+      // A location is in hand, so any earlier "blocked / could not detect" message is stale
+      locatedRef.current = true;
+      setLocationError('');
 
       let name = label ?? '';
       if (!name) {
@@ -359,7 +365,7 @@ export default function HomePage() {
       },
       (err) => {
         setLocating(false);
-        if (silent) return;
+        if (silent || locatedRef.current) return;
         setLocationError(
           err.code === err.PERMISSION_DENIED
             ? 'Location blocked — allow it from the lock icon in the address bar'
@@ -420,6 +426,8 @@ export default function HomePage() {
   const [verseResults, setVerseResults] = useState<{ number: number; text: string; surah: { number: number; name: string; englishName: string }; numberInSurah: number }[]>([]);
   const [verseCount, setVerseCount] = useState<number | null>(null);
   const [verseLoading, setVerseLoading] = useState(false);
+  const [versePage, setVersePage] = useState(1);
+  const verseTopRef = useRef<HTMLDivElement>(null);
   const verseSearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ── Navigate Quran panel ──
@@ -530,6 +538,7 @@ export default function HomePage() {
     if (verseQuery.trim().length < 3) {
       setVerseResults([]);
       setVerseCount(null);
+      setVersePage(1);
       return;
     }
     verseSearchTimer.current = setTimeout(async () => {
@@ -538,8 +547,10 @@ export default function HomePage() {
         const res = await fetch(`/api/quran-search?q=${encodeURIComponent(verseQuery.trim())}`);
         const json = await res.json();
         if (json?.data?.matches) {
-          setVerseResults(json.data.matches.slice(0, 30));
+          // Keep every match; the list below pages through them
+          setVerseResults(json.data.matches);
           setVerseCount(json.data.count);
+          setVersePage(1);
         } else {
           setVerseResults([]);
           setVerseCount(0);
@@ -1125,15 +1136,15 @@ export default function HomePage() {
 
               {/* Results */}
               {verseResults.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {verseResults.map(v => {
+                <div ref={verseTopRef} style={{ display: 'flex', flexDirection: 'column', gap: 12, scrollMarginTop: 90 }}>
+                  {verseResults.slice((versePage - 1) * VERSE_PAGE_SIZE, versePage * VERSE_PAGE_SIZE).map(v => {
                     // Highlight the search term in the text
                     const re = new RegExp(`(${verseQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
                     const parts = v.text.split(re);
                     return (
                       <Link
                         key={`${v.surah.number}:${v.numberInSurah}`}
-                        href={`/read-quran/${v.surah.number}`}
+                        href={`/read-quran/${v.surah.number}#verse-${v.numberInSurah}`}
                         style={{ textDecoration: 'none', display: 'block' }}
                       >
                         <div
@@ -1155,7 +1166,7 @@ export default function HomePage() {
                           {/* Verse text with highlight */}
                           <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.85, ...S.text }}>
                             {parts.map((part, i) =>
-                              re.test(part)
+                              i % 2 === 1
                                 ? <mark key={i} style={{ background: 'rgba(var(--brand-rgb),0.22)', color: 'var(--brand-primary-hover)', borderRadius: 3, padding: '0 2px', fontWeight: 600 }}>{part}</mark>
                                 : part
                             )}
@@ -1164,9 +1175,38 @@ export default function HomePage() {
                       </Link>
                     );
                   })}
-                  {verseCount !== null && verseCount > 30 && (
-                    <p style={{ textAlign: 'center', fontSize: 12, ...S.muted, marginTop: 4 }}>Showing first 30 of {verseCount.toLocaleString()} results</p>
-                  )}
+                  {verseResults.length > VERSE_PAGE_SIZE && (() => {
+                    const pages = Math.ceil(verseResults.length / VERSE_PAGE_SIZE);
+                    const go = (n: number) => {
+                      setVersePage(n);
+                      verseTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    };
+                    const list: (number | '…')[] = pages <= 7
+                      ? Array.from({ length: pages }, (_, i) => i + 1)
+                      : versePage <= 4 ? [1, 2, 3, 4, 5, '…', pages]
+                      : versePage >= pages - 3 ? [1, '…', pages - 4, pages - 3, pages - 2, pages - 1, pages]
+                      : [1, '…', versePage - 1, versePage, versePage + 1, '…', pages];
+                    const btn = (active: boolean, disabled = false): React.CSSProperties => ({
+                      minWidth: 38, height: 38, padding: '0 10px', borderRadius: 10, cursor: disabled ? 'default' : 'pointer',
+                      border: `1px solid ${active ? 'var(--brand-primary)' : 'var(--border-default)'}`,
+                      background: active ? 'var(--brand-primary)' : 'var(--bg-card)',
+                      color: active ? '#fff' : 'var(--text-primary)', fontWeight: 600, fontSize: 13, opacity: disabled ? 0.4 : 1,
+                    });
+                    const from = (versePage - 1) * VERSE_PAGE_SIZE + 1;
+                    const to = Math.min(versePage * VERSE_PAGE_SIZE, verseResults.length);
+                    return (
+                      <nav aria-label="Search result pages" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, marginTop: 8 }}>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 6 }}>
+                          <button style={btn(false, versePage === 1)} disabled={versePage === 1} onClick={() => go(versePage - 1)} aria-label="Previous page">‹</button>
+                          {list.map((n, i) => n === '…'
+                            ? <span key={`e${i}`} style={{ alignSelf: 'center', ...S.muted }}>…</span>
+                            : <button key={n} style={btn(n === versePage)} aria-current={n === versePage ? 'page' : undefined} onClick={() => go(n)}>{n}</button>)}
+                          <button style={btn(false, versePage === pages)} disabled={versePage === pages} onClick={() => go(versePage + 1)} aria-label="Next page">›</button>
+                        </div>
+                        <p style={{ margin: 0, fontSize: 12, ...S.muted }}>Showing {from}–{to} of {verseResults.length.toLocaleString()} results</p>
+                      </nav>
+                    );
+                  })()}
                 </div>
               )}
 
@@ -1178,8 +1218,8 @@ export default function HomePage() {
             {/* ── TASBEEH COUNTER ── */}
             <TasbeehCounter />
 
-            {/* ── EXPLORE SURAHS ── */}
-            <SurahExplorer surahs={SURAHS} recentNums={recent.map(r => r.num)} />
+            {/* ── GET STARTED ── */}
+            <GetStarted />
 
           </div>
         </main>

@@ -5,7 +5,7 @@ import "./quranfy-player.css";
 import "./player-controls-fix.css";
 
 import { 
-  Track, Reciter, RECITERS, SURAHS_DATA, GRADIENTS, QUICK_PLAY_SURAHS,
+  Track, Reciter, RECITERS, SURAHS_DATA, GRADIENTS, RICH_GRADIENTS, QUICK_PLAY_SURAHS,
   estimateDuration, getAudioUrl 
 } from "@/data/quran-player-data";
 import { Icons } from "@/components/quran-player/PlayerIcons";
@@ -35,6 +35,7 @@ export default function QuranPlayerPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedReciterPlaylist, setSelectedReciterPlaylist] = useState<Reciter | null>(null);
   const [greeting, setGreeting] = useState("Welcome");
+  const [homeTab, setHomeTab] = useState<"All" | "Surahs" | "Reciters" | "Translations">("All");
 
   // Translation playback: ayah-by-ayah clips, surah after surah
   type TrMode = 'both' | 'only';
@@ -299,6 +300,12 @@ export default function QuranPlayerPage() {
 
   const isTrackPlaying = (trackId: number) => currentTrack?.id === trackId && isPlaying;
 
+  const playTranslationSurah = (t: Track) => {
+    if (trRef.current) handlePlayTrack(t);
+    else startTranslation(TRANSLATION_LANGS[0].id, pendingMode, t);
+  };
+  const shownTrMode: TrMode = tr?.mode ?? pendingMode;
+
   const trLang = tr ? TRANSLATION_LANGS.find(l => l.id === tr.langId) : undefined;
   const displayTrack: Track | null = currentTrack && tr && trLang && trPos
     ? { ...currentTrack, reciter: `${trLang.name} · ${trPos.phase === 'ar' ? 'Arabic' : 'Translation'} · Ayah ${trPos.ayah}/${currentTrack.ayahs}` }
@@ -350,10 +357,7 @@ export default function QuranPlayerPage() {
           onSelectTranslation={(langId) => startTranslation(langId, tr?.mode ?? pendingMode)}
           onTranslationMode={changeTranslationMode}
           onStopTranslation={stopTranslation}
-          onPlayTranslationSurah={(t) => {
-            if (trRef.current) handlePlayTrack(t);
-            else startTranslation(TRANSLATION_LANGS[0].id, pendingMode, t);
-          }}
+          onPlayTranslationSurah={playTranslationSurah}
         />
 
         <main className="sp-main" ref={mainRef}>
@@ -557,7 +561,71 @@ export default function QuranPlayerPage() {
                 togglePlay={() => (currentTrack ? togglePlay() : tracks[0] && handlePlayTrack(tracks[0]))} 
               />
 
+              {/* Filter chips (Spotify-style) */}
+              <div className="sp-home-chips" role="tablist" aria-label="Browse">
+                {(["All", "Surahs", "Reciters", "Translations"] as const).map(c => (
+                  <button key={c} role="tab" aria-selected={homeTab === c} className={`sp-home-chip${homeTab === c ? " active" : ""}`} onClick={() => setHomeTab(c)}>
+                    {c}
+                  </button>
+                ))}
+              </div>
+
+              {/* Translation audio shelves */}
+              {(homeTab === "All" || homeTab === "Translations") && (
+                <>
+                  <div className="sp-section">
+                    <div className="sp-section-header">
+                      <h2 className="sp-section-title">Listen in your language</h2>
+                      {tr && <button className="sp-section-show-all" onClick={stopTranslation}>Turn off</button>}
+                    </div>
+                    <div className="sp-tr-seg sp-tr-seg-main" role="group" aria-label="What to play">
+                      <button className={shownTrMode === 'both' ? 'on' : ''} onClick={() => changeTranslationMode('both')}>Arabic + Translation</button>
+                      <button className={shownTrMode === 'only' ? 'on' : ''} onClick={() => changeTranslationMode('only')}>Translation only</button>
+                    </div>
+                    <div className="sp-shelf">
+                      {TRANSLATION_LANGS.map((l, i) => {
+                        const on = tr?.langId === l.id;
+                        return (
+                          <div key={l.id} className={`sp-card sp-lang-card${on ? " on" : ""}`} onClick={() => startTranslation(l.id, shownTrMode)}>
+                            <div className="sp-lang-art" dir={l.dir} style={{ background: RICH_GRADIENTS[(i * 3 + 1) % RICH_GRADIENTS.length] }}>
+                              <span>{l.native}</span>
+                              {on && <em>{isPlaying ? "Playing" : "On"}</em>}
+                            </div>
+                            <div className="sp-card-title">{l.name}</div>
+                            <div className="sp-card-subtitle">{l.reciter}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="sp-section">
+                    <div className="sp-section-header">
+                      <h2 className="sp-section-title">
+                        Surahs in {trLang?.name ?? TRANSLATION_LANGS[0].name}
+                      </h2>
+                      <button className="sp-section-show-all" onClick={() => toggleSection('trsurahs')}>{expandedSections.has('trsurahs') || homeTab === "Translations" ? 'Show less' : 'Show all'}</button>
+                    </div>
+                    <div className={expandedSections.has('trsurahs') || homeTab === "Translations" ? "sp-card-grid" : "sp-shelf"}>
+                      {tracks.map(track => (
+                        <div key={track.id} className="sp-card" onClick={() => playTranslationSurah(track)}>
+                          <div className="sp-card-art-container">
+                            <SurahArt number={track.id} name={track.englishName} gradient={track.gradient} />
+                            <button className="sp-card-play-btn" onClick={e => { e.stopPropagation(); playTranslationSurah(track); }}>
+                              {tr && isTrackPlaying(track.id) ? <Icons.Pause /> : <Icons.Play />}
+                            </button>
+                          </div>
+                          <div className="sp-card-title">{track.name}</div>
+                          <div className="sp-card-subtitle">{track.translation} · {track.ayahs} ayahs</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+
               {/* Quick Play Grid */}
+              {(homeTab === "All" || homeTab === "Surahs") && (
               <div className="sp-quickplay-grid">
                 {QUICK_PLAY_SURAHS.map((s, i) => {
                   const track = tracks.find(t => t.id === s.number);
@@ -586,8 +654,10 @@ export default function QuranPlayerPage() {
                   </div>
                 )}
               </div>
+              )}
 
               {/* Popular Reciters Section */}
+              {(homeTab === "All" || homeTab === "Reciters") && (
               <div className="sp-section">
                 <div className="sp-section-header">
                   <h2 className="sp-section-title">Popular Reciters</h2>
@@ -605,15 +675,17 @@ export default function QuranPlayerPage() {
                   ))}
                 </div>
               </div>
+              )}
 
               {/* Featured Surahs (Card Grid) */}
+              {(homeTab === "All" || homeTab === "Surahs") && (
               <div className="sp-section">
                 <div className="sp-section-header">
                   <h2 className="sp-section-title">Featured Surahs</h2>
                   <button className="sp-section-show-all" onClick={() => toggleSection('featured')}>{ expandedSections.has('featured') ? 'Show less' : 'Show all' }</button>
                 </div>
-                <div className="sp-card-grid">
-                  {(expandedSections.has('featured') ? filteredTracks : filteredTracks.slice(0, 8)).map(track => (
+                <div className={expandedSections.has('featured') || homeTab === "Surahs" ? "sp-card-grid" : "sp-shelf"}>
+                  {(expandedSections.has('featured') || homeTab === "Surahs" ? filteredTracks : filteredTracks.slice(0, 12)).map(track => (
                     <div key={track.id} className="sp-card" onClick={() => handlePlayTrack(track)}>
                       <div className="sp-card-art-container">
                         <SurahArt number={track.id} name={track.englishName} gradient={track.gradient} />
@@ -627,6 +699,7 @@ export default function QuranPlayerPage() {
                   ))}
                 </div>
               </div>
+              )}
 
               <div className="sp-footer-spacer" />
             </>
