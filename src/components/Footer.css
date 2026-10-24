@@ -25,41 +25,110 @@
 
 /* ── Arabic verse banner ── */
 .ftr-verse-bar {
+  position: relative;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 28px 24px 22px;
-  background: linear-gradient(135deg, #0F3D2E 0%, #C8A96B 100%);
+  gap: 10px;
+  padding: 48px 24px 40px;
   text-align: center;
-  position: relative;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.12), transparent 60%),
+    linear-gradient(160deg, #13705a 0%, #0c5444 55%, #093d32 100%);
+  border-top: 1px solid rgba(217, 181, 107, 0.45);
+  border-bottom: 1px solid rgba(217, 181, 107, 0.25);
 }
 
-.ftr-verse-bar::before {
+/* large faint mihrab arch behind the verse */
+.ftr-verse-arch {
+  position: absolute;
+  left: 50%;
+  bottom: -40px;
+  width: min(560px, 90vw);
+  height: 320px;
+  border-radius: 280px 280px 0 0;
+  border: 1px solid rgba(240, 227, 196, 0.14);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.ftr-verse-arch::before {
   content: '';
   position: absolute;
-  inset: 0;
-  background-image: radial-gradient(circle at 2px 2px, rgba(255, 255, 255, 0.06) 1px, transparent 0);
-  background-size: 22px 22px;
+  inset: 18px 18px 0;
+  border-radius: 260px 260px 0 0;
+  border: 1px solid rgba(240, 227, 196, 0.08);
+}
+
+.ftr-verse-kicker {
+  position: relative;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(240, 227, 196, 0.7);
 }
 
 .ftr-verse-ar {
-  font-family: "UthmanicHafs", serif;
-  font-size: clamp(16px, 2.2vw, 22px);
-  font-weight: 700;
-  color: white;
-  letter-spacing: 0.02em;
-  line-height: 1.8;
   position: relative;
-  z-index: 1;
+  font-family: "UthmanicHafs", serif;
+  font-size: clamp(22px, 3vw, 32px);
+  line-height: 1.8;
+  color: #f0e3c4;
+}
+
+.ftr-verse-rule {
+  position: relative;
+  width: 140px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #d9b56b, transparent);
+}
+
+.ftr-verse-rule::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  background: #d9b56b;
+  transform: translate(-50%, -50%) rotate(45deg);
 }
 
 .ftr-verse-en {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.82);
-  font-style: italic;
   position: relative;
-  z-index: 1;
+  max-width: 620px;
+  font-family: 'Lora', Georgia, serif;
+  font-size: clamp(14px, 1.7vw, 17px);
+  font-style: italic;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.ftr-verse-ref {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(240, 227, 196, 0.35);
+  font-size: 12.5px;
+  font-weight: 700;
+  text-decoration: none;
+  color: #f0e3c4;
+  transition: background 0.2s ease, gap 0.2s ease;
+}
+
+.ftr-verse-ref:hover {
+  gap: 10px;
+  background: rgba(240, 227, 196, 0.1);
+}
+
+.ftr-verse-ref .material-symbols-outlined {
+  font-size: 16px;
 }
 
 /* ── Container ── */

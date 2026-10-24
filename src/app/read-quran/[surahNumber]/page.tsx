@@ -4,21 +4,6 @@ import { useState, useEffect, useRef, useCallback, use, memo } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import {
-    ChevronLeft,
-    ChevronRight,
-    X,
-    Bookmark,
-    Copy,
-    Share2,
-    Volume2,
-    ChevronDown,
-    BookOpen,
-    Hash,
-    MapPin,
-    ListOrdered,
-    Zap
-} from 'lucide-react';
-import {
     getChapter,
     getAllVerses,
     getVersesWithWords,
@@ -30,10 +15,14 @@ import {
 import { saveLastRead, markVerseRead } from '../lib/progress';
 import { parseTranslationWithFootnotes } from '../lib/translationUtils';
 import { trackSurahVisit } from '@/lib/recentSurahs';
+import { loadQcfFontsForPages, qcfFontFamily } from '../lib/qcf';
 import TafseerModal from '../components/TafseerModal';
-import UthmaniReader from '@/app/uthmani/components/UthmaniReader';
+import MushafPager, { MushafLoader } from '../components/MushafPager';
+import { PageBar, PageNav, readPageParam, writePageParam } from '../components/PageControls';
+import { usePageVerses } from '../lib/usePageVerses';
 import '../styles/reader.css';
 import '../styles/tafseer-modal.css';
+import '../styles/reading-room.css';
 
 // Normalize Arabic Uthmani text for display.
 const normalizeArabicText = (text: string): string => {
@@ -100,56 +89,14 @@ const isBismillahVerse = (verseNumber: number, verseText: string): boolean => {
     return /^بسم\s*الله\s*الرحمن\s*الرحيم\s*$/.test(normalizedText);
 };
 
-// Mushaf-style tashkeel coloring: wraps Arabic diacritics in blue spans
-const TASHKEEL_REGEX = /([\u064B-\u065F\u0670\u06D6-\u06ED]+)/g;
-const colorTashkeel = (text: string): React.ReactNode[] => {
-    const parts = text.split(TASHKEEL_REGEX);
-    return parts.map((part, i) => {
-        if (TASHKEEL_REGEX.test(part)) {
-            TASHKEEL_REGEX.lastIndex = 0; // reset regex state
-            return <span key={i} style={{ color: '#2563eb' }}>{part}</span>;
-        }
-        TASHKEEL_REGEX.lastIndex = 0;
-        return <span key={i}>{part}</span>;
-    });
-};
-
 const AyahEnding = memo(({ number, size = 28 }: { number: number; size?: number }) => {
-    const circleSize = Math.max(34, Math.round(size * 1.15));
-    const numSize = Math.max(13, Math.round(size * 0.5));
-    
+    const circleSize = Math.max(30, Math.round(size * 1.1));
+    const numSize = Math.max(12, Math.round(size * 0.45));
     return (
-        <svg
-            className="nq-ayah-circle-marker"
-            width={circleSize}
-            height={circleSize}
-            viewBox="0 0 36 36"
-            style={{
-                display: 'inline-block',
-                marginLeft: 6,
-                marginRight: 4,
-                whiteSpace: 'nowrap',
-                verticalAlign: 'middle',
-                flexShrink: 0,
-            }}
-            aria-hidden="false"
-        >
-            {/* Filled dark circle background */}
-            <circle cx="18" cy="18" r="17" fill="#1e293b" stroke="#1e293b" strokeWidth="0.5" />
-            {/* Inner decorative ring */}
-            <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="0.8" />
-            {/* Center number text — white on dark */}
-            <text
-                x="18"
-                y="18"
-                textAnchor="middle"
-                dy="0.38em"
-                fontSize={numSize}
-                fontWeight="700"
-                fill="#ffffff"
-                fontFamily="'Noto Sans Arabic', 'UthmanicHafs', serif"
-                style={{ direction: 'ltr', unicodeBidi: 'isolate' }}
-            >
+        <svg className="rr-ayah-mark" width={circleSize} height={circleSize} viewBox="0 0 36 36" aria-label={`Ayah ${number}`}>
+            <circle className="ring" cx="18" cy="18" r="16.5" />
+            <circle className="inner" cx="18" cy="18" r="13" />
+            <text x="18" y="18" textAnchor="middle" dy="0.36em" fontSize={numSize} fontFamily="'Noto Sans Arabic', 'UthmanicHafs', serif" style={{ direction: 'ltr', unicodeBidi: 'isolate' }}>
                 {toArabicNumeral(number)}
             </text>
         </svg>
@@ -157,198 +104,26 @@ const AyahEnding = memo(({ number, size = 28 }: { number: number; size?: number 
 });
 AyahEnding.displayName = 'AyahEnding';
 
-// Hollow circle marker for Bismillah (no verse number)
-const BismillahMarker = memo(({ size = 28 }: { size?: number }) => {
-    const circleSize = Math.max(30, Math.round(size * 1.05));
-    return (
-        <svg
-            className="nq-bismillah-marker"
-            width={circleSize}
-            height={circleSize}
-            viewBox="0 0 36 36"
-            style={{
-                display: 'inline-block',
-                marginLeft: 6,
-                marginRight: 4,
-                whiteSpace: 'nowrap',
-                verticalAlign: 'middle',
-                flexShrink: 0,
-            }}
-            aria-hidden="true"
-        >
-            <circle cx="18" cy="18" r="16" fill="none" stroke="#1e293b" strokeWidth="1.8" opacity="0.6" />
-            <circle cx="18" cy="18" r="11" fill="none" stroke="#1e293b" strokeWidth="0.8" opacity="0.35" />
-        </svg>
-    );
-});
-BismillahMarker.displayName = 'BismillahMarker';
 
-// Right Sidebar component for Desktop
-const RightSidebar = ({ 
-    chapter, 
-    surahInfo, 
-    onJumpToVerse 
-}: { 
-    chapter: Chapter; 
-    surahInfo?: any; 
-    onJumpToVerse: (num: number) => void;
-}) => {
-    const isMakkah = chapter.revelation_place === 'makkah';
-    
-    return (
-        <aside className="nq-right-sidebar">
-            <div className="insight-card surah-main-card">
-                <div className="revelation-badge" data-place={chapter.revelation_place}>
-                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
-                        {isMakkah ? 'wb_sunny' : 'nightlight'}
-                    </span>
-                    <span>{chapter.revelation_place}</span>
-                </div>
-                
-                <div style={{ textAlign: 'center', marginBottom: 24, marginTop: 12 }}>
-                    <div style={{ 
-                        color: 'var(--reader-primary)', 
-                        fontSize: 44, 
-                        fontFamily: 'var(--font-arabic)', 
-                        marginBottom: 4,
-                        textShadow: '0 0 24px var(--reader-primary-glow)'
-                    }}>
-                        {chapter.name_arabic}
-                    </div>
-                    <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
-                        {surahInfo?.name || chapter.name_simple}
-                    </div>
-                    <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: '4px 0 0', fontWeight: 500 }}>
-                        {chapter.translated_name.name}
-                    </p>
-                </div>
-                <div className="surah-meaning-box">
-                    <span className="quote-icon-left">&quot;</span>
-                    <p className="surah-meaning-text">{chapter.translated_name.name}</p>
-                    <span className="quote-icon-right">&quot;</span>
-                </div>
-            </div>
 
-            <div className="insight-card">
-                <div className="insight-title">
-                    <Zap size={16} />
-                    <span>Surah Dimensions</span>
-                </div>
-                <div className="insight-stat-grid two-cols">
-                    <div className="insight-stat-item">
-                        <div className="stat-icon-wrapper">
-                            <Hash size={14} />
-                        </div>
-                        <div className="stat-content">
-                            <span className="insight-stat-label">Verses</span>
-                            <span className="insight-stat-value">{chapter.verses_count}</span>
-                        </div>
-                    </div>
-                    <div className="insight-stat-item">
-                        <div className="stat-icon-wrapper">
-                            <ListOrdered size={14} />
-                        </div>
-                        <div className="stat-content">
-                            <span className="insight-stat-label">Rank</span>
-                            <span className="insight-stat-value">#{chapter.revelation_order}</span>
-                        </div>
-                    </div>
-                    <div className="insight-stat-item">
-                        <div className="stat-icon-wrapper">
-                            <MapPin size={14} />
-                        </div>
-                        <div className="stat-content">
-                            <span className="insight-stat-label">Origin</span>
-                            <span className="insight-stat-value" style={{ textTransform: 'capitalize' }}>
-                                {chapter.revelation_place.slice(0, 3)}
-                            </span>
-                        </div>
-                    </div>
-                    <div className="insight-stat-item">
-                        <div className="stat-icon-wrapper">
-                            <BookOpen size={14} />
-                        </div>
-                        <div className="stat-content">
-                            <span className="insight-stat-label">Type</span>
-                            <span className="insight-stat-value">
-                                {chapter.verses_count > 50 ? 'Long' : 'Short'}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            </div>
+const escapeGlyph = (v: string) => v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-            <div className="insight-card">
-                <div className="insight-title">
-                    <Zap size={16} />
-                    <span>Quick Navigation</span>
-                </div>
-                <div className="quick-nav-list">
-                    <div className="quick-nav-item" onClick={() => onJumpToVerse(1)}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <div className="nav-icon-circle">1</div>
-                            <span>First Ayah</span>
-                        </div>
-                        <ChevronRight size={14} />
-                    </div>
-                    <div className="quick-nav-item" onClick={() => onJumpToVerse(chapter.verses_count)}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <div className="nav-icon-circle">{chapter.verses_count}</div>
-                            <span>Last Ayah</span>
-                        </div>
-                        <ChevronRight size={14} />
-                    </div>
-                    {chapter.id === 32 && (
-                        <div className="quick-nav-item sajdah-nav" onClick={() => onJumpToVerse(15)}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                <div className="nav-icon-circle sajdah-icon">۩</div>
-                                <span style={{ color: 'var(--nq-orange)' }}>Sajdah (15)</span>
-                            </div>
-                            <Zap size={14} fill="currentColor" />
-                        </div>
-                    )}
-                </div>
-            </div>
-            
-            <div style={{ marginTop: 'auto', padding: '12px 0 24px', textAlign: 'center' }}>
-                <Link 
-                    href="/" 
-                    className="all-surahs-link"
-                >
-                    <BookOpen size={14} />
-                    <span>Explore All Surahs</span>
-                </Link>
-            </div>
-        </aside>
-    );
-};
-
-// Memoized Word Item component to prevent expensive re-renders of the entire word list
-const WordItem = memo(({ 
-    word, 
-    verseKey, 
-    verseWords, 
-    isSelected, 
-    onClick 
-}: { 
-    word: any; 
-    verseKey: string; 
-    verseWords: any[]; 
-    isSelected: boolean; 
-    onClick: (word: any, verseKey: string, verseWords: any[]) => void; 
-}) => {
-    return (
-        <div
-            className={`word-item ${isSelected ? 'word-selected' : ''}`}
-            onClick={() => onClick(word, verseKey, verseWords)}
-        >
-            <span className="word-arabic">{cleanArabicText(word.text_uthmani)}</span>
-            {word.translation?.text && <span className="word-translation">{word.translation.text}</span>}
-        </div>
-    );
-});
-WordItem.displayName = 'WordItem';
-
+/** Renders an ayah with the QCF v2 page fonts, including the Mushaf's own ayah-number glyph. */
+const QcfAyah = memo(({ words }: { words: any[] }) => (
+    <>
+        {words.map((w, i) => (
+            <span key={w.id ?? i}>
+                <span
+                    className={`rr-qcf-word${w.char_type_name === 'end' ? ' is-end' : ''}`}
+                    style={{ fontFamily: `${qcfFontFamily(w.page_number)}, UthmanicHafs, serif` }}
+                    dangerouslySetInnerHTML={{ __html: escapeGlyph(w.code_v2) }}
+                />
+                {i < words.length - 1 ? ' ' : ''}
+            </span>
+        ))}
+    </>
+));
+QcfAyah.displayName = 'QcfAyah';
 
 interface SurahPageProps {
     params: Promise<{ surahNumber: string }>;
@@ -483,7 +258,7 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
     const [verses, setVerses] = useState<VerseWithTranslation[]>([]);
     const [versesWithWords, setVersesWithWords] = useState<VerseWithTranslation[]>([]);
     const [loading, setLoading] = useState(true);
-    const [wordDataLoading, setWordDataLoading] = useState(false);
+    const [, setWordDataLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const [readingMode, setReadingMode] = useState<ReadingMode>(
@@ -497,16 +272,7 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
     const [showSettings, setShowSettings] = useState(false);
     const [showTranslation, setShowTranslation] = useState(true);
     const [autoScroll, setAutoScroll] = useState(true);
-    const [audioEnabled, setAudioEnabled] = useState(true);
-
-    // Mobile viewport detection for responsive inline styles
-    const [isMobile, setIsMobile] = useState(false);
-    useEffect(() => {
-        const check = () => setIsMobile(window.innerWidth < 640);
-        check();
-        window.addEventListener('resize', check);
-        return () => window.removeEventListener('resize', check);
-    }, []);
+    const [audioEnabled, setAudioEnabled] = useState(false);
 
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentVerse, setCurrentVerse] = useState<number | null>(null);
@@ -518,23 +284,16 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const playbackIdRef = useRef(0);
     const isMountedRef = useRef(true);
-    const surahBtnRef = useRef<HTMLButtonElement | null>(null);
-    const verseBtnRef = useRef<HTMLButtonElement | null>(null);
 
-    const [showVerseNav, setShowVerseNav] = useState(false);
+    const [, setShowVerseNav] = useState(false);
     const [showSurahPicker, setShowSurahPicker] = useState(false);
     const [showVersePicker, setShowVersePicker] = useState(false);
     const [bookmarks, setBookmarks] = useState<string[]>([]);
     
-    // Performance state: Visible verses count for lazy loading
-    const [visibleVersesCount, setVisibleVersesCount] = useState(40);
     // Tafseer modal state (replaces inline expand panels)
     const [tafseerModalVerse, setTafseerModalVerse] = useState<number | null>(null);
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'warning' } | null>(null);
 
-    // Tooltip state for word meanings
-    const [tooltip] = useState<{ meaning: string; x: number; y: number } | null>(null);
-    const tooltipRef = useRef<HTMLDivElement | null>(null);
     const verseToPageIndexRef = useRef<Map<number, number>>(new Map());
 
     // ── Word Detail Modal state ──
@@ -548,7 +307,10 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
         char_type_name?: string;
         position: number;
         verseKey: string;
-        verseText?: string;
+        code_v2?: string;
+        page_number?: number;
+        /** every word of the ayah, used to show the word in context */
+        verseWords: any[];
     }
     const [selectedWord, setSelectedWord] = useState<SelectedWordInfo | null>(null);
     const wordAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -569,16 +331,7 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
         audio.onerror = () => setWordAudioPlaying(false);
     }, []);
 
-    const openWordDetail = useCallback((word: any, verseKey: string, verseWords?: any[]) => {
-        // Optimization: verseContext is now pre-calculated during loading for instant access
-        // We find the parent verse from the verseKey if verseContext is not passed directly
-        let context = '';
-        if (verseWords) {
-            // Check if context was already pre-calculated on the verse object (we store it in versesWithWords)
-            const parentVerse = (versesWithWords as any[]).find(v => v.verse_key === verseKey);
-            context = parentVerse?.verseContext || '';
-        }
-
+    const openWordDetail = useCallback((word: any, verseKey: string, verseWords: any[] = []) => {
         setSelectedWord({
             text_uthmani: word.text_uthmani,
             text_qpc_hafs: (word as any).text_qpc_hafs,
@@ -589,9 +342,11 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
             char_type_name: word.char_type_name,
             position: word.position,
             verseKey,
-            verseText: context,
+            code_v2: word.code_v2,
+            page_number: word.page_number,
+            verseWords,
         });
-    }, [versesWithWords]);
+    }, []);
 
     // ESC to close word detail modal
     useEffect(() => {
@@ -614,6 +369,28 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
     // Mushaf page pagination for reading mode
     const [, setMushafPageIndex] = useState(0);
 
+    // Reading-room UI state
+    const [surahQuery, setSurahQuery] = useState('');
+    const scrollRef = useRef<HTMLDivElement | null>(null);
+    const progressRef = useRef<HTMLSpanElement | null>(null);
+
+    // Page-by-page ayahs for Translation / Word by Word (same ?page= as Reading mode)
+    const [pageIdx, setPageIdx] = useState(0);
+    const [pageRetry, setPageRetry] = useState(0);
+    const pendingVerseRef = useRef<number | null>(null);
+    const firstPage = chapter?.pages?.[0] ?? 1;
+    const lastPage = chapter?.pages?.[chapter.pages.length - 1] ?? firstPage;
+    const totalPages = lastPage - firstPage + 1;
+    const pagedMode = readingMode !== 'reading';
+    const translationResourceId = TRANSLATIONS.find(t => t.id === selectedTranslation)?.resourceId ?? '20';
+    const { verses: pageVerses, loading: pageLoading, error: pageError } = usePageVerses(
+        surahNumber,
+        chapter && pagedMode ? firstPage + pageIdx : null,
+        lastPage,
+        translationResourceId,
+        pageRetry
+    );
+
     // Unified Data Loader - Fetches everything needed in one go and pre-calculates contexts
     useEffect(() => {
         let isCancelled = false;
@@ -633,16 +410,12 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
                 if (isCancelled) return;
                 setChapter(chapterData);
                 setMushafPageIndex(0);
+                setLoading(false);
 
                 // 2. Load Verses (with or without words depending on requirements)
                 // We always try to get words if we are in reading/wbw modes as it's more complete
                 const needsWords = readingMode === 'reading' || readingMode === 'word-by-word';
-                const translationMap: Record<string, string> = {
-                    'en.sahih': '131', 'en.pickthall': '22', 'en.yusufali': '21',
-                    'en.asad': '206', 'ur.jalandhry': '97', 'ur.ahmedali': '96',
-                    'fr.hamidullah': '31', 'es.asad': '83'
-                };
-                const resourceId = translationMap[selectedTranslation] || '131';
+                const resourceId = TRANSLATIONS.find(t => t.id === selectedTranslation)?.resourceId ?? '20';
 
                 // Fetch data
                 const versesData = needsWords 
@@ -692,6 +465,56 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
         return () => { isCancelled = true; };
     }, [surahNumber, selectedTranslation, readingMode]);
 
+    // Register QCF page fonts for every page this surah spans
+    useEffect(() => {
+        const pages = new Set<number>();
+        versesWithWords.forEach(v => v.words?.forEach((w: any) => w.page_number && pages.add(w.page_number)));
+        loadQcfFontsForPages(pages);
+    }, [versesWithWords]);
+
+    // The reader is a full-screen layer: lock the page behind it so only one scrollbar exists
+    useEffect(() => {
+        const root = document.documentElement;
+        root.classList.add('rr-lock');
+        return () => root.classList.remove('rr-lock');
+    }, []);
+
+    // Pick up ?page= when the surah loads or when switching into a paged mode
+    useEffect(() => {
+        if (chapter && pagedMode) setPageIdx(readPageParam(totalPages));
+    }, [chapter, pagedMode, totalPages]);
+
+    const goPage = useCallback((i: number) => {
+        setPageIdx(Math.min(Math.max(i, 0), Math.max(totalPages - 1, 0)));
+    }, [totalPages]);
+
+    // Persist the page and return to the top (unless we're heading for a specific ayah)
+    useEffect(() => {
+        if (!chapter || !pagedMode) return;
+        writePageParam(pageIdx);
+        if (pendingVerseRef.current == null) scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+    }, [pageIdx, chapter, pagedMode]);
+
+    // Once the page has rendered, finish any pending jump to an ayah
+    useEffect(() => {
+        if (pageLoading || pendingVerseRef.current == null) return;
+        const v = pendingVerseRef.current;
+        pendingVerseRef.current = null;
+        setTimeout(() => document.getElementById(`verse-${v}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60);
+    }, [pageLoading, pageVerses]);
+
+    // [ and ] turn pages in Translation / Word by Word
+    useEffect(() => {
+        if (!pagedMode) return;
+        const onKey = (e: KeyboardEvent) => {
+            if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) return;
+            if (e.key === ']' || e.key === 'PageDown') { e.preventDefault(); goPage(pageIdx + 1); }
+            if (e.key === '[' || e.key === 'PageUp') { e.preventDefault(); goPage(pageIdx - 1); }
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [pagedMode, pageIdx, goPage]);
+
     // Track recently visited surah
     useEffect(() => {
         if (!chapter) return;
@@ -712,8 +535,6 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
         }
     }, []);
 
-    const [showSurahInfo, setShowSurahInfo] = useState(false);
-
     // Cleanup
     useEffect(() => {
         isMountedRef.current = true;
@@ -727,9 +548,14 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
     useEffect(() => {
         if (currentVerse && isPlaying && autoScroll) {
             const el = document.getElementById(`verse-${currentVerse}`);
-            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+            const page = verses.find(v => v.verse_number === currentVerse)?.page_number;
+            if (pagedMode && page && chapter) {
+                pendingVerseRef.current = currentVerse;
+                setPageIdx(page - (chapter.pages?.[0] ?? 1));
+            }
         }
-    }, [currentVerse, isPlaying, autoScroll]);
+    }, [currentVerse, isPlaying, autoScroll, verses, pagedMode, chapter]);
 
     // Save progress
     useEffect(() => {
@@ -841,10 +667,19 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
 
     const jumpToVerse = useCallback((verseNumber: number) => {
         setShowVerseNav(false);
+        if (readingMode !== 'reading' && chapter) {
+            const page = verses.find(v => v.verse_number === verseNumber)?.page_number;
+            const target = page ? page - (chapter.pages?.[0] ?? 1) : null;
+            if (target != null && target !== pageIdx) {
+                pendingVerseRef.current = verseNumber;
+                setPageIdx(target);
+                return;
+            }
+        }
         // In reading mode, switch to the page containing this verse first
-        const pageIdx = verseToPageIndexRef.current.get(verseNumber);
-        if (pageIdx !== undefined) {
-            setMushafPageIndex(pageIdx);
+        const legacyPageIdx = verseToPageIndexRef.current.get(verseNumber);
+        if (legacyPageIdx !== undefined) {
+            setMushafPageIndex(legacyPageIdx);
             // Scroll after page renders
             setTimeout(() => {
                 const el = document.getElementById(`verse-${verseNumber}`);
@@ -854,15 +689,14 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
             const el = document.getElementById(`verse-${verseNumber}`);
             if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
-    }, []);
+    }, [readingMode, chapter, verses, pageIdx]);
 
     // Loading state
     if (loading) {
         return (
-            <div className="nq-shell">
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, flexDirection: 'column', gap: 16 }}>
-                    <div className="reader-spinner" />
-                    <p style={{ color: '#94a3b8', fontFamily: 'Lexend, sans-serif' }}>Loading Surah…</p>
+            <div className="rr">
+                <div className="rr-scroll" style={{ paddingTop: 40 }}>
+                    <MushafLoader label="Opening the Surah" />
                 </div>
             </div>
         );
@@ -870,1081 +704,521 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
 
     if (error || !chapter) {
         return (
-            <div className="nq-shell">
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, flexDirection: 'column', gap: 16 }}>
-                    <p style={{ color: '#f85149' }}>{error || 'Surah not found'}</p>
-                    <Link href="/" style={{ color: '#f59e0b' }}>← Go Home</Link>
+            <div className="rr">
+                <div className="rr-state">
+                    <span className="material-symbols-outlined" style={{ fontSize: 40 }}>menu_book</span>
+                    <p>{error || 'Surah not found'}</p>
+                    <Link href="/read-quran">← Back to the library</Link>
                 </div>
             </div>
         );
     }
 
-    const displayVerses = (readingMode === 'word-by-word' || readingMode === 'reading') && versesWithWords.length > 0 ? versesWithWords : verses;
+
+    const reciterName = POPULAR_RECITERS.find(r => r.id === selectedReciter)?.name ?? 'Reciter';
+    const showBismillah = chapter.bismillah_pre && surahNumber !== 1 && surahNumber !== 9;
+    const pagesLabel = firstPage ? (firstPage === lastPage ? `Page ${firstPage}` : `Pages ${firstPage}–${lastPage}`) : null;
+    const sq = surahQuery.trim().toLowerCase();
+    const surahResults = sq
+        ? ALL_SURAHS.filter(s => s.name.toLowerCase().includes(sq) || s.translation.toLowerCase().includes(sq) || s.arabic.includes(surahQuery.trim()) || String(s.number) === sq)
+        : ALL_SURAHS;
+    const modes: { id: ReadingMode; label: string; icon: string }[] = [
+        { id: 'reading', label: 'Reading', icon: 'auto_stories' },
+        { id: 'translation', label: 'Translation', icon: 'translate' },
+        { id: 'word-by-word', label: 'Word by Word', icon: 'text_fields' },
+    ];
+    const verseArabic = (verse: VerseWithTranslation) =>
+        cleanArabicText(verse.verse_number === 1 && chapter.bismillah_pre ? removeBismillah(verse.text_uthmani) : verse.text_uthmani);
+    const closeWordDetail = () => {
+        setSelectedWord(null);
+        if (wordAudioRef.current) { wordAudioRef.current.pause(); wordAudioRef.current = null; setWordAudioPlaying(false); }
+    };
+    const startListening = () => {
+        setAudioEnabled(true);
+        playVerse(currentVerse || 1, true);
+    };
+
+    const hero = (
+        <section className="rr-hero">
+            <div style={{ position: 'relative', zIndex: 1 }}>
+                <p className="rr-hero-kicker">Surah {surahNumber} of 114</p>
+                <h1>{chapter.name_simple}</h1>
+                <p className="rr-hero-meaning">“{chapter.translated_name.name}”</p>
+                <div className="rr-hero-chips">
+                    <span>
+                        <span className="material-symbols-outlined">{chapter.revelation_place === 'makkah' ? 'landscape' : 'location_city'}</span>
+                        {chapter.revelation_place === 'makkah' ? 'Makkah' : 'Madinah'}
+                    </span>
+                    <span>
+                        <span className="material-symbols-outlined">format_list_numbered</span>
+                        {chapter.verses_count} ayahs
+                    </span>
+                    <span>
+                        <span className="material-symbols-outlined">history</span>
+                        Revealed #{chapter.revelation_order}
+                    </span>
+                    {pagesLabel && (
+                        <span>
+                            <span className="material-symbols-outlined">description</span>
+                            {pagesLabel}
+                        </span>
+                    )}
+                </div>
+            </div>
+            <div className="rr-hero-right">
+                <span className="rr-hero-ar font-arabic" lang="ar">{chapter.name_arabic}</span>
+                <button className="rr-hero-play" onClick={startListening}>
+                    <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
+                    Listen
+                </button>
+            </div>
+        </section>
+    );
+
+    const bismillah = showBismillah && (
+        <div className="rr-bismillah">
+            {/* Same Mushaf calligraphy as Reading mode */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/bismillah.svg" alt="بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ" />
+            <span className="rr-rule" aria-hidden="true" />
+        </div>
+    );
+
+    const pageHasOpening = pageVerses.some(v => v.verse_number === 1);
+    const pageBar = <PageBar index={pageIdx} total={totalPages} firstPage={firstPage} onGo={goPage} />;
+    const pageNav = <PageNav index={pageIdx} total={totalPages} firstPage={firstPage} onGo={goPage} surahNumber={surahNumber} linkQuery={`mode=${readingMode}`} />;
+    const pageState = pageError ? (
+        <div className="mp-error">
+            <span className="material-symbols-outlined">cloud_off</span>
+            <p>{pageError}</p>
+            <button onClick={() => setPageRetry(r => r + 1)}>Try again</button>
+        </div>
+    ) : pageLoading ? (
+        <MushafLoader label={`Preparing page ${pageIdx + 1}`} />
+    ) : null;
 
     return (
         <>
-            <style>{`
-                .nq-shell{position:fixed;inset:0;z-index:9999;display:flex;overflow:hidden;background:#f6f8f6;font-family:'Lexend','Figtree',sans-serif}
-                .dark .nq-shell{background:#102215}
-                .nq-sidebar{width:0;flex-shrink:0;background:white;border-right:1px solid #e2e8f0;display:flex;flex-direction:column;justify-content:space-between;padding:24px 0;transition:width 0.2s;overflow:hidden}
-                @media(min-width:640px){.nq-sidebar{width:56px}}
-                @media(min-width:1024px){.nq-sidebar{width:256px}}
-                .dark .nq-sidebar{background:#0f172a;border-color:#1e293b}
-                .nq-main{flex:1;display:flex;flex-direction:column;min-width:0;position:relative;transition:margin 0.3s ease}
-                @media(min-width:1280px){.nq-main{margin-right:280px}}
-                .nq-header{height:56px;background:rgba(255,255,255,0.8);backdrop-filter:blur(12px);border-bottom:1px solid #e2e8f0;padding:0 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;z-index:10;gap:8px}
-                @media(min-width:640px){.nq-header{height:64px;padding:0 24px}}
-                @media(min-width:1024px){.nq-header{height:80px;padding:0 32px}}
-                .dark .nq-header{background:rgba(15,23,42,0.8);border-color:#1e293b}
-                .nq-content{flex:1;display:flex;flex-direction:column;overflow:hidden}
-                .nq-scroll{flex:1;overflow-y:auto;padding:16px 16px 32px}
-                @media(min-width:640px){.nq-scroll{padding:24px 24px 32px}}
-                @media(min-width:1024px){.nq-scroll{padding:32px 48px 32px}}
-                .nq-scroll.audio-on{padding-bottom:80px!important}
-                @media(min-width:640px){.nq-scroll.audio-on{padding-bottom:80px!important}}
-                @media(min-width:1024px){.nq-scroll.audio-on{padding-bottom:80px!important}}
-                .nq-islamic{background-image:radial-gradient(circle at 2px 2px,rgba(245,158,11,0.05) 1px,transparent 0);background-size:24px 24px}
-                /* Bismillah */
-                .nq-bismillah{display:flex;flex-direction:column;align-items:center;margin-bottom:48px}
-                .nq-bismillah-text{font-family:var(--rq-font-arabic);font-size:36px;color:#1e293b;padding:32px 0;opacity:0.9}
-                .dark .nq-bismillah-text{color:#e2e8f0}
-                .nq-bismillah-hr{width:128px;height:4px;background:linear-gradient(90deg,transparent,rgba(245,158,11,0.3),transparent);border:none;margin:0}
-                /* Verse cards */
-                .nq-ayah-card{position:relative;padding:16px;border-radius:16px;border:1px solid transparent;transition:all 0.3s;margin-bottom:32px}
-                @media(min-width:640px){.nq-ayah-card{padding:24px;margin-bottom:48px}}
-                .nq-ayah-card:hover{background:rgba(245,158,11,0.05);border-color:rgba(245,158,11,0.1)}
-                .nq-ayah-card.nq-playing{background:rgba(245,158,11,0.05);border-color:rgba(245,158,11,0.25);box-shadow:0 2px 12px rgba(245,158,11,0.08)}
-                .nq-active-accent{position:absolute;left:-3px;top:32px;width:6px;height:48px;background:#f59e0b;border-radius:3px}
-                .nq-arabic-row{display:flex;flex-direction:row-reverse;align-items:flex-start;gap:12px;margin-bottom:0}
-                @media(min-width:640px){.nq-arabic-row{gap:24px}}
-                .nq-arabic-text{font-family:var(--rq-font-arabic);font-size:var(--nq-fs,26px);line-height:2;text-align:right;flex:1;color:#1e293b;direction:rtl}
-                @media(min-width:640px){.nq-arabic-text{font-size:var(--nq-fs,36px)}}
-                .dark .nq-arabic-text{color:#e2e8f0}
-                .nq-shell .word-arabic,.nq-shell .reader-verse-arabic,.nq-shell .reader-bismillah-text,.nq-shell .nq-bismillah-text,.nq-shell .nq-arabic-text{font-family: "UthmanicHafs", serif;font-feature-settings:'liga' 1,'calt' 1,'mark' 1,'mkmk' 1}
-                .nq-verse-badge{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;border:1px solid rgba(245,158,11,0.4);font-size:12px;font-weight:700;color:#f59e0b;margin-right:6px;font-family:'Lexend',sans-serif;cursor:pointer;vertical-align:middle;transition:background 0.15s}
-                @media(min-width:640px){.nq-verse-badge{width:40px;height:40px;font-size:14px;margin-right:8px}}
-                .nq-verse-badge:hover{background:rgba(245,158,11,0.1)}
-                .nq-playing .nq-verse-badge{border-color:#f59e0b;background:rgba(245,158,11,0.12)}
-                .nq-translation-row{margin-top:14px;padding-left:12px;border-left:2px solid #e2e8f0;transition:border-color 0.2s}
-                @media(min-width:640px){.nq-translation-row{margin-top:24px;padding-left:16px}}
-                .nq-ayah-card:hover .nq-translation-row{border-color:rgba(245,158,11,0.3)}
-                .nq-ayah-card.nq-playing .nq-translation-row{border-color:rgba(245,158,11,0.5)}
-                .nq-translation-text{color:#475569;font-size:15px;line-height:1.8}
-                @media(min-width:640px){.nq-translation-text{font-size:18px}}
-                @media(max-width:639px){.nq-translation-row{padding-left:0;border-left:none;padding-top:12px;border-top:1px solid #e2e8f0;margin-top:12px}.nq-translation-text{text-align:center}}
-                .dark .nq-translation-text{color:#94a3b8}
-                .nq-ayah-card.nq-playing .nq-translation-text{color:#1e293b;font-weight:500}
-                .dark .nq-ayah-card.nq-playing .nq-translation-text{color:#e2e8f0}
-                /* Hover actions */
-                .nq-actions{position:absolute;top:10px;right:10px;display:flex;gap:6px;opacity:0;transition:opacity 0.2s}
-                @media(min-width:640px){.nq-actions{top:16px;right:16px;gap:8px}}
-                .nq-ayah-card:hover .nq-actions{opacity:1}
-                .nq-action-btn{padding:8px;background:white;border:none;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,0.08);color:#94a3b8;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:color 0.15s}
-                .dark .nq-action-btn{background:#1e293b}
-                .nq-action-btn:hover{color:#f59e0b}
-                .nq-bookmarked{color:#f59e0b!important}
-                .nq-active-btn{color:#f59e0b!important}
-                /* Sidebar nav */
-                .nq-nav-link{display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;text-decoration:none;font-weight:500;font-size:14px;color:#64748b;transition:background 0.15s;white-space:nowrap}
-                .nq-nav-link:hover{background:#f8fafc}
-                .dark .nq-nav-link:hover{background:#1e293b}
-                .nq-nav-link.active{background:rgba(245,158,11,0.1);color:#f59e0b;font-weight:600}
-                @media(max-width:1023px){.nq-nav-label{display:none}}
-                /* Header buttons */
-                .nq-hdr-btn{padding:6px 8px;border:none;border-radius:8px;background:#f1f5f9;color:#64748b;cursor:pointer;display:flex;align-items:center;transition:all 0.15s;font-size:12px}
-                @media(min-width:640px){.nq-hdr-btn{padding:8px 12px;font-size:13px}}
-                .dark .nq-hdr-btn{background:#1e293b;color:#94a3b8}
-                .nq-hdr-btn:hover{color:#f59e0b}
-                .nq-hdr-toggle-group{display:none;align-items:center;background:#f1f5f9;border-radius:8px;padding:4px;gap:2px}
-                @media(min-width:600px){.nq-hdr-toggle-group{display:flex}}
-                .dark .nq-hdr-toggle-group{background:#1e293b}
-                .nq-hdr-toggle{padding:4px 10px;border-radius:6px;border:none;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s;background:transparent;color:#64748b}
-                @media(min-width:768px){.nq-hdr-toggle{padding:4px 12px;font-size:12px}}
-                .nq-hdr-toggle.active{background:white;color:#0f172a;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
-                .dark .nq-hdr-toggle.active{background:#0f172a;color:white}
-                .nq-bkmk-btn{width:34px;height:34px;background:#f59e0b;border:none;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;cursor:pointer;box-shadow:0 4px 14px rgba(245,158,11,0.3);flex-shrink:0}
-                @media(min-width:640px){.nq-bkmk-btn{width:40px;height:40px}}
-                /* Audio bar - Spotify-style dark 3-column bar */
-                .nq-audio-bar{
-                  position:fixed;bottom:0;left:0;right:0;
-                  height:72px;
-                  background:#121212;
-                  border-top:1px solid rgba(255,255,255,0.08);
-                  z-index:9990;
-                  display:grid;
-                  grid-template-columns:1fr 2fr 1fr;
-                  align-items:center;
-                  padding:0 16px;
-                  gap:8px;
-                  animation:audioBarIn 0.25s ease-out;
-                  font-family:'Figtree','Inter',sans-serif;
-                }
-                @keyframes audioBarIn{from{opacity:0;transform:translateY(100%)}to{opacity:1;transform:translateY(0)}}
-                @media(max-width:520px){
-                  .nq-audio-bar{grid-template-columns:auto 1fr auto;height:64px;padding:0 10px}
-                }
-
-                /* Left column */
-                .nq-ab-left{display:flex;align-items:center;gap:12px;min-width:0;overflow:hidden}
-                .nq-ab-art{
-                  width:48px;height:48px;flex-shrink:0;border-radius:6px;
-                  background:linear-gradient(135deg,#f59e0b,#d97706);
-                  display:flex;align-items:center;justify-content:center;
-                  box-shadow:0 4px 12px rgba(245,158,11,0.25);
-                  font-family: "UthmanicHafs", serif;font-size:20px;color:white;font-weight:700;
-                }
-                .nq-ab-art-num{font-family:'Figtree','Inter',sans-serif;font-size:14px;font-weight:700;color:rgba(255,255,255,0.9)}
-                .nq-ab-track{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
-                .nq-ab-track-name{font-size:13px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-                .nq-ab-track-artist{font-size:11px;color:#b3b3b3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-                .nq-ab-like-btn{
-                  width:28px;height:28px;background:none;border:none;cursor:pointer;
-                  color:#b3b3b3;display:flex;align-items:center;justify-content:center;flex-shrink:0;
-                  transition:color 0.15s;
-                }
-                .nq-ab-like-btn.liked{color:#f59e0b}
-                .nq-ab-like-btn:hover{color:#fff}
-
-                /* Center column */
-                .nq-ab-center{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
-                .nq-ab-controls{display:flex;align-items:center;gap:8px}
-                .nq-ab-ctrl{
-                  background:none;border:none;cursor:pointer;
-                  color:#b3b3b3;display:flex;align-items:center;justify-content:center;
-                  width:28px;height:28px;border-radius:50%;
-                  transition:color 0.15s;position:relative;
-                }
-                .nq-ab-ctrl:hover{color:#fff}
-                .nq-ab-ctrl.active{color:#f59e0b}
-                .nq-ab-ctrl.active::after{content:'';position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:#f59e0b}
-                .nq-ab-play{
-                  width:32px;height:32px;border-radius:50%;border:none;cursor:pointer;
-                  background:#ffffff;
-                  display:flex;align-items:center;justify-content:center;
-                  transition:transform 0.1s,background 0.15s;
-                  flex-shrink:0;
-                }
-                .nq-ab-play svg{fill:#000;width:16px;height:16px}
-                .nq-ab-play:hover{transform:scale(1.06);background:#e0e0e0}
-                .nq-ab-play:active{transform:scale(0.95)}
-                /* Progress bar row */
-                .nq-ab-progress{display:flex;align-items:center;gap:6px;width:100%}
-                .nq-ab-time{font-size:10px;color:#6a6a6a;min-width:36px;font-variant-numeric:tabular-nums;white-space:nowrap}
-                .nq-ab-time:first-child{text-align:right}
-                .nq-ab-bar-wrap{flex:1;height:12px;display:flex;align-items:center;cursor:pointer;position:relative}
-                .nq-ab-bar{width:100%;height:4px;background:rgba(255,255,255,0.12);border-radius:2px;position:relative;overflow:visible}
-                .nq-ab-bar-wrap:hover .nq-ab-bar{height:5px}
-                .nq-ab-fill{height:100%;background:#fff;border-radius:2px;position:relative;transition:width 100ms linear}
-                .nq-ab-bar-wrap:hover .nq-ab-fill{background:#f59e0b}
-                .nq-ab-knob{width:12px;height:12px;border-radius:50%;background:#fff;position:absolute;right:-6px;top:50%;transform:translateY(-50%);opacity:0;box-shadow:0 2px 4px rgba(0,0,0,0.5);transition:opacity 0.1s}
-                .nq-ab-bar-wrap:hover .nq-ab-knob{opacity:1}
-
-                /* Right column */
-                .nq-ab-right{display:flex;align-items:center;gap:4px;justify-content:flex-end}
-                .nq-ab-vol-wrap{width:80px;height:12px;display:flex;align-items:center;cursor:pointer;position:relative}
-                .nq-ab-vol-bar{width:100%;height:4px;background:rgba(255,255,255,0.12);border-radius:2px;position:relative;overflow:visible}
-                .nq-ab-vol-fill{height:100%;background:#fff;border-radius:2px;position:relative;transition:width 100ms ease}
-                .nq-ab-vol-wrap:hover .nq-ab-vol-fill{background:#f59e0b}
-                .nq-ab-vol-knob{width:12px;height:12px;border-radius:50%;background:#fff;position:absolute;right:-6px;top:50%;transform:translateY(-50%);opacity:0;box-shadow:0 2px 4px rgba(0,0,0,0.5)}
-                .nq-ab-vol-wrap:hover .nq-ab-vol-knob{opacity:1}
-                .nq-ab-close{width:26px;height:26px;background:rgba(255,255,255,0.08);border:none;border-radius:50%;cursor:pointer;color:#b3b3b3;display:flex;align-items:center;justify-content:center;transition:background 0.15s,color 0.15s;flex-shrink:0}
-                .nq-ab-close:hover{background:rgba(239,68,68,0.2);color:#ef4444}
-
-                /* Use larger padding to clear the bar */
-                .nq-scroll.audio-on{padding-bottom:90px!important}
-                .nq-scroll.audio-off{padding-bottom:32px}
-                /* Right panel */
-                .nq-panel-section{padding:24px;border-bottom:1px solid #f1f5f9}
-                .dark .nq-panel-section{border-color:#1e293b}
-                .nq-panel-title{font-weight:700;font-size:14px;color:#1e293b;display:flex;align-items:center;gap:8px;margin:0 0 16px}
-                .dark .nq-panel-title{color:#e2e8f0}
-                .nq-tajweed-card{padding:16px;border-radius:12px;margin-bottom:12px}
-                .nq-tajweed-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-                .nq-tajweed-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em}
-                .nq-tajweed-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
-                .nq-tajweed-desc{font-size:13px;color:#64748b;line-height:1.5}
-                .dark .nq-tajweed-desc{color:#94a3b8}
-                /* scrollbar — hidden everywhere */
-                .nq-shell,.nq-shell *{scrollbar-width:none;-ms-overflow-style:none}
-                .nq-shell::-webkit-scrollbar,.nq-shell *::-webkit-scrollbar{display:none}
-                .wdm-sheet{scrollbar-width:none;-ms-overflow-style:none}
-                .wdm-sheet::-webkit-scrollbar{display:none}
-                /* Mode tabs row */
-                .nq-tabs-row{display:flex;align-items:center;background:rgba(255,255,255,0.8);border-bottom:1px solid #e2e8f0;height:44px;flex-shrink:0;min-width:0}
-                @media(min-width:640px){.nq-tabs-row{height:48px}}
-                .dark .nq-tabs-row{background:rgba(15,23,42,0.8);border-color:#1e293b}
-                .nq-mode-tabs{display:flex;gap:4px;padding:0 8px 0 16px;flex:1;min-width:0;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;align-items:center;height:100%}
-                .nq-mode-tabs::-webkit-scrollbar{display:none}
-                @media(min-width:640px){.nq-mode-tabs{padding:0 8px 0 24px}}
-                @media(min-width:1024px){.nq-mode-tabs{padding:0 8px 0 32px}}
-                .nq-mode-tab{padding:5px 12px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:500;transition:all 0.15s;background:transparent;color:#64748b;font-family:'Lexend',sans-serif;white-space:nowrap;flex-shrink:0}
-                @media(min-width:640px){.nq-mode-tab{padding:6px 16px;font-size:13px}}
-                .nq-mode-tab.active{background:#f59e0b;color:white}
-                    .nq-header-title{margin:0;font-size:14px;font-weight:700;color:#0f172a;display:flex;align-items:baseline;gap:5px;white-space:nowrap;overflow:hidden;min-width:0}
-                    @media(min-width:640px){.nq-header-title{font-size:17px;gap:7px}}
-                    @media(min-width:1024px){.nq-header-title{font-size:20px;gap:8px}}
-                    .nq-header-subtitle{font-size:11px;font-weight:400;color:#94a3b8;flex-shrink:0}
-                    @media(min-width:480px){.nq-header-subtitle{font-size:13px}}
-                    .dark .nq-header-title{color:#e2e8f0}
-                    /* Audio toggle (legacy - kept for settings panel compat) */
-                    .nq-audio-toggle{display:flex;align-items:center;gap:8px;flex-shrink:0}
-                    .nq-audio-toggle-label{font-size:11px;font-weight:600;color:#94a3b8;white-space:nowrap;font-family:'Lexend',sans-serif;text-transform:uppercase;letter-spacing:0.06em}
-                    .nq-audio-toggle-pill{position:relative;width:38px;height:22px;border-radius:11px;cursor:pointer;transition:background 0.22s;flex-shrink:0;border:none;padding:0}
-                    .nq-audio-toggle-pill.on{background:#f59e0b}
-                    .nq-audio-toggle-pill.off{background:#94a3b8}
-                    .nq-audio-toggle-pill-thumb{position:absolute;top:3px;width:16px;height:16px;border-radius:50%;background:white;transition:left 0.22s;box-shadow:0 1px 3px rgba(0,0,0,0.2)}
-                    .nq-audio-toggle-pill.on .nq-audio-toggle-pill-thumb{left:19px}
-                    .nq-audio-toggle-pill.off .nq-audio-toggle-pill-thumb{left:3px}
-                    /* Tafsir panel */
-                    .nq-tafsir-panel{margin-top:16px;border-radius:12px;border:1px solid rgba(245,158,11,0.2);background:rgba(245,158,11,0.03);overflow:hidden;animation:fadeIn 0.2s ease-out}
-                    @keyframes fadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
-                    .nq-tafsir-header{display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(245,158,11,0.08);border-bottom:1px solid rgba(245,158,11,0.15);font-size:12px;font-weight:700;color:#f59e0b;text-transform:uppercase;letter-spacing:0.06em;font-family:'Lexend',sans-serif}
-                    .nq-tafsir-text{margin:0;padding:14px 16px;font-size:14px;line-height:1.85;color:#334155;max-height:320px;overflow-y:auto;font-family:'Inter','Lexend',sans-serif}
-                    .dark .nq-tafsir-text{color:#94a3b8}
-                    .nq-tafsir-loading{display:flex;align-items:center;gap:10px;padding:16px;font-size:13px;color:#64748b;font-family:'Lexend',sans-serif}
-                    .nq-tafsir-text::-webkit-scrollbar{width:4px}
-                    .nq-tafsir-text::-webkit-scrollbar-thumb{background:rgba(245,158,11,0.3);border-radius:2px}
-                    /* === IMPROVED TRANSLATION MODE === */
-                    .nq-ayah-card{margin-bottom:0!important}
-                    .nq-verse-meta-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
-                    .nq-verse-ref-tag{font-size:11px;font-weight:700;color:#94a3b8;font-family:'Lexend','Inter',sans-serif;letter-spacing:0.05em;padding:3px 10px;background:#f1f5f9;border-radius:99px;border:1px solid #e2e8f0}
-                    .dark .nq-verse-ref-tag{background:#1e293b;border-color:#334155;color:#64748b}
-                    .nq-inline-play-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 13px;background:rgba(245,158,11,0.08);border:1.5px solid rgba(245,158,11,0.25);border-radius:99px;color:#f59e0b;cursor:pointer;font-size:11px;font-weight:700;font-family:'Lexend',sans-serif;transition:all 0.2s;letter-spacing:0.02em}
-                    .nq-inline-play-btn:hover{background:rgba(245,158,11,0.15);border-color:rgba(245,158,11,0.5);box-shadow:0 2px 8px rgba(245,158,11,0.15)}
-                    .nq-ayah-card.nq-playing .nq-inline-play-btn{background:rgba(245,158,11,0.15);border-color:#f59e0b}
-                    .nq-ayah-end-marker{cursor:pointer;display:inline-block;vertical-align:middle;margin:0 2px;transition:opacity 0.15s}
-                    .nq-ayah-end-marker:hover{opacity:0.7}
-                    .nq-translation-row{margin-top:20px;padding:14px 18px;background:#f8fafc;border:1px solid #f1f5f9;border-left:3px solid rgba(245,158,11,0.5);border-radius:0 10px 10px 0;transition:border-left-color 0.2s,background 0.2s}
-                    @media(min-width:640px){.nq-translation-row{margin-top:24px;padding:16px 20px}}
-                    .dark .nq-translation-row{background:rgba(30,41,59,0.5);border-color:#1e293b;border-left-color:rgba(245,158,11,0.4)}
-                    .nq-ayah-card:hover .nq-translation-row{border-left-color:rgba(245,158,11,0.6);background:rgba(245,158,11,0.02)}
-                    .nq-ayah-card.nq-playing .nq-translation-row{border-left-color:#f59e0b;background:rgba(245,158,11,0.05)}
-                    .nq-translation-text{color:#334155;font-size:15px;line-height:1.9;margin:0}
-                    @media(min-width:640px){.nq-translation-text{font-size:17px;line-height:2.0}}
-                    @media(max-width:639px){.nq-translation-row{padding:10px 0;border-left:none;border-top:1px solid rgba(245,158,11,0.2);border-radius:0;background:transparent}.nq-translation-text{text-align:center}}
-                    .dark .nq-translation-text{color:#94a3b8}
-                    .nq-actions-bar{display:flex;align-items:center;gap:6px;margin-top:16px;padding-top:12px;border-top:1px solid #f1f5f9;flex-wrap:wrap}
-                    @media(min-width:640px){.nq-actions-bar{gap:8px;margin-top:20px;padding-top:14px}}
-                    .dark .nq-actions-bar{border-top-color:#1e293b}
-                    .nq-bar-btn{display:inline-flex;align-items:center;gap:5px;padding:7px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;color:#64748b;cursor:pointer;font-size:12px;font-weight:500;transition:all 0.15s;font-family:'Lexend',sans-serif;white-space:nowrap}
-                    @media(min-width:640px){.nq-bar-btn{padding:8px 14px}}
-                    .dark .nq-bar-btn{background:#1e293b;border-color:#334155;color:#94a3b8}
-                    .nq-bar-btn:hover{background:rgba(245,158,11,0.08);border-color:rgba(245,158,11,0.3);color:#f59e0b}
-                                        .nq-bar-btn.nq-bar-active{color:#f59e0b;background:rgba(245,158,11,0.08);border-color:rgba(245,158,11,0.3)}
-                    
-                    /* Premium Audio Entry Button */
-                    .nq-audio-entry-btn {
-                        display: flex;
-                        align-items: center;
-                        gap: 8px;
-                        padding: 6px 12px;
-                        background: rgba(245,158,11,0.08);
-                        border: 1.5px solid rgba(245,158,11,0.2);
-                        border-radius: 99px;
-                        cursor: pointer;
-                        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-                        position: relative;
-                        overflow: hidden;
-                    }
-                    .nq-audio-entry-btn:hover {
-                        background: rgba(245,158,11,0.15);
-                        border-color: rgba(245,158,11,0.4);
-                        transform: translateY(-1px);
-                        box-shadow: 0 4px 12px rgba(245,158,11,0.12);
-                    }
-                    .nq-audio-entry-btn.active {
-                        background: #f59e0b;
-                        border-color: #f59e0b;
-                        box-shadow: 0 4px 15px rgba(245,158,11,0.3);
-                    }
-                    .nq-audio-entry-btn .nq-btn-icon {
-                        font-size: 20px;
-                        transition: transform 0.3s ease;
-                    }
-                    .nq-audio-entry-btn.active .nq-btn-icon {
-                        color: white !important;
-                        transform: scale(1.1);
-                    }
-                    .nq-audio-entry-btn .nq-btn-text {
-                        font-size: 13px;
-                        font-weight: 700;
-                        font-family: 'Lexend', sans-serif;
-                        color: #92400e;
-                        transition: color 0.25s;
-                    }
-                    .nq-audio-entry-btn.active .nq-btn-text {
-                        color: white;
-                    }
-                    .nq-audio-entry-btn:active {
-                        transform: scale(0.96);
-                    }
-                    .nq-ayah-sep{display:flex;align-items:center;gap:16px;padding:6px 0}
-                    .nq-sep-line{flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(100,116,139,0.15) 20%,rgba(100,116,139,0.2) 50%,rgba(100,116,139,0.15) 80%,transparent)}
-                    .nq-sep-icon{font-size:14px;color:rgba(245,158,11,0.45);flex-shrink:0;line-height:1;font-family: "UthmanicHafs", serif;user-select:none}
-                    .nq-surah-header{text-align:center;margin-bottom:32px;padding:24px 16px 20px;border-bottom:1px solid rgba(245,158,11,0.1)}
-                    .nq-surah-header-arabic{font-family:var(--rq-font-arabic);color:#1e293b;font-weight:700;line-height:1.6;display:block}
-                    .dark .nq-surah-header-arabic{color:#e2e8f0}
-                    .nq-surah-header-sub{font-size:13px;color:#64748b;margin-top:6px;font-weight:500;font-family:'Lexend',sans-serif}
-                    .nq-bismillah-header{text-align:center;margin-bottom:32px;font-family:var(--rq-font-arabic);color:#1e293b;line-height:2;opacity:0.9}
-                    .dark .nq-bismillah-header{color:#e2e8f0}
-                    @media(max-width:479px){.nq-bar-btn span{display:none}.nq-inline-play-btn span{display:none}}
-                `}</style>
-
-            <div className="nq-shell">
-                {/* SIDEBAR */}
-                <aside className="nq-sidebar">
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 24, padding: '0 12px' }}>
-                        {/* Logo */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0 4px' }}>
-                            <div style={{ background: 'rgba(245,158,11,0.15)', borderRadius: 10, padding: 8, flexShrink: 0 }}>
-                                <span className="material-symbols-outlined" style={{ color: '#f59e0b', fontSize: 26 }}>auto_stories</span>
-                            </div>
-                            <div className="nq-nav-label">
-                                <p style={{ margin: 0, fontWeight: 700, fontSize: 15, color: '#0f172a', lineHeight: 1 }}>Learn Quran</p>
-                                <p style={{ margin: 0, color: '#f59e0b', fontSize: 9, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em' }}>Learning Hub</p>
-                            </div>
-                        </div>
-                        {/* Nav */}
-                        <nav style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                            <Link href="/" className="nq-nav-link">
-                                <span className="material-symbols-outlined" style={{ fontSize: 22, flexShrink: 0 }}>home</span>
-                                <span className="nq-nav-label">Home</span>
-                            </Link>
-                            <Link href="/read-quran/1" className="nq-nav-link active">
-                                <span className="material-symbols-outlined" style={{ fontSize: 22, flexShrink: 0 }}>menu_book</span>
-                                <span className="nq-nav-label">Quran</span>
-                            </Link>
-                            <Link href="/memorize-quran" className="nq-nav-link">
-                                <span className="material-symbols-outlined" style={{ fontSize: 22, flexShrink: 0 }}>ads_click</span>
-                                <span className="nq-nav-label">Memorization</span>
-                            </Link>
-                            <div style={{ margin: '8px 0', borderTop: '1px solid #f1f5f9' }} />
-                            <button onClick={() => setShowSettings(true)} className="nq-nav-link" style={{ border: 'none', background: 'transparent', cursor: 'pointer', textAlign: 'left' }}>
-                                <span className="material-symbols-outlined" style={{ fontSize: 22, flexShrink: 0 }}>settings</span>
-                                <span className="nq-nav-label">Settings</span>
-                            </button>
-                        </nav>
+            <div className="rr">
+                {/* ── Top bar ── */}
+                <header className="rr-bar">
+                    <div className="rr-bar-left">
+                        <Link href="/read-quran" className="rr-icon-btn" aria-label="Back to the library" title="Library">
+                            <span className="material-symbols-outlined">arrow_back</span>
+                        </Link>
+                        <button
+                            className="rr-surah-btn"
+                            onClick={() => { setShowSurahPicker(v => !v); setShowVersePicker(false); setSurahQuery(''); }}
+                            aria-haspopup="dialog"
+                            aria-expanded={showSurahPicker}
+                        >
+                            <span className="rr-surah-num">{surahNumber}</span>
+                            <span className="rr-surah-btn-text">
+                                <b>{chapter.name_simple}</b>
+                                <small>{chapter.translated_name.name} · {chapter.verses_count} ayahs</small>
+                            </span>
+                            <span className="material-symbols-outlined" style={{ color: 'var(--rr-muted)' }}>expand_more</span>
+                        </button>
                     </div>
-                    {/* Profile */}
-                    <div style={{ padding: '0 12px' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: 10, borderRadius: 12, background: '#f8fafc', border: '1px solid #e2e8f0' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg,#475569,#334155)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                    <span className="material-symbols-outlined" style={{ fontSize: 18, color: 'white' }}>person</span>
-                                </div>
-                                <div className="nq-nav-label" style={{ minWidth: 0 }}>
-                                    <p style={{ margin: 0, fontWeight: 700, fontSize: 12, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Browsing Anonymously</p>
-                                    <p style={{ margin: 0, fontSize: 10, color: '#94a3b8' }}>Guest User</p>
-                                </div>
-                            </div>
-                            <Link href="/signup" className="nq-nav-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, width: '100%', padding: '7px 0', borderRadius: 8, textDecoration: 'none', background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: 'white', fontSize: 11.5, fontWeight: 700, letterSpacing: '0.03em' }}>
-                                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>star</span>
-                                Subscribe Now
-                            </Link>
-                        </div>
-                    </div>
-                </aside>
 
-                {/* MAIN */}
-                <div className="nq-main">
-                    {/* Header */}
-                    <header className="nq-header">
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-                            <Link href="/" style={{ color: '#94a3b8', display: 'flex', alignItems: 'center', transition: 'color 0.15s' }}
-                                onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#f59e0b'}
-                                onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#94a3b8'}>
-                                <span className="material-symbols-outlined">arrow_back</span>
-                            </Link>
-                            <div style={{ position: 'relative' }}>
-                                    <h2 className="nq-header-title">
-                                        {chapter.name_simple}
-                                        <span className="nq-header-subtitle">
-                                            {chapter.translated_name.name} • {chapter.verses_count} Verses
-                                        </span>
-                                    </h2>
-                            </div>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            {/* Surah picker button */}
-                            <button
-                                ref={surahBtnRef}
-                                onClick={() => { setShowSurahPicker(!showSurahPicker); setShowVersePicker(false); }}
-                                className="nq-hdr-btn"
-                                style={{ gap: 6, display: 'flex', alignItems: 'center', padding: '6px 12px' }}
-                            >
-                                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>menu_book</span>
-                                <span style={{ fontSize: 13, fontWeight: 500 }}>Surah</span>
-                                <ChevronDown size={14} />
-                            </button>
-                            {/* Verse picker button */}
-                            <button
-                                ref={verseBtnRef}
-                                onClick={() => { setShowVersePicker(!showVersePicker); setShowSurahPicker(false); }}
-                                className="nq-hdr-btn"
-                                style={{ gap: 6, display: 'flex', alignItems: 'center', padding: '6px 12px' }}
-                            >
-                                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>format_list_numbered</span>
-                                <span style={{ fontSize: 13, fontWeight: 500 }}>Verse</span>
-                                <ChevronDown size={14} />
-                            </button>
-                            {/* Translation / Transliteration toggle */}
-                            <div className="nq-hdr-toggle-group">
-                                <span className="material-symbols-outlined" style={{ fontSize: 20, color: '#64748b', marginRight: 2 }}>format_size</span>
-                                <div style={{ width: 1, height: 16, background: '#cbd5e1', margin: '0 4px' }} />
-                                <button className={`nq-hdr-toggle ${showTranslation ? 'active' : ''}`} onClick={() => setShowTranslation(true)}>Translation</button>
-                                <button className={`nq-hdr-toggle ${!showTranslation ? 'active' : ''}`} onClick={() => setShowTranslation(false)}>Arabic only</button>
-                            </div>
-                            {/* Bookmark current verse */}
-                            <button
-                                className="nq-bkmk-btn"
-                                onClick={() => currentVerse && toggleBookmark(`${surahNumber}:${currentVerse}`)}
-                                title="Bookmark current verse"
-                            >
-                                <Bookmark size={18} />
-                            </button>
-                        </div>
-                    </header>
-
-                    {/* Mode tabs + Sound Toggle */}
-                    <div className="nq-tabs-row">
-                        <div className="nq-mode-tabs">
-                            {(['reading', 'translation', 'word-by-word'] as ReadingMode[]).filter(m => !isMobile || m !== 'word-by-word').map(m => (
-                                <button key={m} className={`nq-mode-tab ${readingMode === m ? 'active' : ''}`} onClick={() => setReadingMode(m)}>
-                                    {m === 'word-by-word' ? 'Word by Word' : m.charAt(0).toUpperCase() + m.slice(1)}
+                    <div className="rr-bar-center">
+                        <div className="rr-modes" role="tablist" aria-label="Reading mode">
+                            {modes.map(m => (
+                                <button key={m.id} role="tab" aria-selected={readingMode === m.id} className={readingMode === m.id ? 'on' : ''} onClick={() => setReadingMode(m.id)}>
+                                    <span className="material-symbols-outlined">{m.icon}</span>
+                                    <span className="rr-mode-label">{m.label}</span>
+                                    {m.id === 'word-by-word' && <span className="rr-mode-short">Words</span>}
                                 </button>
                             ))}
                         </div>
-                        {/* Sound Toggle — hidden in word-by-word mode */}
-                        {readingMode !== 'word-by-word' && (
-                        <div className="nq-sound-toggle-wrap">
-                            <button 
-                                className={`nq-audio-entry-btn ${audioEnabled ? 'active' : ''}`}
-                                onClick={() => {
-                                    if (audioEnabled) stopAudio();
-                                    setAudioEnabled(!audioEnabled);
-                                }}
-                                title={audioEnabled ? "Close Audio Player" : "Open Audio Player"}
+                    </div>
+
+                    <div className="rr-bar-right">
+                        {readingMode !== 'reading' && (
+                            <button
+                                className={`rr-icon-btn${showVersePicker ? ' on' : ''}`}
+                                onClick={() => { setShowVersePicker(v => !v); setShowSurahPicker(false); }}
+                                title="Go to ayah"
                             >
-                                <span className="material-symbols-outlined nq-btn-icon" style={{ color: audioEnabled ? 'white' : '#f59e0b' }}>
-                                    {audioEnabled ? 'volume_up' : 'headphones'}
-                                </span>
-                                <span className="nq-btn-text">{audioEnabled ? 'Playing' : 'Audio'}</span>
+                                <span className="material-symbols-outlined">format_list_numbered</span>
+                                <span className="rr-btn-label">Ayah</span>
                             </button>
-                        </div>
                         )}
+                        <button
+                            className={`rr-icon-btn${audioEnabled ? ' on' : ''}`}
+                            onClick={() => { if (audioEnabled) { stopAudio(); setAudioEnabled(false); } else setAudioEnabled(true); }}
+                            title={audioEnabled ? 'Close player' : 'Listen'}
+                        >
+                            <span className="material-symbols-outlined">headphones</span>
+                            <span className="rr-btn-label">Listen</span>
+                        </button>
+                        <button className="rr-icon-btn" onClick={() => setShowSettings(true)} title="Reading settings (Ctrl+S)">
+                            <span className="material-symbols-outlined">tune</span>
+                        </button>
                     </div>
 
-                    {/* Content area */}
-                    <div className="nq-content">
-                        {/* Scrollable verse area */}
-                        <div className={`nq-scroll nq-islamic ${audioEnabled ? 'audio-on' : 'audio-off'}`} style={{ '--nq-fs': `${fontSize}px` } as React.CSSProperties}>
+                    <span ref={progressRef} className="rr-progress" style={{ width: '0%' }} aria-hidden="true" />
+                </header>
 
-                            {/* Verses */}
-                            <div style={{ maxWidth: readingMode === 'reading' ? 'none' : 896, margin: '0 auto', width: '100%' }}>
-                                {readingMode === 'reading' ? (
-                                    <UthmaniReader
-                                        surahNumber={surahNumber}
-                                        readingMode="arabic"
-                                        linkBase="/read-quran"
-                                        linkQuery="mode=reading"
-                                    />
-                                ) : readingMode === 'word-by-word' ? (
-                                    <div className="wbw-clean">
-                                        {wordDataLoading ? (
-                                            <div className="reader-loading"><div className="reader-spinner" /><p className="reader-loading-text">Loading word data…</p></div>
-                                        ) : displayVerses.map((verse) => (
-                                            <div key={verse.id} id={`verse-${verse.verse_number}`} className="wbw-verse">
-                                                {/* Tiny verse number */}
-                                                <span className="wbw-vnum">{verse.verse_number}</span>
-                                                {/* Words */}
-                                                <div className="reader-verse-words">
-                                                    {verse.words && verse.words.length > 0 ? (
-                                                        verse.words.filter((w: any) => w.char_type_name !== 'end').map((word: any, idx: number) => {
-                                                            const location = word.location || `${verse.verse_key}:${word.position}`;
-                                                            return (
-                                                                <WordItem
-                                                                    key={word.id || idx}
-                                                                    word={word}
-                                                                    verseKey={verse.verse_key}
-                                                                    verseWords={verse.words || []}
-                                                                    isSelected={selectedWord?.location === location}
-                                                                    onClick={openWordDetail}
-                                                                />
-                                                            );
-                                                        })
-                                                    ) : (
-                                                        <div className="reader-verse-arabic">{verse.verse_number === 1 && chapter.bismillah_pre ? cleanArabicText(removeBismillah(verse.text_uthmani)) : cleanArabicText(verse.text_uthmani)}</div>
-                                                    )}
-                                                </div>
-                                                {/* Translation */}
-                                                {showTranslation && <p className="wbw-translation">{parseTranslationWithFootnotes(verse.translations?.[0]?.text || '')}</p>}
-                                            </div>
-                                        ))}
-                                        {/* Surah navigation */}
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 32 }}>
-                                            {surahNumber > 1 ? <Link href={`/read-quran/${surahNumber - 1}?mode=word-by-word`} className="reader-nav-btn"><ChevronLeft size={18} /><span>Previous Surah</span></Link> : <div />}
-                                            {surahNumber < 114 && <Link href={`/read-quran/${surahNumber + 1}?mode=word-by-word`} className="reader-nav-btn primary"><span>Next Surah</span><ChevronRight size={18} /></Link>}
-                                        </div>
-                                    </div>
-                                ) : (
-                                    // Translation mode — improved card design
-                                    <div>
-                                        {/* Surah title header */}
-                                        <div className="nq-surah-header">
-                                            <span className="nq-surah-header-arabic" style={{ fontSize: isMobile ? 28 : 42 }}>{chapter.name_arabic}</span>
-                                            <p className="nq-surah-header-sub">{chapter.translated_name.name} &bull; {chapter.verses_count} Verses</p>
-                                        </div>
-                                        
-                                        {/* Bismillah as separate line without number */}
-                                        {chapter.bismillah_pre && surahNumber !== 1 && surahNumber !== 9 && (
-                                            <div style={{
-                                                textAlign: 'center',
-                                                padding: isMobile ? '16px 12px' : '24px 24px',
-                                                marginBottom: '24px',
-                                            }}>
-                                                <span className="nq-arabic-text" style={{
-                                                    fontSize: isMobile ? 22 : 32,
-                                                    fontFamily: "'UthmanicHafs', 'Amiri', serif",
-                                                    lineHeight: 1.8,
-                                                    color: 'var(--text-primary)',
-                                                    fontFeatureSettings: '"liga" 1, "calt" 1, "mark" 1, "mkmk" 1',
-                                                }}>
-                                                    بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
-                                                </span>
-                                            </div>
-                                        )}
-                                        
-                                        {verses.map((verse, idx) => (
-                                            <div key={verse.id}>
-                                                {/* Skip rendering Bismillah verses (they are shown separately without numbering) */}
-                                                {!isBismillahVerse(verse.verse_number, verse.text_uthmani) && (
-                                                <div id={`verse-${verse.verse_number}`} className={`nq-ayah-card ${currentVerse === verse.verse_number ? 'nq-playing' : ''}`}>
-                                                    {currentVerse === verse.verse_number && <div className="nq-active-accent" />}
-                                                    {/* Verse meta row: reference pill + play button */}
-                                                    <div className="nq-verse-meta-row">
-                                                        <span className="nq-verse-ref-tag">{verse.verse_key}</span>
-                                                        <button className="nq-inline-play-btn" onClick={() => playVerse(verse.verse_number)} title={`Play verse ${verse.verse_number}`}>
-                                                            <Volume2 size={13} />
-                                                            <span>Play</span>
-                                                        </button>
-                                                    </div>
-                                                    {/* Arabic text with ayah marker at end */}
-                                                    <div className="nq-arabic-row">
-                                                        <span className="nq-arabic-text">
-                                                            {(() => {
-                                                                const sourceText = verse.verse_number === 1 && chapter.bismillah_pre
-                                                                    ? removeBismillah(verse.text_uthmani)
-                                                                    : (verse.text_uthmani);
-                                                                const dt = cleanArabicText(sourceText);
-                                                                return (
-                                                                    <span onClick={() => playVerse(verse.verse_number)} style={{ cursor: 'pointer' }}>
-                                                                        {dt}
-                                                                        {' '}
-                                                                        <AyahEnding number={verse.verse_number} size={isMobile ? 26 : 32} />
-                                                                    </span>
-                                                                );
-                                                            })()}
-                                                        </span>
-                                                    </div>
-                                                    {/* Translation */}
-                                                    {showTranslation && (
-                                                        <div className="nq-translation-row">
-                                                            <p className="nq-translation-text">{parseTranslationWithFootnotes(verse.translations?.[0]?.text || 'Translation not available')}</p>
-                                                        </div>
-                                                    )}
-                                                    {/* Bottom action bar — share is here below */}
-                                                    <div className="nq-actions-bar">
-                                                        <button className="nq-bar-btn" onClick={() => copyVerse(verse)} title="Copy"><Copy size={13} /><span>Copy</span></button>
-                                                        <button className={`nq-bar-btn ${bookmarks.includes(verse.verse_key) ? 'nq-bar-active' : ''}`} onClick={() => toggleBookmark(verse.verse_key)} title="Bookmark"><Bookmark size={13} /><span>{bookmarks.includes(verse.verse_key) ? 'Saved' : 'Save'}</span></button>
-                                                        <button className="nq-bar-btn" onClick={() => shareVerse(verse)} title="Share"><Share2 size={13} /><span>Share</span></button>
-                                                        <button className={`nq-bar-btn ${tafseerModalVerse === verse.verse_number ? 'nq-bar-active' : ''}`} onClick={() => openTafseer(verse.verse_number)} title="Tafsir"><BookOpen size={13} /><span>Tafsir</span></button>
-                                                    </div>
-                                                </div>
-                                                )}
-                                                {/* After the card: simple decorative separator */}
-                                                {idx < verses.length - 1 && !isBismillahVerse(verses[idx + 1].verse_number, verses[idx + 1].text_uthmani) && (
-                                                    <div className="nq-ayah-sep">
-                                                        <div className="nq-sep-line" />
-                                                        <span className="nq-sep-icon">۞</span>
-                                                        <div className="nq-sep-line" />
-                                                    </div>
-                                                )}
-                                            </div>
-                                        ))}
-                                        {/* Surah navigation */}
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 32 }}>
-                                            {surahNumber > 1 ? <Link href={`/read-quran/${surahNumber - 1}`} className="reader-nav-btn"><ChevronLeft size={18} /><span>Previous Surah</span></Link> : <div />}
-                                            {surahNumber < 114 && <Link href={`/read-quran/${surahNumber + 1}`} className="reader-nav-btn primary"><span>Next Surah</span><ChevronRight size={18} /></Link>}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
+                {/* ── Reading area ── */}
+                <div
+                    ref={scrollRef}
+                    className="rr-scroll"
+                    onScroll={e => {
+                        const el = e.currentTarget;
+                        const max = el.scrollHeight - el.clientHeight;
+                        if (progressRef.current) progressRef.current.style.width = `${max > 0 ? (el.scrollTop / max) * 100 : 0}%`;
+                    }}
+                >
+                    {readingMode === 'reading' ? (
+                        <div className="rr-column wide">
+                            <MushafPager
+                                surahNumber={surahNumber}
+                                surahName={chapter.name_simple}
+                                surahArabic={chapter.name_arabic}
+                                pages={chapter.pages}
+                            />
                         </div>
-
-
-                    </div>
-
-                    {audioEnabled && readingMode !== 'word-by-word' && (
-                        <div className="nq-audio-bar nq-audio-bar--compact">
-                            {/* Left Side: Thumbnail & Info */}
-                            <div className="nq-ab-left">
-                                <div className="nq-ab-art nq-ab-art--green">
-                                    <span className="nq-ab-art-text">Al-<br/>Fatihah</span>
-                                </div>
-                                <div className="nq-ab-track">
-                                    <span className="nq-ab-track-title">Surah {chapter.name_simple}</span>
-                                    <span className="nq-ab-track-artist">
-                                        {POPULAR_RECITERS.find(r => r.id === selectedReciter)?.name ?? 'Reciter'}
-                                        {currentVerse ? ` · Verse ${currentVerse}` : ''}
-                                    </span>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
-                                        <span style={{ fontSize: 10, color: '#94a3b8', minWidth: 28 }}>
-                                            {audioCurrentTimeLabel}
-                                        </span>
-                                        <div style={{ flex: 1, height: 4, borderRadius: 999, background: 'rgba(255,255,255,0.12)', overflow: 'hidden' }}>
-                                            <div style={{ width: `${audioProgress}%`, height: '100%', background: 'linear-gradient(90deg, #f59e0b, #fbbf24)' }} />
+                    ) : readingMode === 'word-by-word' ? (
+                        <div className="rr-column">
+                            {pageIdx === 0 && hero}
+                            {pageBar}
+                            {!pageState && pageHasOpening && bismillah}
+                            {pageState ?? pageVerses.filter(v => !isBismillahVerse(v.verse_number, v.text_uthmani)).map(verse => (
+                                <article key={verse.id} id={`verse-${verse.verse_number}`} className={`rr-verse${currentVerse === verse.verse_number ? ' is-playing' : ''}`}>
+                                    <div className="rr-verse-top">
+                                        <span className="rr-vnum">{verse.verse_number}</span>
+                                        <div className="rr-actions">
+                                            <button className="rr-act rr-act-play" onClick={() => { setAudioEnabled(true); playVerse(verse.verse_number, true); }} title="Play ayah">
+                                                <span className="material-symbols-outlined">play_arrow</span>
+                                                <span className="rr-act-label">Play</span>
+                                            </button>
                                         </div>
-                                        <span style={{ fontSize: 10, color: '#94a3b8', minWidth: 28, textAlign: 'right' }}>
-                                            {audioDurationLabel}
-                                        </span>
                                     </div>
-                                </div>
-                            </div>
-
-                            {/* Right Side: Actions (Like & Play/Pause) */}
-                            <div className="nq-ab-right">
-                                {currentVerse && (
-                                    <button
-                                        className={`nq-ab-action-btn${verses[currentVerse - 1] && bookmarks.includes(verses[currentVerse - 1]?.verse_key ?? '') ? ' liked' : ''}`}
-                                        onClick={() => currentVerse && verses[currentVerse - 1] && toggleBookmark(verses[currentVerse - 1].verse_key)}
-                                        title="Save verse"
-                                    >
-                                        <svg viewBox="0 0 24 24" fill={currentVerse && bookmarks.includes(verses[currentVerse - 1]?.verse_key ?? '') ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.5" width="20" height="20">
-                                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                                        </svg>
-                                    </button>
-                                )}
-                                
-                                <button
-                                    className="nq-ab-play-btn"
-                                    onClick={() => { if (isPlaying) stopAudio(); else playVerse(currentVerse || 1, true); }}
-                                    title={isPlaying ? 'Pause' : 'Play'}
-                                >
-                                    {isPlaying
-                                        ? <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-                                        : <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24" style={{marginLeft:2}}><path d="M8 5v14l11-7z"/></svg>
-                                    }
-                                </button>
-                                <button className="nq-ab-action-btn" onClick={() => setAudioEnabled(false)} title="Close Player" style={{ marginLeft: 4 }}>
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                                </button>
-                            </div>
+                                    <div className="rr-wbw-words">
+                                        {verse.words && verse.words.length > 0 ? (
+                                            verse.words.filter((w: any) => w.char_type_name !== 'end').map((word: any, idx: number) => {
+                                                const location = word.location || `${verse.verse_key}:${word.position}`;
+                                                return (
+                                                    <button
+                                                        key={word.id || idx}
+                                                        className={`rr-word${selectedWord?.location === location ? ' on' : ''}`}
+                                                        onClick={() => openWordDetail(word, verse.verse_key, verse.words || [])}
+                                                    >
+                                                        {word.code_v2 ? (
+                                                            <span
+                                                                className="rr-word-ar is-qcf"
+                                                                style={{ fontFamily: `${qcfFontFamily(word.page_number)}, UthmanicHafs, serif` }}
+                                                                dangerouslySetInnerHTML={{ __html: escapeGlyph(word.code_v2) }}
+                                                            />
+                                                        ) : (
+                                                            <span className="rr-word-ar">{cleanArabicText(word.text_uthmani)}</span>
+                                                        )}
+                                                        {word.translation?.text && <span className="rr-word-en">{word.translation.text}</span>}
+                                                    </button>
+                                                );
+                                            })
+                                        ) : (
+                                            <p className="rr-arabic font-arabic" style={{ fontSize }}>{verseArabic(verse)}</p>
+                                        )}
+                                    </div>
+                                    {showTranslation && (
+                                        <p className="rr-translation">{parseTranslationWithFootnotes(verse.translations?.[0]?.text || '')}</p>
+                                    )}
+                                </article>
+                            ))}
+                            {pageNav}
+                        </div>
+                    ) : (
+                        <div className="rr-column">
+                            {pageIdx === 0 && hero}
+                            {pageBar}
+                            {!pageState && pageHasOpening && bismillah}
+                            {pageState ?? pageVerses.filter(v => !isBismillahVerse(v.verse_number, v.text_uthmani)).map(verse => {
+                                const saved = bookmarks.includes(verse.verse_key);
+                                const glyphWords = verse.words?.filter((w: any) => w.code_v2) ?? [];
+                                const playing = currentVerse === verse.verse_number;
+                                return (
+                                    <article key={verse.id} id={`verse-${verse.verse_number}`} className={`rr-verse${playing ? ' is-playing' : ''}`}>
+                                        <div className="rr-verse-top">
+                                            <span className="rr-vnum" title={verse.verse_key}>{verse.verse_number}</span>
+                                            <div className="rr-actions">
+                                                <button className="rr-act" onClick={() => openTafseer(verse.verse_number)} title="Tafseer">
+                                                    <span className="material-symbols-outlined">menu_book</span>
+                                                    <span className="rr-act-label">Tafseer</span>
+                                                </button>
+                                                <button className={`rr-act${saved ? ' on' : ''}`} onClick={() => toggleBookmark(verse.verse_key)} title={saved ? 'Remove bookmark' : 'Bookmark'}>
+                                                    <span className="material-symbols-outlined">bookmark</span>
+                                                </button>
+                                                <button className="rr-act" onClick={() => copyVerse(verse)} title="Copy">
+                                                    <span className="material-symbols-outlined">content_copy</span>
+                                                </button>
+                                                <button className="rr-act" onClick={() => shareVerse(verse)} title="Share">
+                                                    <span className="material-symbols-outlined">ios_share</span>
+                                                </button>
+                                                <button
+                                                    className="rr-act rr-act-play"
+                                                    onClick={() => { if (playing && isPlaying) stopAudio(); else { setAudioEnabled(true); playVerse(verse.verse_number, true); } }}
+                                                    title={playing && isPlaying ? 'Stop' : 'Play ayah'}
+                                                >
+                                                    <span className="material-symbols-outlined">{playing && isPlaying ? 'stop' : 'play_arrow'}</span>
+                                                    <span className="rr-act-label">{playing && isPlaying ? 'Stop' : 'Play'}</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <p className={`rr-arabic${glyphWords.length ? ' is-qcf' : ' font-arabic'}`} lang="ar" style={{ fontSize }} onClick={() => { setAudioEnabled(true); playVerse(verse.verse_number, true); }}>
+                                            {glyphWords.length ? (
+                                                <QcfAyah words={glyphWords} />
+                                            ) : (
+                                                <>
+                                                    {verseArabic(verse)}{' '}
+                                                    <AyahEnding number={verse.verse_number} size={Math.round(fontSize * 0.9)} />
+                                                </>
+                                            )}
+                                        </p>
+                                        {showTranslation && (
+                                            <p className="rr-translation">{parseTranslationWithFootnotes(verse.translations?.[0]?.text || 'Translation not available')}</p>
+                                        )}
+                                    </article>
+                                );
+                            })}
+                            {pageNav}
                         </div>
                     )}
                 </div>
 
-                {/* RIGHT SIDEBAR - Surah Insights */}
-                {chapter && (
-                    <RightSidebar 
-                        chapter={chapter} 
-                        surahInfo={ALL_SURAHS.find(s => s.number === surahNumber)} 
-                        onJumpToVerse={jumpToVerse} 
-                    />
-                )}
-            </div>
-            {/* Settings Panel */}
-            {showSettings && (
-                <>
-                    <div className="reader-settings-overlay" onClick={() => setShowSettings(false)} />
-                    <div className="reader-settings-panel">
-                        <div className="settings-header">
-                            <h2 className="settings-title">Settings</h2>
-                            <button className="settings-close-btn" onClick={() => setShowSettings(false)}><X size={18} /></button>
+                {/* ── Floating player ── */}
+                {audioEnabled && (
+                    <div className="rr-player" role="region" aria-label="Audio player">
+                        <span className="rr-player-art" aria-hidden="true">{chapter.name_arabic}</span>
+                        <div className="rr-player-info">
+                            <b>{chapter.name_simple}{currentVerse ? ` · Ayah ${currentVerse}` : ''}</b>
+                            <small>{reciterName}</small>
+                            <div className="rr-player-bar">
+                                <span>{audioCurrentTimeLabel}</span>
+                                <div className="rr-player-track"><span style={{ width: `${audioProgress}%` }} /></div>
+                                <span>{audioDurationLabel}</span>
+                            </div>
                         </div>
-                        <div className="settings-content">
-                            <div className="settings-section">
-                                <label className="settings-label">Arabic Font Size</label>
-                                <div className="font-size-control">
-                                    <input type="range" min="24" max="52" value={fontSize} onChange={(e) => setFontSize(parseInt(e.target.value))} className="font-size-slider" />
-                                    <span className="font-size-value">{fontSize}px</span>
-                                </div>
-                            </div>
-                            <div className="settings-section">
-                                <label className="settings-label">Translation</label>
-                                <select className="settings-select" value={selectedTranslation} onChange={(e) => setSelectedTranslation(e.target.value)}>
-                                    {TRANSLATIONS.map((t) => <option key={t.id} value={t.id}>{t.name} ({t.language})</option>)}
-                                </select>
-                            </div>
-                            <div className="settings-section">
-                                <label className="settings-label">Reciter</label>
-                                <select className="settings-select" value={selectedReciter} onChange={(e) => setSelectedReciter(parseInt(e.target.value))}>
-                                    {POPULAR_RECITERS.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
-                                </select>
-                            </div>
-                            <div className="settings-section">
-                                <div className="settings-toggle">
-                                    <div className="toggle-info"><div className="toggle-label">Show Translation</div><div className="toggle-desc">Display translation below Arabic</div></div>
-                                    <div className={`toggle-switch ${showTranslation ? 'active' : ''}`} onClick={() => setShowTranslation(!showTranslation)} />
-                                </div>
-                                <div className="settings-toggle">
-                                    <div className="toggle-info"><div className="toggle-label">Auto-Scroll</div><div className="toggle-desc">Scroll to verse during playback</div></div>
-                                    <div className={`toggle-switch ${autoScroll ? 'active' : ''}`} onClick={() => setAutoScroll(!autoScroll)} />
-                                </div>
-                            </div>
-                            <div className="keyboard-hints">
-                                <div className="keyboard-hints-title">Keyboard Shortcuts</div>
-                                <div className="keyboard-hint"><span className="keyboard-key">Space</span><span className="keyboard-action">Play / Pause</span></div>
-                                <div className="keyboard-hint"><span className="keyboard-key">←</span><span className="keyboard-action">Previous verse</span></div>
-                                <div className="keyboard-hint"><span className="keyboard-key">→</span><span className="keyboard-action">Next verse</span></div>
-                                <div className="keyboard-hint"><span className="keyboard-key">Esc</span><span className="keyboard-action">Stop / Close</span></div>
-                            </div>
+                        <div className="rr-player-ctrls">
+                            <button className="rr-pbtn" onClick={() => currentVerse && playVerse(currentVerse - 1, true)} disabled={!currentVerse || currentVerse <= 1} aria-label="Previous ayah">
+                                <span className="material-symbols-outlined">skip_previous</span>
+                            </button>
+                            <button className="rr-pbtn main" onClick={() => { if (isPlaying) stopAudio(); else playVerse(currentVerse || 1, true); }} aria-label={isPlaying ? 'Stop' : 'Play'}>
+                                <span className="material-symbols-outlined">{isPlaying ? 'pause' : 'play_arrow'}</span>
+                            </button>
+                            <button className="rr-pbtn" onClick={() => playVerse((currentVerse || 0) + 1, true)} disabled={!!currentVerse && currentVerse >= verses.length} aria-label="Next ayah">
+                                <span className="material-symbols-outlined">skip_next</span>
+                            </button>
+                            <button className="rr-pbtn" onClick={() => { stopAudio(); setAudioEnabled(false); }} aria-label="Close player">
+                                <span className="material-symbols-outlined">close</span>
+                            </button>
                         </div>
                     </div>
+                )}
+            </div>
+
+            {/* ── Surah picker ── */}
+            {showSurahPicker && (
+                <>
+                    <div className="rr-overlay" onClick={() => setShowSurahPicker(false)} />
+                    <div className="rr-pop rr-pop-surah" role="dialog" aria-label="Choose a surah">
+                        <div className="rr-pop-head">
+                            <span><b>Choose a Surah</b><small>114 total</small></span>
+                            <button className="rr-icon-btn" onClick={() => setShowSurahPicker(false)} aria-label="Close">
+                                <span className="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                        <label className="rr-pop-search">
+                            <span className="material-symbols-outlined" style={{ color: 'var(--rr-muted)' }}>search</span>
+                            <input autoFocus value={surahQuery} onChange={e => setSurahQuery(e.target.value)} placeholder="Name, meaning or number" aria-label="Search surahs" />
+                        </label>
+                        <div className="rr-pop-list">
+                            {surahResults.map(s => (
+                                <Link
+                                    key={s.number}
+                                    href={`/read-quran/${s.number}?mode=${readingMode}`}
+                                    onClick={() => setShowSurahPicker(false)}
+                                    className={`rr-pop-row${s.number === surahNumber ? ' on' : ''}`}
+                                >
+                                    <span className="rr-surah-num">{s.number}</span>
+                                    <span className="rr-pop-row-text"><b>{s.name}</b><small>{s.translation}</small></span>
+                                    <span className="font-arabic" lang="ar">{s.arabic}</span>
+                                </Link>
+                            ))}
+                            {surahResults.length === 0 && <p style={{ padding: 20, textAlign: 'center', color: 'var(--rr-muted)' }}>No surah matches “{surahQuery}”.</p>}
+                        </div>
+                    </div>
+                </>
+            )}
+
+            {/* ── Ayah picker ── */}
+            {showVersePicker && (
+                <>
+                    <div className="rr-overlay" onClick={() => setShowVersePicker(false)} />
+                    <div className="rr-pop rr-pop-verse" role="dialog" aria-label="Go to ayah">
+                        <div className="rr-pop-head">
+                            <span><b>Go to Ayah</b><small>{chapter.verses_count} ayahs</small></span>
+                            <button className="rr-icon-btn" onClick={() => setShowVersePicker(false)} aria-label="Close">
+                                <span className="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                        <div className="rr-verse-grid">
+                            {Array.from({ length: chapter.verses_count }, (_, i) => i + 1).map(n => {
+                                const key = `${surahNumber}:${n}`;
+                                return (
+                                    <button
+                                        key={n}
+                                        className={`${n === currentVerse ? 'on' : ''}${bookmarks.includes(key) ? ' saved' : ''}`}
+                                        onClick={() => { setShowVersePicker(false); jumpToVerse(n); }}
+                                        title={bookmarks.includes(key) ? 'Bookmarked' : undefined}
+                                    >
+                                        {n}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </>
+            )}
+
+            {/* ── Settings drawer ── */}
+            {showSettings && (
+                <>
+                    <div className="rr-overlay" onClick={() => setShowSettings(false)} />
+                    <aside className="rr-drawer" role="dialog" aria-label="Reading settings">
+                        <div className="rr-drawer-head">
+                            <h2>Reading settings</h2>
+                            <button className="rr-icon-btn" onClick={() => setShowSettings(false)} aria-label="Close">
+                                <span className="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                        <div className="rr-drawer-body">
+                            <div className="rr-field">
+                                <span className="rr-field-label">Arabic text size</span>
+                                <div className="rr-size">
+                                    <span className="material-symbols-outlined" style={{ fontSize: 16, color: 'var(--rr-muted)' }}>text_decrease</span>
+                                    <input type="range" min="24" max="52" value={fontSize} onChange={e => setFontSize(parseInt(e.target.value))} aria-label="Arabic font size" />
+                                    <span className="material-symbols-outlined" style={{ fontSize: 22, color: 'var(--rr-muted)' }}>text_increase</span>
+                                    <span className="rr-size-val">{fontSize}px</span>
+                                </div>
+                                <p className="rr-size-preview font-arabic" style={{ fontSize }} lang="ar">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</p>
+                            </div>
+                            <div className="rr-field">
+                                <label htmlFor="rr-translation">Translation</label>
+                                <select id="rr-translation" className="rr-select" value={selectedTranslation} onChange={e => setSelectedTranslation(e.target.value)}>
+                                    {TRANSLATIONS.map(t => <option key={t.id} value={t.id}>{t.name} ({t.language})</option>)}
+                                </select>
+                            </div>
+                            <div className="rr-field">
+                                <label htmlFor="rr-reciter">Reciter</label>
+                                <select id="rr-reciter" className="rr-select" value={selectedReciter} onChange={e => setSelectedReciter(parseInt(e.target.value))}>
+                                    {POPULAR_RECITERS.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                                </select>
+                            </div>
+                            <div className="rr-field">
+                                <span className="rr-field-label">Display</span>
+                                <div className="rr-toggle" role="switch" aria-checked={showTranslation} tabIndex={0} onClick={() => setShowTranslation(v => !v)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setShowTranslation(v => !v); } }}>
+                                    <span><b>Show translation</b><small>Meaning below each ayah</small></span>
+                                    <span className={`rr-switch${showTranslation ? ' on' : ''}`} />
+                                </div>
+                                <div className="rr-toggle" role="switch" aria-checked={autoScroll} tabIndex={0} onClick={() => setAutoScroll(v => !v)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setAutoScroll(v => !v); } }}>
+                                    <span><b>Follow along</b><small>Scroll to the ayah being recited</small></span>
+                                    <span className={`rr-switch${autoScroll ? ' on' : ''}`} />
+                                </div>
+                            </div>
+                            <div className="rr-field">
+                                <span className="rr-field-label">Keyboard shortcuts</span>
+                                <div className="rr-keys">
+                                    <kbd>Space</kbd><span>Play / pause</span>
+                                    <kbd>←</kbd><span>Previous ayah</span>
+                                    <kbd>→</kbd><span>Next ayah</span>
+                                    <kbd>Esc</kbd><span>Stop / close</span>
+                                </div>
+                            </div>
+                        </div>
+                    </aside>
                 </>
             )}
 
             {/* Toast */}
             {toast && <div className={`reader-toast ${toast.type}`}>{toast.message}</div>}
 
-            {/* ── WORD DETAIL MODAL ── */}
-            {selectedWord && (
-                <>
-                    <div className="wdm-backdrop" onClick={(e) => { 
-                        e.stopPropagation();
-                        setSelectedWord(null); 
-                        if (wordAudioRef.current) { wordAudioRef.current.pause(); wordAudioRef.current = null; setWordAudioPlaying(false); } 
-                    }} />
-                    <div className="wdm-sheet" onClick={(e) => e.stopPropagation()}>
-                        {/* Drag handle */}
-                        <div className="wdm-handle"><div className="wdm-handle-bar" /></div>
-                        {/* Header */}
-                        <div className="wdm-header">
-                            <span className="wdm-ref">{selectedWord.location.replace(/:/g, ':')}</span>
-                            <button className="wdm-close" onClick={() => { setSelectedWord(null); if (wordAudioRef.current) { wordAudioRef.current.pause(); wordAudioRef.current = null; setWordAudioPlaying(false); } }}>
-                                <X size={18} />
-                            </button>
-                        </div>
-                        {/* Word display */}
-                        <div className="wdm-word-display">
-                            <span className="wdm-arabic">{cleanArabicText(selectedWord.text_uthmani)}</span>
-                            <span className="wdm-meaning">{selectedWord.translation}</span>
-                        </div>
-                        {/* Transliteration + Location */}
-                        <div className="wdm-meta-row">
-                            <div className="wdm-meta-item">
-                                <span className="wdm-meta-label">Transliteration</span>
-                                <span className="wdm-meta-value">{selectedWord.transliteration || '—'}</span>
-                            </div>
-                            <div className="wdm-meta-item">
-                                <span className="wdm-meta-label">Position</span>
-                                <span className="wdm-meta-value">Word {selectedWord.position}</span>
-                            </div>
-                        </div>
-                        {/* Verse context */}
-                        {selectedWord.verseText && (
-                            <div className="wdm-context">
-                                <span className="wdm-context-label">Verse Context</span>
-                                <p className="wdm-context-text" dir="rtl">{cleanArabicText(selectedWord.verseText)}</p>
-                            </div>
-                        )}
-                        {/* Actions */}
-                        <div className="wdm-actions">
-                            {selectedWord.audio_url && (
-                                <button className={`wdm-action-btn wdm-audio-btn ${wordAudioPlaying ? 'playing' : ''}`} onClick={() => playWordAudio(selectedWord.audio_url)}>
-                                    <span className="material-symbols-outlined" style={{ fontSize: 20 }}>{wordAudioPlaying ? 'pause_circle' : 'play_circle'}</span>
-                                    <span>{wordAudioPlaying ? 'Playing...' : 'Play Audio'}</span>
+            {/* ── Word detail ── */}
+            {selectedWord && (() => {
+                const w = selectedWord;
+                const glyphFont = (page?: number) => `${qcfFontFamily(page ?? 1)}, UthmanicHafs, serif`;
+                const contextWords = w.verseWords.filter((x: any) => x.code_v2);
+                const shareText = `${w.text_uthmani} — ${w.translation}${w.transliteration ? ` (${w.transliteration})` : ''} · Quran ${w.verseKey}`;
+                return (
+                    <>
+                        <div className="rr-overlay" onClick={closeWordDetail} />
+                        <div className="rr-word-sheet" role="dialog" aria-modal="true" aria-label="Word details">
+                            <header className="rr-ws-head">
+                                <span className="rr-ws-ref">
+                                    <span className="material-symbols-outlined">menu_book</span>
+                                    Ayah {w.verseKey} · word {w.position}
+                                </span>
+                                <button className="rr-icon-btn" onClick={closeWordDetail} aria-label="Close">
+                                    <span className="material-symbols-outlined">close</span>
                                 </button>
-                            )}
-                            <button className="wdm-action-btn" onClick={() => {
-                                if (navigator.share) {
-                                    navigator.share({ text: `${selectedWord.text_uthmani} - ${selectedWord.translation} (${selectedWord.location})` }).catch(() => {});
-                                } else {
-                                    navigator.clipboard.writeText(`${selectedWord.text_uthmani} - ${selectedWord.translation}`);
-                                    setToast({ message: 'Word copied!', type: 'success' });
-                                    setTimeout(() => setToast(null), 2000);
-                                }
-                            }}>
-                                <Share2 size={16} />
-                                <span>Share</span>
-                            </button>
-                            <button className="wdm-action-btn" onClick={() => {
-                                navigator.clipboard.writeText(`${selectedWord.text_uthmani} - ${selectedWord.translation} (${selectedWord.transliteration})`);
-                                setToast({ message: 'Copied perfectly!', type: 'success' });
-                                setTimeout(() => setToast(null), 2500);
-                            }}>
-                                <Copy size={16} />
-                                <span>Copy</span>
-                            </button>
-                        </div>
-                        {/* Close hint */}
-                        <p className="wdm-hint">Tap outside or press ESC to close</p>
-                    </div>
-                </>
-            )}
+                            </header>
 
-            {/* Word Meaning Tooltip */}
-            {tooltip && (
-                <div
-                    ref={tooltipRef}
-                    style={{
-                        position: 'fixed',
-                        left: `${tooltip.x}px`,
-                        top: `${tooltip.y}px`,
-                        transform: 'translateX(-50%)',
-                        zIndex: 10000,
-                        pointerEvents: 'none',
-                        animation: 'fadeIn 0.15s ease-out'
-                    }}
-                >
-                    <div
-                        style={{
-                            background: '#1e293b',
-                            color: '#f1f5f9',
-                            padding: '8px 12px',
-                            borderRadius: '6px',
-                            fontSize: '13px',
-                            fontWeight: 500,
-                            whiteSpace: 'nowrap',
-                            maxWidth: '250px',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
-                            fontFamily: "'Lexend', sans-serif",
-                            letterSpacing: '0.3px',
-                            border: '1px solid rgba(255,255,255,0.1)'
-                        }}
-                    >
-                        {tooltip.meaning}
-                    </div>
-                    <div
-                        style={{
-                            position: 'absolute',
-                            bottom: '-4px',
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            width: 0,
-                            height: 0,
-                            borderLeft: '5px solid transparent',
-                            borderRight: '5px solid transparent',
-                            borderTop: '5px solid #1e293b'
-                        }}
-                    />
-                </div>
-            )}
-
-            {/* Close dropdowns on outside click */}
-            {showVerseNav && <div style={{ position: 'fixed', inset: 0, zIndex: 50 }} onClick={() => setShowVerseNav(false)} />}
-
-            {/* Verse Picker — bottom sheet on mobile, dropdown on desktop */}
-            {showVersePicker && (() => {
-                if (isMobile) {
-                    return (
-                        <>
-                            <div onClick={() => setShowVersePicker(false)} style={{ position: 'fixed', inset: 0, zIndex: 10100, background: 'rgba(2,8,20,0.55)', backdropFilter: 'blur(4px)' }} />
-                            <div style={{
-                                position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 10101,
-                                background: 'white', borderRadius: '20px 20px 0 0',
-                                boxShadow: '0 -8px 40px rgba(0,0,0,0.18)',
-                                display: 'flex', flexDirection: 'column', maxHeight: '78vh',
-                            }}>
-                                <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 10, paddingBottom: 4, flexShrink: 0 }}>
-                                    <div style={{ width: 36, height: 4, borderRadius: 99, background: '#e2e8f0' }} />
+                            <div className="rr-ws-body">
+                                <div className="rr-ws-word">
+                                    {w.code_v2 ? (
+                                        <span className="rr-ws-glyph" lang="ar" style={{ fontFamily: glyphFont(w.page_number) }} dangerouslySetInnerHTML={{ __html: escapeGlyph(w.code_v2) }} />
+                                    ) : (
+                                        <span className="rr-ws-glyph font-arabic" lang="ar">{cleanArabicText(w.text_uthmani)}</span>
+                                    )}
+                                    <b className="rr-ws-meaning">{w.translation || '—'}</b>
+                                    {w.transliteration && <span className="rr-ws-translit">{w.transliteration}</span>}
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 18px', borderBottom: '1px solid #f1f5f9', flexShrink: 0 }}>
-                                    <div>
-                                        <span style={{ fontWeight: 700, fontSize: 13, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: 'Lexend, sans-serif' }}>Go to Verse</span>
-                                        <span style={{ marginLeft: 8, fontSize: 11, color: '#94a3b8', fontFamily: 'Lexend, sans-serif' }}>{chapter.verses_count} verses</span>
+
+                                {contextWords.length > 0 && (
+                                    <div className="rr-ws-context">
+                                        <span className="rr-ws-label">In this ayah</span>
+                                        <p dir="rtl" lang="ar">
+                                            {contextWords.map((x: any, i: number) => (
+                                                <span key={x.id ?? i}>
+                                                    <span
+                                                        className={`rr-ws-cword${x.position === w.position && x.char_type_name !== 'end' ? ' on' : ''}${x.char_type_name === 'end' ? ' is-end' : ''}`}
+                                                        style={{ fontFamily: glyphFont(x.page_number) }}
+                                                        dangerouslySetInnerHTML={{ __html: escapeGlyph(x.code_v2) }}
+                                                    />
+                                                    {i < contextWords.length - 1 ? ' ' : ''}
+                                                </span>
+                                            ))}
+                                        </p>
                                     </div>
-                                    <button onClick={() => setShowVersePicker(false)} style={{ background: '#f1f5f9', border: 'none', borderRadius: 8, width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b', fontSize: 16 }}>✕</button>
-                                </div>
-                                <div style={{ overflowY: 'auto', flex: 1, padding: '8px 14px 16px', display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
-                                    {verses.map(v => {
-                                        const isCurrent = v.verse_number === currentVerse;
-                                        const isBookmarked = bookmarks.includes(v.verse_key);
-                                        return (
-                                            <button
-                                                key={v.verse_number}
-                                                onClick={() => { setShowVersePicker(false); jumpToVerse(v.verse_number); }}
-                                                style={{
-                                                    width: '100%', aspectRatio: '1', borderRadius: 10,
-                                                    border: isCurrent ? '2px solid #f59e0b' : isBookmarked ? '2px solid #f59e0b' : '1.5px solid #e2e8f0',
-                                                    background: isCurrent ? 'rgba(245,158,11,0.1)' : isBookmarked ? 'rgba(245,158,11,0.06)' : '#f8fafc',
-                                                    color: isCurrent ? '#f59e0b' : isBookmarked ? '#d97706' : '#475569',
-                                                    fontSize: 13, fontWeight: 700, cursor: 'pointer',
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                    fontFamily: 'Lexend, sans-serif',
-                                                    transition: 'all 0.15s',
-                                                }}
-                                            >
-                                                {v.verse_number}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
+                                )}
                             </div>
-                        </>
-                    );
-                }
-                // ── DESKTOP: anchored dropdown ──
-                const btnRect = verseBtnRef.current?.getBoundingClientRect();
-                const dropW = 260;
-                const rightEdge = btnRect ? btnRect.right : 400;
-                const leftPos = Math.max(8, rightEdge - dropW);
-                const topPos = btnRect ? btnRect.bottom + 8 : 80;
-                return (
-                    <>
-                        <div style={{ position: 'fixed', inset: 0, zIndex: 150 }} onClick={() => setShowVersePicker(false)} />
-                        <div style={{
-                            position: 'fixed', top: topPos, left: leftPos, zIndex: 9999,
-                            background: 'white', border: '1px solid #e2e8f0', borderRadius: 14,
-                            boxShadow: '0 8px 32px rgba(0,0,0,0.15)', width: dropW,
-                            maxHeight: 380, overflowY: 'auto', padding: '10px 12px 12px',
-                        }}>
-                            <div style={{ fontWeight: 700, fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: 'Lexend, sans-serif', marginBottom: 10 }}>
-                                Go to Verse · {chapter.verses_count} total
-                            </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 6 }}>
-                                {verses.map(v => {
-                                    const isCurrent = v.verse_number === currentVerse;
-                                    const isBookmarked = bookmarks.includes(v.verse_key);
-                                    return (
-                                        <button
-                                            key={v.verse_number}
-                                            onClick={() => { setShowVersePicker(false); jumpToVerse(v.verse_number); }}
-                                            style={{
-                                                width: '100%', aspectRatio: '1', borderRadius: 8,
-                                                border: isCurrent ? '2px solid #f59e0b' : isBookmarked ? '2px solid #f59e0b' : '1px solid #e2e8f0',
-                                                background: isCurrent ? 'rgba(245,158,11,0.1)' : isBookmarked ? 'rgba(245,158,11,0.06)' : '#f8fafc',
-                                                color: isCurrent ? '#f59e0b' : isBookmarked ? '#d97706' : '#475569',
-                                                fontSize: 11, fontWeight: 700, cursor: 'pointer',
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                fontFamily: 'Lexend, sans-serif', transition: 'all 0.15s',
-                                            }}
-                                        >
-                                            {v.verse_number}
-                                        </button>
-                                    );
-                                })}
+
+                            <div className="rr-ws-actions">
+                                {w.audio_url && (
+                                    <button className={`rr-ws-btn primary${wordAudioPlaying ? ' playing' : ''}`} onClick={() => playWordAudio(w.audio_url)}>
+                                        <span className="material-symbols-outlined">{wordAudioPlaying ? 'graphic_eq' : 'play_arrow'}</span>
+                                        {wordAudioPlaying ? 'Playing' : 'Listen'}
+                                    </button>
+                                )}
+                                <button className="rr-ws-btn" onClick={() => {
+                                    if (navigator.share) navigator.share({ text: shareText }).catch(() => {});
+                                    else { navigator.clipboard.writeText(shareText); showToast('Word copied!'); }
+                                }}>
+                                    <span className="material-symbols-outlined">ios_share</span>
+                                    Share
+                                </button>
+                                <button className="rr-ws-btn" onClick={() => { navigator.clipboard.writeText(shareText); showToast('Copied!'); }}>
+                                    <span className="material-symbols-outlined">content_copy</span>
+                                    Copy
+                                </button>
                             </div>
                         </div>
                     </>
                 );
             })()}
 
-            {/* Surah Picker */}
-            {showSurahPicker && (() => {
-                if (isMobile) {
-                    // ── MOBILE: full bottom sheet ──
-                    return (
-                        <>
-                            {/* Dim backdrop */}
-                            <div
-                                onClick={() => setShowSurahPicker(false)}
-                                style={{ position: 'fixed', inset: 0, zIndex: 10100, background: 'rgba(2,8,20,0.55)', backdropFilter: 'blur(4px)' }}
-                            />
-                            {/* Sheet */}
-                            <div style={{
-                                position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 10101,
-                                background: 'white', borderRadius: '20px 20px 0 0',
-                                boxShadow: '0 -8px 40px rgba(0,0,0,0.18)',
-                                display: 'flex', flexDirection: 'column',
-                                maxHeight: '82vh',
-                            }}>
-                                {/* Drag handle */}
-                                <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 10, paddingBottom: 4, flexShrink: 0 }}>
-                                    <div style={{ width: 36, height: 4, borderRadius: 99, background: '#e2e8f0' }} />
-                                </div>
-                                {/* Header */}
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 24px 10px', borderBottom: '1px solid #f1f5f9', flexShrink: 0 }}>
-                                    <span style={{ fontWeight: 700, fontSize: 13, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: 'Lexend, sans-serif' }}>Select Surah</span>
-                                    <button onClick={() => setShowSurahPicker(false)} style={{ background: '#f1f5f9', border: 'none', borderRadius: 8, width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b', fontSize: 16 }}>✕</button>
-                                </div>
-                                {/* List */}
-                                <div style={{ overflowY: 'auto', flex: 1 }}>
-                                    {ALL_SURAHS.map(s => (
-                                        <Link
-                                            key={s.number}
-                                            href={`/read-quran/${s.number}?mode=${readingMode}`}
-                                            onClick={() => setShowSurahPicker(false)}
-                                            style={{
-                                                display: 'flex', alignItems: 'center', gap: 12,
-                                                padding: '11px 24px', textDecoration: 'none',
-                                                background: s.number === surahNumber ? 'rgba(245,158,11,0.08)' : 'transparent',
-                                                borderBottom: '1px solid #f8fafc',
-                                                color: s.number === surahNumber ? '#f59e0b' : '#1e293b',
-                                            }}
-                                        >
-                                            <span style={{
-                                                width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-                                                background: s.number === surahNumber ? 'rgba(245,158,11,0.15)' : '#f1f5f9',
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                fontSize: 12, fontWeight: 700,
-                                                color: s.number === surahNumber ? '#f59e0b' : '#64748b',
-                                            }}>{s.number}</span>
-                                            <span style={{ flex: 1, minWidth: 0 }}>
-                                                <span style={{ display: 'block', fontSize: 14, fontWeight: 600 }}>{s.name}</span>
-                                                <span style={{ display: 'block', fontSize: 11.5, color: '#94a3b8' }}>{s.translation}</span>
-                                            </span>
-                                            <span style={{ fontSize: 16, fontFamily: 'var(--rq-font-arabic)', color: '#475569', direction: 'rtl' }}>{s.arabic}</span>
-                                        </Link>
-                                    ))}
-                                </div>
-                            </div>
-                        </>
-                    );
-                }
-
-                // ── DESKTOP: anchored dropdown ──
-                const btnRect = surahBtnRef.current?.getBoundingClientRect();
-                const dropdownWidth = 280;
-                const rightEdge = btnRect ? btnRect.right : 320;
-                const leftPos = Math.max(8, rightEdge - dropdownWidth);
-                const topPos = btnRect ? btnRect.bottom + 8 : 80;
-                return (
-                    <>
-                        <div style={{ position: 'fixed', inset: 0, zIndex: 150 }} onClick={() => setShowSurahPicker(false)} />
-                        <div style={{
-                            position: 'fixed', top: topPos, left: leftPos, zIndex: 9999,
-                            background: 'white', border: '1px solid #e2e8f0', borderRadius: 14,
-                            boxShadow: '0 8px 32px rgba(0,0,0,0.15)', width: dropdownWidth,
-                            maxHeight: 420, overflowY: 'auto',
-                        }}>
-                            <div style={{ padding: '12px 14px 8px', borderBottom: '1px solid #f1f5f9', fontWeight: 700, fontSize: 12, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: 'Lexend, sans-serif' }}>
-                                Select Surah
-                            </div>
-                            {ALL_SURAHS.map(s => (
-                                <Link
-                                    key={s.number}
-                                    href={`/read-quran/${s.number}?mode=${readingMode}`}
-                                    onClick={() => setShowSurahPicker(false)}
-                                    style={{
-                                        display: 'flex', alignItems: 'center', gap: 10,
-                                        width: '100%', padding: '10px 14px', textDecoration: 'none',
-                                        background: s.number === surahNumber ? 'rgba(245,158,11,0.08)' : 'transparent',
-                                        cursor: 'pointer', textAlign: 'left', borderBottom: '1px solid #f8fafc',
-                                        color: s.number === surahNumber ? '#f59e0b' : '#1e293b',
-                                    }}
-                                >
-                                    <span style={{
-                                        width: 28, height: 28, borderRadius: '50%',
-                                        background: s.number === surahNumber ? 'rgba(245,158,11,0.15)' : '#f1f5f9',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        fontSize: 11, fontWeight: 700, flexShrink: 0,
-                                        color: s.number === surahNumber ? '#f59e0b' : '#64748b',
-                                    }}>{s.number}</span>
-                                    <span style={{ flex: 1, minWidth: 0 }}>
-                                        <span style={{ display: 'block', fontSize: 13, fontWeight: 600 }}>{s.name}</span>
-                                        <span style={{ display: 'block', fontSize: 11, color: '#94a3b8' }}>{s.translation}</span>
-                                    </span>
-                                    <span style={{ fontSize: 15, fontFamily: 'var(--rq-font-arabic)', color: '#475569', direction: 'rtl' }}>{s.arabic}</span>
-                                </Link>
-                            ))}
-                        </div>
-                    </>
-                );
-            })()}
-
-            {/* Tafseer Modal — premium side drawer */}
+            {/* Tafseer drawer */}
             <TafseerModal
                 isOpen={tafseerModalVerse !== null}
                 onClose={closeTafseer}

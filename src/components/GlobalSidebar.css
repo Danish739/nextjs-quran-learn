@@ -497,3 +497,7 @@
     padding-bottom: 68px;
   }
 }
+/* Homepage has no side dashboard */
+.gsb-root.gsb-home-hidden {
+  display: none !important;
+}

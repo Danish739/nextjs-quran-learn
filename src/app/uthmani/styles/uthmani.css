@@ -422,3 +422,85 @@
   .uth-step-4.uth-qcf .uth-ar-line { width: 61vh; }
   .uth-step-5.uth-qcf .uth-ar-line { width: 64.5vh; }
 }
+
+/* ── Page number ornament + surah navigation (polish) ── */
+.uth-ar-footer,
+.uth-qcf .uth-ar-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 26px auto 10px;
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--brand-primary, #0f766e);
+}
+
+.uth-ar-footer::before,
+.uth-ar-footer::after {
+  content: '';
+  width: 64px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #c8963e);
+}
+
+.uth-ar-footer::after {
+  background: linear-gradient(90deg, #c8963e, transparent);
+}
+
+.uth-nav,
+.uth-qcf .uth-nav {
+  justify-content: center;
+  gap: 12px;
+  margin: 18px 0 48px;
+  padding: 0 20px;
+}
+
+.uth-nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 20px;
+  border-radius: 12px;
+  border: 1px solid var(--border-default, #e2e8f0);
+  background: var(--bg-card, #fff);
+  color: var(--text-primary, #0f172a);
+  font-size: 14px;
+  font-weight: 700;
+  transition: border-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease, gap 0.2s ease;
+}
+
+.uth-nav a:first-child::before {
+  content: '←';
+}
+
+.uth-nav a:last-child::after {
+  content: '→';
+}
+
+.uth-nav a:hover {
+  color: var(--brand-primary, #0f766e);
+  border-color: var(--brand-primary, #0f766e);
+  transform: translateY(-1px);
+}
+
+/* the forward link is the primary action */
+.uth-nav a:last-child:not(:first-child),
+.uth-nav span:first-child + a {
+  color: #fff;
+  border-color: transparent;
+  background: var(--brand-primary, #0f766e);
+  box-shadow: 0 8px 18px rgba(var(--brand-rgb, 15, 118, 110), 0.25);
+}
+
+.uth-nav a:last-child:not(:first-child):hover,
+.uth-nav span:first-child + a:hover {
+  color: #fff;
+  gap: 12px;
+}
+
+.uth-nav span:first-child + a::before {
+  content: none;
+}

@@ -312,7 +312,7 @@ export default function MushafReadingView({
                         fontFamily: 'Inter, system-ui, sans-serif',
                       }}
                     >
-                      <strong style={{ color: '#f59e0b' }}>{v.verse_number}. </strong>
+                      <strong style={{ color: 'var(--brand-primary)' }}>{v.verse_number}. </strong>
                       {v.translations?.[0]?.text || ''}
                     </p>
                   ))}

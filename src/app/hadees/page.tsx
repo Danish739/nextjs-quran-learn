@@ -1,8 +1,9 @@
 ﻿'use client';
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import HadeesOfTheDay from '@/components/HadeesOfTheDay';
+import { MushafLoader } from '@/app/read-quran/components/MushafPager';
 import './hadees.css';
-import GlobalLoader from '@/components/Loader/GlobalLoader';
 
 /* ─── Types ─────────────────────────────────────────────────── */
 interface Hadith {
@@ -11,583 +12,478 @@ interface Hadith {
   arabic: string;
   grade: string;
   chapter: string;
-  urn?: number;
 }
 
 interface Collection {
   id: string;
   name: string;
   ar: string;
-  description: string;
-  color: string;
-  icon: string;
+  compiler: string;
+  died: string;
+  blurb: string;
+  hue: string;
+}
+
+interface SavedHadith {
+  key: string;
+  collection: string;
+  number: string;
+  english: string;
+  arabic: string;
+  chapter: string;
+  at: number;
 }
 
 /* ─── Constants ──────────────────────────────────────────────── */
+const COLLECTIONS: Collection[] = [
+  { id: 'bukhari', name: 'Sahih al-Bukhari', ar: 'صحيح البخاري', compiler: 'Imam al-Bukhari', died: 'd. 256 AH', blurb: 'Regarded as the most authentic collection after the Quran.', hue: '#13705a' },
+  { id: 'muslim', name: 'Sahih Muslim', ar: 'صحيح مسلم', compiler: 'Imam Muslim', died: 'd. 261 AH', blurb: 'The second of the two Sahih collections, known for its careful ordering.', hue: '#1e6091' },
+  { id: 'abudawud', name: 'Sunan Abu Dawud', ar: 'سنن أبي داود', compiler: 'Imam Abu Dawud', died: 'd. 275 AH', blurb: 'Focused on the hadith that underpin rulings of fiqh.', hue: '#8a5a1f' },
+  { id: 'tirmidhi', name: "Jami' at-Tirmidhi", ar: 'جامع الترمذي', compiler: 'Imam at-Tirmidhi', died: 'd. 279 AH', blurb: 'Notes the grading of hadith and the views of the scholars.', hue: '#6b3d8a' },
+  { id: 'nasai', name: "Sunan an-Nasa'i", ar: 'سنن النسائي', compiler: "Imam an-Nasa'i", died: 'd. 303 AH', blurb: 'Known for its strict criteria among the Sunan works.', hue: '#9a3b3b' },
+  { id: 'ibnmajah', name: 'Sunan Ibn Majah', ar: 'سنن ابن ماجه', compiler: 'Imam Ibn Majah', died: 'd. 273 AH', blurb: 'Completes the six major collections (al-Kutub al-Sittah).', hue: '#2f6f6a' },
+];
+
+const LIMIT = 20;
+const SAVED_KEY = 'hadees-saved';
 const ARABIC_FONT = "'UthmanicHafs', 'Amiri', serif";
 
-const COLLECTIONS: Collection[] = [
-  { id: 'bukhari',   name: 'Sahih Bukhari',  ar: 'صحيح البخاري',    description: 'Most Authentic Collection',  color: '#f59e0b', icon: 'verified'       },
-  { id: 'muslim',    name: 'Sahih Muslim',   ar: 'صحيح مسلم',       description: 'Second Most Authentic',      color: '#d97706', icon: 'stars'          },
-  { id: 'abudawud',  name: 'Abu Dawud',      ar: 'سنن أبي داود',    description: 'Sunan Abu Dawud',            color: '#b45309', icon: 'history_edu'   },
-  { id: 'tirmidhi',  name: 'Tirmidhi',       ar: 'جامع الترمذي',    description: "Jami' at-Tirmidhi",          color: '#d97706', icon: 'menu_book'      },
-  { id: 'nasai',     name: "An-Nasa'i",      ar: 'سنن النسائي',     description: "Sunan an-Nasa'i",            color: '#92400e', icon: 'bookmark_star'  },
-  { id: 'ibnmajah',  name: 'Ibn Majah',      ar: 'سنن ابن ماجه',    description: 'Sunan Ibn Majah',            color: '#b45309', icon: 'library_books'  },
-];
+type View = { kind: 'home' } | { kind: 'collection'; id: string } | { kind: 'saved' };
 
-/* Card colours for landing grid (pastel tones matching the design) */
-const CARD_COLORS = [
-  { bg: '#fde2e4', accent: '#e74c3c' },  // Al-Muslim — soft pink
-  { bg: '#dbeafe', accent: '#3b82f6' },  // Al-Bukhari — soft blue
-  { bg: '#d1fae5', accent: '#10b981' },  // Sunnan e Nasai — soft green
-  { bg: '#fef9c3', accent: '#eab308' },  // Abu Dawood — soft yellow
-  { bg: '#ede9fe', accent: '#8b5cf6' },  // Al-Tirmazi — soft purple
-  { bg: '#e0f2fe', accent: '#0ea5e9' },  // Al-Ibn e Maja — soft sky
-];
+/** Paginator with ellipses */
+function pageList(page: number, total: number): (number | '…')[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  if (page <= 4) return [1, 2, 3, 4, 5, '…', total];
+  if (page >= total - 3) return [1, '…', total - 4, total - 3, total - 2, total - 1, total];
+  return [1, '…', page - 1, page, page + 1, '…', total];
+}
 
-const HADITH_OF_THE_DAY = {
-  arabic: 'إِنَّمَا الْأَعْمَالُ بِالنِّيَّاتِ وَإِنَّمَا لِكُلِّ امْرِئٍ مَا نَوَى',
-  text: "Actions are but by intentions, and every person shall have only that which he intended. So whoever's emigration was for Allah and His Messenger, his emigration is for Allah and His Messenger; and whoever's emigration was for worldly gain or a woman to marry, his emigration is for that which he emigrated.",
-  reference: 'Sahih al-Bukhari & Muslim — Hadith #1',
-};
+/** Wraps search matches in <mark> */
+function highlight(text: string, q: string) {
+  if (!q.trim()) return text;
+  const esc = q.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return text.split(new RegExp(`(${esc})`, 'gi')).map((part, i) =>
+    part.toLowerCase() === q.trim().toLowerCase() ? <mark key={i}>{part}</mark> : part
+  );
+}
 
-/* ─── Component ──────────────────────────────────────────────── */
+/* ─── Hadith card ────────────────────────────────────────────── */
+function HadithCard({
+  h, col, saved, onSave, query, index, onCopy, onShare, copied,
+}: {
+  h: Hadith | SavedHadith;
+  col: Collection;
+  saved: boolean;
+  onSave: () => void;
+  query: string;
+  index: number;
+  onCopy: () => void;
+  onShare: () => void;
+  copied: boolean;
+}) {
+  const [showArabic, setShowArabic] = useState(true);
+  const [expanded, setExpanded] = useState(false);
+  const longAr = !!h.arabic && h.arabic.length > 320;
+  const longEn = h.english.length > 700;
+
+  return (
+    <article className="hd-card" style={{ ['--hue' as string]: col.hue, animationDelay: `${Math.min(index, 10) * 35}ms` }}>
+      <header className="hd-card-top">
+        <span className="hd-num">#{h.number}</span>
+        <span className="hd-col-tag">{col.name}</span>
+        {h.chapter && <span className="hd-chapter" title={h.chapter}>{h.chapter}</span>}
+        <button className={`hd-icon${saved ? ' on' : ''}`} onClick={onSave} aria-pressed={saved} title={saved ? 'Remove from saved' : 'Save'}>
+          <span className="material-symbols-outlined">bookmark</span>
+        </button>
+      </header>
+
+      {h.arabic && showArabic && (
+        <div className={`hd-ar-wrap${longAr && !expanded ? ' clamp' : ''}`}>
+          <p className="hd-ar" lang="ar" dir="rtl" style={{ fontFamily: ARABIC_FONT }}>{h.arabic}</p>
+        </div>
+      )}
+
+      <p className={`hd-en${longEn && !expanded ? ' clamp' : ''}`}>{highlight(h.english, query)}</p>
+
+      <footer className="hd-card-foot">
+        <span className="hd-ref">
+          <span className="material-symbols-outlined">menu_book</span>
+          {col.name} {h.number}
+        </span>
+        <div className="hd-actions">
+          {(longAr || longEn) && (
+            <button className="hd-act" onClick={() => setExpanded(e => !e)}>
+              <span className="material-symbols-outlined">{expanded ? 'unfold_less' : 'unfold_more'}</span>
+              {expanded ? 'Less' : 'Read all'}
+            </button>
+          )}
+          {h.arabic && (
+            <button className="hd-act" onClick={() => setShowArabic(s => !s)} title="Show / hide Arabic">
+              <span className="material-symbols-outlined">translate</span>
+              {showArabic ? 'Hide Arabic' : 'Arabic'}
+            </button>
+          )}
+          <button className="hd-act" onClick={onCopy}>
+            <span className="material-symbols-outlined">{copied ? 'check' : 'content_copy'}</span>
+            {copied ? 'Copied' : 'Copy'}
+          </button>
+          <button className="hd-act" onClick={onShare}>
+            <span className="material-symbols-outlined">ios_share</span>
+            Share
+          </button>
+        </div>
+      </footer>
+    </article>
+  );
+}
+
+/* ─── Page ───────────────────────────────────────────────────── */
 export default function HadeesPage() {
-  const [activeCollection, setActiveCollection] = useState<Collection>(COLLECTIONS[0]);
-  const [hadiths, setHadiths]       = useState<Hadith[]>([]);
-  const [metadata, setMetadata]     = useState<any>(null);
-  const [activeBookId, setActiveBookId] = useState<string>('');
-  const [activeSharhId, setActiveSharhId] = useState<string | null>(null);
-  const [bookFilter, setBookFilter]     = useState('');
-  const [page, setPage]             = useState(1);
-  const [total, setTotal]           = useState(0);
+  const [view, setView] = useState<View>({ kind: 'home' });
+  const [hadiths, setHadiths] = useState<Hadith[]>([]);
+  const [sections, setSections] = useState<Record<string, string>>({});
+  const [bookId, setBookId] = useState('');
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading]       = useState(false);
-  const [error, setError]           = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [retry, setRetry] = useState(0);
   const [searchInput, setSearchInput] = useState('');
-  const [search, setSearch]           = useState('');
-  const [expandedArabicIds, setExpandedArabicIds] = useState<Set<string>>(new Set());
-  const [bookmarks, setBookmarks] = useState<Set<string>>(new Set());
+  const [search, setSearch] = useState('');
+  const [saved, setSaved] = useState<SavedHadith[]>([]);
   const [copied, setCopied] = useState<string | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const contentRef = useRef<HTMLDivElement>(null);
-  const [visibleBooksCount, setVisibleBooksCount] = useState(20);
-  const [showLanding, setShowLanding] = useState(true);
+  const [booksOpen, setBooksOpen] = useState(false);
+  const [bookFilter, setBookFilter] = useState('');
+  const [homeQuery, setHomeQuery] = useState('');
+  const topRef = useRef<HTMLDivElement>(null);
 
+  const col = view.kind === 'collection' ? COLLECTIONS.find(c => c.id === view.id)! : null;
+  const savedKeys = useMemo(() => new Set(saved.map(s => s.key)), [saved]);
 
-
-  /* Load bookmarks */
+  /* Saved hadith (full copies, so the Saved view works offline) */
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('hadees-bookmarks');
-      if (saved) setBookmarks(new Set(JSON.parse(saved)));
-    } catch { /* ignore */ }
+    try { setSaved(JSON.parse(localStorage.getItem(SAVED_KEY) || '[]')); } catch { /* ignore */ }
+    // restore ?c=&book=&page= deep links
+    const p = new URLSearchParams(window.location.search);
+    const c = p.get('c');
+    if (c === 'saved') setView({ kind: 'saved' });
+    else if (c && COLLECTIONS.some(x => x.id === c)) {
+      setView({ kind: 'collection', id: c });
+      setBookId(p.get('book') || '');
+      setPage(Math.max(1, Number(p.get('page')) || 1));
+      if (p.get('q')) { setSearchInput(p.get('q')!); setSearch(p.get('q')!); }
+    }
   }, []);
 
-  /* Save bookmarks */
-  useEffect(() => {
-    try {
-      localStorage.setItem('hadees-bookmarks', JSON.stringify([...bookmarks]));
-    } catch { /* ignore */ }
-  }, [bookmarks]);
+  const persistSaved = (next: SavedHadith[]) => {
+    setSaved(next);
+    try { localStorage.setItem(SAVED_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+  };
 
-  /* Debounce search input → committed search */
+  const toggleSave = (c: Collection, h: Hadith | SavedHadith) => {
+    const key = `${c.id}-${h.number}`;
+    if (savedKeys.has(key)) persistSaved(saved.filter(s => s.key !== key));
+    else persistSaved([{ key, collection: c.id, number: h.number, english: h.english, arabic: h.arabic, chapter: h.chapter, at: Date.now() }, ...saved]);
+  };
+
+  /* Keep the URL in sync so links and refresh return to the same place */
   useEffect(() => {
-    const t = setTimeout(() => { setSearch(searchInput); setPage(1); }, 500);
+    const url = new URL(window.location.href);
+    ['c', 'book', 'page', 'q'].forEach(k => url.searchParams.delete(k));
+    if (view.kind === 'saved') url.searchParams.set('c', 'saved');
+    if (view.kind === 'collection') {
+      url.searchParams.set('c', view.id);
+      if (bookId) url.searchParams.set('book', bookId);
+      if (page > 1) url.searchParams.set('page', String(page));
+      if (search) url.searchParams.set('q', search);
+    }
+    window.history.replaceState(null, '', url.toString());
+  }, [view, bookId, page, search]);
+
+  /* Debounced search */
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (searchInput !== search) { setSearch(searchInput); setPage(1); }
+    }, 450);
     return () => clearTimeout(t);
-  }, [searchInput]);
+  }, [searchInput, search]);
 
-  /* Fetch from /api/hadith proxy */
-  const fetchPage = useCallback(async (col: Collection, pg: number, q: string) => {
+  /* Fetch */
+  useEffect(() => {
+    if (view.kind !== 'collection') return;
+    let cancelled = false;
     setLoading(true);
     setError('');
-    try {
-      const params = new URLSearchParams({ collection: col.id, page: String(pg), limit: '20' });
-      if (q.trim()) params.set('search', q.trim());
-      if (activeBookId) params.set('section', activeBookId);
-      
-      const res = await fetch(`/api/hadith?${params}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      
-      setHadiths(data.hadiths ?? []);
-      setTotal(data.total ?? 0);
-      setTotalPages(data.totalPages ?? 1);
-      if (data.metadata) setMetadata(data.metadata);
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Failed to load collection.';
-      setError(msg);
-      setHadiths([]);
-    } finally {
-      // Minimum loading duration for font stability
-      setTimeout(() => setLoading(false), 800);
-    }
-  }, [activeBookId]);
+    const params = new URLSearchParams({ collection: view.id, page: String(page), limit: String(LIMIT) });
+    if (search.trim()) params.set('search', search.trim());
+    if (bookId) params.set('section', bookId);
+    fetch(`/api/hadith?${params}`)
+      .then(r => r.json().then(d => ({ ok: r.ok, d })))
+      .then(({ ok, d }) => {
+        if (cancelled) return;
+        if (!ok || d.error) throw new Error(d.error || 'Failed to load collection');
+        setHadiths(d.hadiths ?? []);
+        setTotal(d.total ?? 0);
+        setTotalPages(d.totalPages ?? 1);
+        if (d.metadata?.sections) setSections(d.metadata.sections);
+      })
+      .catch(e => { if (!cancelled) { setError(e instanceof Error ? e.message : 'Failed to load collection'); setHadiths([]); } })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [view, page, search, bookId, retry]);
 
-  useEffect(() => {
-    fetchPage(activeCollection, page, search);
-  }, [activeCollection, page, search, activeBookId, fetchPage]);
+  const scrollTop = () => topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-  /* Actions */
-  const toggleBookmark = (key: string) =>
-    setBookmarks(prev => { const s = new Set(prev); s.has(key) ? s.delete(key) : s.add(key); return s; });
-
-  const toggleArabicExpand = (key: string) =>
-    setExpandedArabicIds(prev => { const s = new Set(prev); s.has(key) ? s.delete(key) : s.add(key); return s; });
-
-  const copyHadith = (key: string, hadith: Hadith) => {
-    const text = `Hadith #${hadith.number} — ${activeCollection.name}\n\n${hadith.arabic ? hadith.arabic + '\n\n' : ''}${hadith.english}`;
-    navigator.clipboard.writeText(text).catch(() => {});
-    setCopied(key);
-    setTimeout(() => setCopied(null), 2000);
+  const openCollection = (id: string, q = '') => {
+    setView({ kind: 'collection', id });
+    setSections({});
+    setBookId('');
+    setPage(1);
+    setSearchInput(q);
+    setSearch(q);
+    setHadiths([]);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const shareHadith = (hadith: Hadith) => {
-    const text = `Hadith #${hadith.number} — ${activeCollection.name}\n\n${hadith.arabic ? hadith.arabic + '\n\n' : ''}${hadith.english}`;
-    if (navigator.share) navigator.share({ title: `Hadith #${hadith.number}`, text }).catch(() => {});
-    else { navigator.clipboard.writeText(text); setCopied('share-' + hadith.number); setTimeout(() => setCopied(null), 2000); }
-  };
+  const goHome = () => { setView({ kind: 'home' }); window.scrollTo({ top: 0, behavior: 'smooth' }); };
 
-  const changePage = (p: number) => {
-    setPage(p);
-    if (contentRef.current) contentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  const changePage = (p: number) => { setPage(p); scrollTop(); };
 
-  const switchCollection = (col: Collection) => {
-    setActiveCollection(col);
+  const pickBook = (id: string) => {
+    setBookId(id);
     setPage(1);
     setSearchInput('');
     setSearch('');
-    setActiveBookId('');
-    setBookFilter('');
-    setSidebarOpen(false);
-    setVisibleBooksCount(20);
+    setBooksOpen(false);
+    scrollTop();
   };
 
-  const switchBook = (bookId: string) => {
-    setActiveBookId(bookId);
-    setPage(1);
-    setSearch('');
-    setSearchInput('');
-    setActiveSharhId(null);
-    if (window.innerWidth <= 860) setSidebarOpen(false);
-    if (contentRef.current) contentRef.current.scrollTo(0, 0);
-    setVisibleBooksCount(20);
-  };
+  const textOf = (c: Collection, h: Hadith | SavedHadith) =>
+    `${h.arabic ? h.arabic + '\n\n' : ''}${h.english}\n\n— ${c.name} ${h.number}\nlearnquran.app`;
 
-  /* Pagination pills */
-  const paginationPages = useMemo(() => {
-    const total = totalPages;
-    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-    if (page <= 4) return [1, 2, 3, 4, 5, '...', total];
-    if (page >= total - 3) return [1, '...', total - 4, total - 3, total - 2, total - 1, total];
-    return [1, '...', page - 1, page, page + 1, '...', total];
-  }, [page, totalPages]);
+  const copy = useCallback((c: Collection, h: Hadith | SavedHadith) => {
+    navigator.clipboard.writeText(textOf(c, h)).catch(() => {});
+    setCopied(`${c.id}-${h.number}`);
+    setTimeout(() => setCopied(null), 1800);
+  }, []);
 
-  const openCollection = (col: Collection) => {
-    switchCollection(col);
-    setShowLanding(false);
-  };
+  const share = useCallback((c: Collection, h: Hadith | SavedHadith) => {
+    const text = textOf(c, h);
+    if (navigator.share) navigator.share({ title: `${c.name} ${h.number}`, text }).catch(() => {});
+    else copy(c, h);
+  }, [copy]);
 
-  /* ─── Landing Screen ─── */
-  if (showLanding) {
+  const sectionList = useMemo(
+    () => Object.entries(sections).filter(([, n]) => n && (!bookFilter || n.toLowerCase().includes(bookFilter.toLowerCase()))),
+    [sections, bookFilter]
+  );
+
+  /* ═════════════════ HOME ═════════════════ */
+  if (view.kind === 'home') {
     return (
-      <div className="hadees-landing">
-        <div className="hadees-landing-inner">
-          {/* Header */}
-          <h1 className="hadees-landing-title">Hadith</h1>
-          <p className="hadees-landing-sub">Explore the six major collections of Hadith</p>
+      <main className="hd">
+        <div className="hd-wrap">
+          <header className="hd-hero">
+            <p className="hd-kicker"><span className="font-arabic">الحديث النبوي</span><span className="hd-kicker-sep" />The Sunnah</p>
+            <h1>The words of the Prophet <span className="hd-saw">ﷺ</span>, <em>within reach.</em></h1>
+            <p className="hd-sub">Read and search the six major collections in Arabic and English, and keep the narrations that move you.</p>
+            <form className="hd-hero-search" onSubmit={e => { e.preventDefault(); if (homeQuery.trim()) openCollection('bukhari', homeQuery.trim()); }}>
+              <span className="material-symbols-outlined">search</span>
+              <input value={homeQuery} onChange={e => setHomeQuery(e.target.value)} placeholder="Search a word or topic, e.g. intention, mercy, prayer" aria-label="Search hadith" />
+              <button type="submit" disabled={!homeQuery.trim()}>Search Bukhari</button>
+            </form>
+          </header>
 
-          {/* Search */}
-          <div className="hadees-landing-search">
-            <span className="material-symbols-outlined" style={{ fontSize: 20, color: '#999' }}>search</span>
-            <input
-              type="text"
-              placeholder="Search Hadees Book"
-              className="hadees-landing-search-input"
-              onFocus={() => setShowLanding(false)}
-            />
-          </div>
+          <HadeesOfTheDay />
 
-          {/* Book Grid */}
-          <div className="hadees-landing-grid">
-            {COLLECTIONS.map((col, idx) => (
-              <button
-                key={col.id}
-                className="hadees-landing-card"
-                style={{ background: CARD_COLORS[idx]?.bg || '#f5f5f5' }}
-                onClick={() => openCollection(col)}
-              >
-                <div className="hadees-landing-card-icon" style={{ color: CARD_COLORS[idx]?.accent || '#333' }}>
-                  <span style={{ fontFamily: "'UthmanicHafs', 'Amiri', serif", fontSize: 28, lineHeight: 1 }}>{col.ar.split(' ').slice(0, 2).join(' ')}</span>
-                </div>
-                <span className="hadees-landing-card-name">{col.name}</span>
+          <section>
+            <div className="hd-section-head">
+              <div>
+                <p className="hd-kicker-ar font-arabic">الكتب الستة</p>
+                <h2>The Six Collections</h2>
+              </div>
+              <button className="hd-saved-link" onClick={() => setView({ kind: 'saved' })}>
+                <span className="material-symbols-outlined">bookmarks</span>
+                Saved <b>{saved.length}</b>
               </button>
-            ))}
-          </div>
+            </div>
+            <div className="hd-grid">
+              {COLLECTIONS.map((c, i) => (
+                <button key={c.id} className="hd-col" style={{ ['--hue' as string]: c.hue, animationDelay: `${i * 50}ms` }} onClick={() => openCollection(c.id)}>
+                  <span className="hd-col-arch" aria-hidden="true">
+                    <span className="font-arabic">{c.ar.split(' ').slice(-1)[0]}</span>
+                  </span>
+                  <span className="hd-col-text">
+                    <span className="hd-col-ar font-arabic">{c.ar}</span>
+                    <b>{c.name}</b>
+                    <small>{c.compiler} · {c.died}</small>
+                    <span className="hd-col-blurb">{c.blurb}</span>
+                  </span>
+                  <span className="hd-col-go material-symbols-outlined">arrow_forward</span>
+                </button>
+              ))}
+            </div>
+          </section>
         </div>
-      </div>
+      </main>
     );
   }
 
-  return (
-    <div className="hadees-page">
-      {/* ── Standardized Premium Loader ── */}
-      <GlobalLoader loading={loading} />
-
-      {/* ── Main Layout ── */}
-      <div className="hadees-layout">
-
-        {/* Mobile sidebar toggle */}
-        <button className="hadees-sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
-          <span className="material-symbols-outlined">{sidebarOpen ? 'close' : 'menu'}</span>
-          Collections
-        </button>
-
-        {/* Sidebar Backdrop for mobile */}
-        <div 
-          className={`hadees-sidebar-backdrop ${sidebarOpen ? 'open' : ''}`} 
-          onClick={() => setSidebarOpen(false)}
-        />
-
-        {/* ── Sidebar ── */}
-        <aside className={`hadees-sidebar ${sidebarOpen ? 'open' : ''}`}>
-          <div className="hadees-sidebar-header">
-            <h3 className="hadees-sidebar-title">
-              <span className="material-symbols-outlined" style={{ fontSize: 20 }}>library_books</span>
-              Collections
-            </h3>
-            <span className="hadees-sidebar-count">{COLLECTIONS.length}</span>
-          </div>
-
-          <div className="hadees-sidebar-divider" />
-
-          {COLLECTIONS.map(col => (
-            <div key={col.id} className="hadees-col-group">
-              <button
-                className={`hadees-col-btn ${activeCollection.id === col.id ? 'active' : ''}`}
-                onClick={() => switchCollection(col)}
-              >
-                <div className="hadees-col-icon" style={{ background: `${col.color}15`, color: col.color }}>
-                  <span className="material-symbols-outlined">{col.icon}</span>
-                </div>
-                <div className="hadees-col-info">
-                  <span className="hadees-col-name">{col.name}</span>
-                  <span className="hadees-col-arabic">{col.ar}</span>
-                  <span className="hadees-col-meta">{col.description}</span>
-                </div>
-                {activeCollection.id === col.id && (
-                  <span className="hadees-col-active-dot" style={{ background: col.color }} />
-                )}
-                <span className={`material-symbols-outlined hadees-col-chevron ${activeCollection.id === col.id ? 'expanded' : ''}`}>
-                  expand_more
-                </span>
-              </button>
-              
-              {activeCollection.id === col.id && metadata?.sections && (
-                <div className="hadees-books-container">
-                  {/* Book Filter for long lists like Bukhari */}
-                  {Object.keys(metadata.sections).length > 20 && (
-                    <div className="hadees-book-filter-wrapper">
-                      <input
-                        type="text"
-                        placeholder="Search books..."
-                        className="hadees-book-filter-input"
-                        value={bookFilter}
-                        onChange={(e) => setBookFilter(e.target.value)}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    </div>
-                  )}
-                  {Object.entries(metadata.sections)
-                    .filter(([_, name]) => !bookFilter || (name as string).toLowerCase().includes(bookFilter.toLowerCase()))
-                    .slice(0, visibleBooksCount)
-                    .map(([id, name]) => {
-                    if (!name) return null;
-                    return (
-                      <button
-                        key={id}
-                        className={`hadees-book-btn ${activeBookId === id ? 'active' : ''}`}
-                        onClick={() => switchBook(id)}
-                      >
-                        <span className="hadees-book-num">{id}</span>
-                        <span className="hadees-book-name" title={name as string}>{name as string}</span>
-                      </button>
-                    );
-                  })}
-
-                  {Object.keys(metadata.sections).length > visibleBooksCount && !bookFilter && (
-                    <button 
-                      className="hadees-books-see-more"
-                      onClick={(e) => { e.stopPropagation(); setVisibleBooksCount(prev => prev + 20); }}
-                    >
-                      <span className="material-symbols-outlined">add_circle</span>
-                      See More Books...
-                    </button>
-                  )}
-                </div>
-              )}
+  /* ═════════════════ SAVED ═════════════════ */
+  if (view.kind === 'saved') {
+    return (
+      <main className="hd">
+        <div className="hd-bar">
+          <button className="hd-icon" onClick={goHome} aria-label="Back"><span className="material-symbols-outlined">arrow_back</span></button>
+          <div className="hd-bar-title"><b>Saved hadith</b><small>{saved.length} saved in this browser</small></div>
+        </div>
+        <div className="hd-wrap narrow">
+          {saved.length === 0 ? (
+            <div className="hd-empty">
+              <span className="material-symbols-outlined">bookmark_add</span>
+              <h3>Nothing saved yet</h3>
+              <p>Tap the bookmark on any hadith to keep it here.</p>
+              <button className="hd-btn primary" onClick={goHome}>Browse collections</button>
             </div>
-          ))}
-
-          <div className="hadees-sidebar-divider" />
-
-          <div style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span className="material-symbols-outlined" style={{ fontSize: 18, color: '#f59e0b' }}>bookmark</span>
-            <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 500 }}>
-              {bookmarks.size} bookmark{bookmarks.size !== 1 ? 's' : ''} saved
-            </span>
-          </div>
-        </aside>
-
-        {/* ── Content Area ── */}
-        <main className="hadees-content" ref={contentRef}>
-          {/* Sticky Mini Header for context */}
-          {activeBookId && metadata?.sections?.[activeBookId] && (
-            <div className="hadees-sticky-header">
-              <div className="hadees-sticky-info">
-                <span className="hadees-sticky-book">{activeCollection.name}</span>
-                <span className="hadees-sticky-chapter">{metadata.sections[activeBookId]}</span>
-              </div>
-              <div className="hadees-sidebar-count" style={{ fontSize: 10 }}>Book {activeBookId}</div>
-            </div>
-          )}
-
-          {/* Search */}
-          <div className="hadees-toolbar">
-            <div className="hadees-search-wrapper">
-              <span className="material-symbols-outlined hadees-search-icon">search</span>
-              <input
-                type="text"
-                className="hadees-search-input"
-                value={searchInput}
-                onChange={e => setSearchInput(e.target.value)}
-                placeholder={`Search within ${activeCollection.name}…`}
-              />
-              {searchInput && (
-                <button className="hadees-search-clear" onClick={() => { setSearchInput(''); setSearch(''); }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 18 }}>close</span>
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Content Header */}
-          <div className="hadees-content-header">
-            <div>
-              <h2 className="hadees-content-title">
-                {search ? 'Search Results' : activeCollection.name}
-              </h2>
-              <p className="hadees-content-subtitle">
-                {loading
-                  ? 'Loading…'
-                  : search
-                  ? `${total.toLocaleString()} hadith${total !== 1 ? 's' : ''} found for "${search}"`
-                  : `${total.toLocaleString()} hadiths · Page ${page} of ${totalPages}`}
-              </p>
-            </div>
-
-            {!search && !loading && totalPages > 1 && (
-              <div className="hadees-paginator">
-                <button className="hadees-pg-btn" onClick={() => changePage(Math.max(1, page - 1))} disabled={page === 1}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>chevron_left</span>
-                  Prev
-                </button>
-                {paginationPages.map((p, i) =>
-                  p === '...'
-                    ? <span key={`e-${i}`} style={{ padding: '0 4px', color: 'var(--text-muted)', fontSize: 14 }}>…</span>
-                    : <button key={p} className={`hadees-pg-num ${page === p ? 'active' : ''}`} onClick={() => changePage(p as number)}>{p}</button>
-                )}
-                <button className="hadees-pg-btn" onClick={() => changePage(Math.min(totalPages, page + 1))} disabled={page === totalPages}>
-                  Next
-                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>chevron_right</span>
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Error */}
-          {error && (
-            <div className="hadees-error">
-              <span className="material-symbols-outlined" style={{ fontSize: 28, color: '#ef4444' }}>error_outline</span>
-              <div>
-                <p style={{ margin: '0 0 2px', fontWeight: 600, color: '#ef4444', fontSize: 14 }}>Failed to load collection</p>
-                <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted)' }}>{error}</p>
-              </div>
-              <button className="hadees-error-retry" onClick={() => fetchPage(activeCollection, page, search)}>Retry</button>
-            </div>
-          )}
-
-          {/* Loading */}
-          {loading && (
-            <div className="hadees-loading-list">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="hadees-card-skeleton">
-                  <div className="hadees-skel-line hadees-skel-header" />
-                  <div className="hadees-skel-line hadees-skel-body" />
-                  <div className="hadees-skel-line hadees-skel-body" />
-                  <div className="hadees-skel-line hadees-skel-body-short" />
-                  <div className="hadees-skel-line hadees-skel-footer" />
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Empty */}
-          {!loading && !error && hadiths.length === 0 && (
-            <div className="hadees-empty">
-              <span className="material-symbols-outlined" style={{ fontSize: 56, color: 'var(--text-muted)', display: 'block', marginBottom: 16 }}>search_off</span>
-              <h3>No hadiths found</h3>
-              <p>Try a different search term or select another collection</p>
-              <button className="hadees-empty-btn" onClick={() => { setSearchInput(''); setSearch(''); }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>restart_alt</span>
-                Clear Search
-              </button>
-            </div>
-          )}
-
-          {/* Cards */}
-          {!loading && hadiths.length > 0 && (
-            <div className="hadees-list">
-              {hadiths.map((hadith, idx) => {
-                const key = `${activeCollection.id}-${hadith.number}`;
-                const isBookmarked = bookmarks.has(key);
-                const isCopied = copied === key;
-                const isArabicLong = !!hadith.arabic && hadith.arabic.length > 100;
-                const isArabicExpanded = expandedArabicIds.has(key);
-
+          ) : (
+            <div className="hd-list">
+              {saved.map((s, i) => {
+                const c = COLLECTIONS.find(x => x.id === s.collection) ?? COLLECTIONS[0];
                 return (
-                  <article
-                    key={key}
-                    className="hadees-card"
-                    style={{ animationDelay: `${Math.min(idx * 40, 300)}ms` }}
-                  >
-                    {/* Top row: number + chapter + bookmark */}
-                    <div className="hadees-card-toprow">
-                      <div className="hadees-card-toprow-left">
-                        <span className="hadees-card-num-label">#{hadith.number}</span>
-                        {hadith.chapter && <span className="hadees-card-chapter-inline">{hadith.chapter}</span>}
-                      </div>
-                      <button
-                        className={`hadees-icon-btn ${isBookmarked ? 'bookmark-active' : ''}`}
-                        onClick={() => toggleBookmark(key)}
-                        title={isBookmarked ? 'Remove bookmark' : 'Bookmark'}
-                      >
-                        <span className="material-symbols-outlined" style={{ fontSize: 18, fontVariationSettings: isBookmarked ? "'FILL' 1" : "'FILL' 0" }}>bookmark</span>
-                      </button>
-                    </div>
-
-                    {/* Body: English + Arabic side by side */}
-                    <div className="hadees-card-body">
-                      <div className="hadees-card-english">
-                        <p className="hadees-card-text">{hadith.english}</p>
-                        
-                        {/* Sharh Button for Sahih Bukhari */}
-                        {activeCollection.id === 'bukhari' && (
-                          <button 
-                            className="hadees-sharh-btn"
-                            onClick={() => setActiveSharhId(activeSharhId === key ? null : key)}
-                          >
-                            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>auto_awesome</span>
-                            {activeSharhId === key ? 'Hide Sharh' : 'Fath al-Bari Sharh'}
-                          </button>
-                        )}
-                      </div>
-                      {hadith.arabic && (
-                        <div className="hadees-card-arabic-col">
-                          <p
-                            className={`hadees-card-arabic-text${isArabicLong && !isArabicExpanded ? ' arabic-collapsed' : ''}`}
-                            style={{ fontFamily: ARABIC_FONT }}
-                          >{hadith.arabic}</p>
-                          {isArabicLong && !isArabicExpanded && <div className="hadees-arabic-fade" />}
-                          {isArabicLong && (
-                            <button className="hadees-arabic-read-more" onClick={() => toggleArabicExpand(key)}>
-                              {isArabicExpanded ? 'Show less' : 'Read more'}
-                              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>{isArabicExpanded ? 'expand_less' : 'expand_more'}</span>
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Sharh Content Section */}
-                    {activeSharhId === key && (
-                      <div className="hadees-sharh-section">
-                        <h4 className="hadees-sharh-title">
-                          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>menu_book</span>
-                          Sharh Bukhari — Hafiz Ibn Hajar al-Asqalani
-                        </h4>
-                        <div className="hadees-sharh-content">
-                          <p>Commentary by Ibn Hajar al-Asqalani (Fath al-Bari):</p>
-                          <blockquote style={{ borderLeft: '3px solid #fcd34d', paddingLeft: 16, margin: '12px 0', fontSize: '13px', fontStyle: 'italic' }}>
-                            "This hadith is a fundamental principle of Islam. Ibn Hajar mentions that intentions differentiate between acts of worship and ordinary habits..."
-                          </blockquote>
-                          <p style={{ fontSize: 12, opacity: 0.8 }}>
-                            The complete text of Fath al-Bari for this hadith is extensive. You can view the full academic analysis and linguistic breakdowns in the multi-volume physical editions or through scholarly databases.
-                          </p>
-                        </div>
-                        <span className="hadees-sharh-source">Source: Fath al-Bari bi Sharh Sahih al-Bukhari</span>
-                      </div>
-                    )}
-
-                    {/* Footer: grade + reference + actions */}
-                    <div className="hadees-card-footer">
-                      <div className="hadees-card-footer-left">
-                        {hadith.grade && (
-                          <p className="hadees-card-grade">
-                            Grade: <strong>{hadith.grade}</strong>
-                          </p>
-                        )}
-                        <p className="hadees-card-ref">
-                          <span>Reference</span>
-                          <span className="hadees-ref-sep">:</span>
-                          <span>{activeCollection.name} {hadith.number}</span>
-                        </p>
-                      </div>
-                      <div className="hadees-card-actions">
-                        <button className="hadees-action-link" onClick={() => copyHadith(key, hadith)}>
-                          {isCopied ? 'Copied!' : 'Copy'}
-                        </button>
-                        <span className="hadees-action-sep">|</span>
-                        <button className="hadees-action-link" onClick={() => shareHadith(hadith)}>Share</button>
-                      </div>
-                    </div>
-                  </article>
+                  <HadithCard key={s.key} h={s} col={c} saved onSave={() => toggleSave(c, s)} query="" index={i}
+                    onCopy={() => copy(c, s)} onShare={() => share(c, s)} copied={copied === s.key} />
                 );
               })}
             </div>
           )}
+        </div>
+      </main>
+    );
+  }
 
-          {/* Bottom Pagination */}
-          {!loading && !search && totalPages > 1 && hadiths.length > 0 && (
-            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 32, marginBottom: 16 }}>
-              <div className="hadees-paginator">
-                <button className="hadees-pg-btn" onClick={() => changePage(1)} disabled={page === 1}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>first_page</span>
-                </button>
-                <button className="hadees-pg-btn" onClick={() => changePage(Math.max(1, page - 1))} disabled={page === 1}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>chevron_left</span>
-                  Prev
-                </button>
-                {paginationPages.map((p, i) =>
-                  p === '...'
-                    ? <span key={`b-e-${i}`} style={{ padding: '0 4px', color: 'var(--text-muted)', fontSize: 14 }}>…</span>
-                    : <button key={`b-${p}`} className={`hadees-pg-num ${page === p ? 'active' : ''}`} onClick={() => changePage(p as number)}>{p}</button>
-                )}
-                <button className="hadees-pg-btn" onClick={() => changePage(Math.min(totalPages, page + 1))} disabled={page === totalPages}>
-                  Next
-                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>chevron_right</span>
-                </button>
-                <button className="hadees-pg-btn" onClick={() => changePage(totalPages)} disabled={page === totalPages}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>last_page</span>
-                </button>
-              </div>
-            </div>
-          )}
+  /* ═════════════════ COLLECTION ═════════════════ */
+  if (!col) return null;
+  const bookName = bookId ? sections[bookId] : '';
+  const from = (page - 1) * LIMIT + 1;
+  const to = Math.min(page * LIMIT, total);
 
-        </main>
+  return (
+    <main className="hd" style={{ ['--hue' as string]: col.hue }}>
+      <div className="hd-bar">
+        <button className="hd-icon" onClick={goHome} aria-label="Back to collections"><span className="material-symbols-outlined">arrow_back</span></button>
+        <div className="hd-bar-title">
+          <b>{col.name} <span className="font-arabic">{col.ar}</span></b>
+          <small>{col.compiler} · {col.died}</small>
+        </div>
+        <div className="hd-switch" role="tablist" aria-label="Collection">
+          {COLLECTIONS.map(c => (
+            <button key={c.id} role="tab" aria-selected={c.id === col.id} className={c.id === col.id ? 'on' : ''} onClick={() => openCollection(c.id)} title={c.name}>
+              {c.name.replace(/^(Sahih|Sunan|Jami') ?/, '').replace('al-', '')}
+            </button>
+          ))}
+        </div>
+        <button className="hd-icon" onClick={() => setView({ kind: 'saved' })} title="Saved hadith">
+          <span className="material-symbols-outlined">bookmarks</span>
+        </button>
       </div>
-    </div>
+
+      <div className="hd-wrap narrow" ref={topRef}>
+        {/* toolbar */}
+        <div className="hd-tools">
+          <button className={`hd-books-btn${bookId ? ' on' : ''}`} onClick={() => setBooksOpen(true)}>
+            <span className="material-symbols-outlined">library_books</span>
+            <span className="hd-books-label">{bookId ? <>Book {bookId}: <b>{bookName}</b></> : 'All books'}</span>
+            <span className="material-symbols-outlined">expand_more</span>
+          </button>
+          {bookId && (
+            <button className="hd-chip-clear" onClick={() => pickBook('')}>
+              <span className="material-symbols-outlined">close</span>Clear
+            </button>
+          )}
+          <label className="hd-search">
+            <span className="material-symbols-outlined">search</span>
+            <input value={searchInput} onChange={e => setSearchInput(e.target.value)} placeholder={`Search ${col.name}…`} aria-label="Search this collection" />
+            {searchInput && <button onClick={() => { setSearchInput(''); setSearch(''); }} aria-label="Clear search"><span className="material-symbols-outlined">close</span></button>}
+          </label>
+        </div>
+
+        <div className="hd-status">
+          {loading ? 'Loading…' : search
+            ? <>{total.toLocaleString()} result{total === 1 ? '' : 's'} for “<b>{search}</b>”</>
+            : total > 0 ? <>Showing <b>{from}–{to}</b> of {total.toLocaleString()} hadith</> : null}
+        </div>
+
+        {error ? (
+          <div className="hd-empty">
+            <span className="material-symbols-outlined">cloud_off</span>
+            <h3>Couldn’t load this collection</h3>
+            <p>{error}</p>
+            <button className="hd-btn primary" onClick={() => setRetry(r => r + 1)}>Try again</button>
+          </div>
+        ) : loading ? (
+          <MushafLoader label={bookName ? `Opening ${bookName}` : `Opening ${col.name}`} />
+        ) : hadiths.length === 0 ? (
+          <div className="hd-empty">
+            <span className="material-symbols-outlined">search_off</span>
+            <h3>No hadith found</h3>
+            <p>Try another word, or search a different collection.</p>
+            <button className="hd-btn" onClick={() => { setSearchInput(''); setSearch(''); }}>Clear search</button>
+          </div>
+        ) : (
+          <div className="hd-list">
+            {hadiths.map((h, i) => {
+              const key = `${col.id}-${h.number}`;
+              return (
+                <HadithCard key={key} h={h} col={col} saved={savedKeys.has(key)} onSave={() => toggleSave(col, h)} query={search} index={i}
+                  onCopy={() => copy(col, h)} onShare={() => share(col, h)} copied={copied === key} />
+              );
+            })}
+          </div>
+        )}
+
+        {!loading && !error && totalPages > 1 && (
+          <nav className="hd-pager" aria-label="Pages">
+            <button onClick={() => changePage(page - 1)} disabled={page === 1} aria-label="Previous page"><span className="material-symbols-outlined">chevron_left</span></button>
+            {pageList(page, totalPages).map((p, i) =>
+              p === '…' ? <span key={`e${i}`}>…</span> : (
+                <button key={p} className={p === page ? 'on' : ''} onClick={() => changePage(p)}>{p}</button>
+              )
+            )}
+            <button onClick={() => changePage(page + 1)} disabled={page === totalPages} aria-label="Next page"><span className="material-symbols-outlined">chevron_right</span></button>
+          </nav>
+        )}
+      </div>
+
+      {/* books drawer */}
+      {booksOpen && (
+        <>
+          <div className="hd-overlay" onClick={() => setBooksOpen(false)} />
+          <aside className="hd-drawer" role="dialog" aria-label="Books">
+            <div className="hd-drawer-head">
+              <div><b>Books</b><small>{Object.keys(sections).length} in {col.name}</small></div>
+              <button className="hd-icon" onClick={() => setBooksOpen(false)} aria-label="Close"><span className="material-symbols-outlined">close</span></button>
+            </div>
+            <label className="hd-search in-drawer">
+              <span className="material-symbols-outlined">search</span>
+              <input autoFocus value={bookFilter} onChange={e => setBookFilter(e.target.value)} placeholder="Find a book (e.g. Prayer, Fasting)" aria-label="Find a book" />
+            </label>
+            <div className="hd-drawer-list">
+              <button className={`hd-book${!bookId ? ' on' : ''}`} onClick={() => pickBook('')}>
+                <span className="hd-book-num"><span className="material-symbols-outlined">apps</span></span>
+                <span className="hd-book-name">All books</span>
+              </button>
+              {sectionList.map(([id, name]) => (
+                <button key={id} className={`hd-book${bookId === id ? ' on' : ''}`} onClick={() => pickBook(id)}>
+                  <span className="hd-book-num">{id}</span>
+                  <span className="hd-book-name">{name}</span>
+                </button>
+              ))}
+              {sectionList.length === 0 && Object.keys(sections).length > 0 && <p className="hd-drawer-empty">No book matches “{bookFilter}”.</p>}
+            </div>
+          </aside>
+        </>
+      )}
+    </main>
   );
 }

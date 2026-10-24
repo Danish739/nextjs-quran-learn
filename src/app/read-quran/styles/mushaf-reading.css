@@ -139,14 +139,14 @@
 }
 
 .qc-pill:hover {
-  border-color: #f59e0b;
-  color: #b45309;
+  border-color: var(--brand-primary);
+  color: var(--brand-primary-active);
 }
 
 .qc-pill.is-selected {
-  background: rgba(245, 158, 11, 0.12);
-  border-color: rgba(245, 158, 11, 0.45);
-  color: #b45309;
+  background: rgba(var(--brand-rgb), 0.12);
+  border-color: rgba(var(--brand-rgb), 0.45);
+  color: var(--brand-primary-active);
 }
 
 .qc-pill:disabled {
@@ -199,11 +199,11 @@
 
 .qc-word:hover,
 .qc-word.is-active {
-  background: rgba(245, 158, 11, 0.14);
+  background: rgba(var(--brand-rgb), 0.14);
 }
 
 .qc-word.is-starting {
-  background: rgba(245, 158, 11, 0.1);
+  background: rgba(var(--brand-rgb), 0.1);
 }
 
 .qc-glyph {
@@ -246,7 +246,7 @@
 }
 
 .qc-page-link:hover {
-  color: #f59e0b;
+  color: var(--brand-primary);
 }
 
 .qc-nav {
@@ -274,7 +274,7 @@
 }
 
 .qc-nav a.primary {
-  background: var(--brand-primary, #f59e0b);
+  background: var(--brand-primary, var(--brand-primary));
   border-color: transparent;
   color: #fff;
 }

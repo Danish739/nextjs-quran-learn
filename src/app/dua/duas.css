@@ -1,1248 +1,1003 @@
-/* =====================================================
-   DUAS PAGE - Premium Islamic Duas Section
-   Warm Amber/Gold Theme Matching Design System
-   ===================================================== */
+/* =========================================================
+   DUAS & ADHKAR — /dua
+   Single page scroll (no inner scroll areas).
+   ========================================================= */
 
-/* ── Loading Progress Bar ── */
-.duas-progress-track {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: var(--bg-elevated);
-  z-index: 9999;
-  pointer-events: none;
-}
-.duas-progress-bar {
-  height: 100%;
-  background: linear-gradient(90deg, #b45309, #f59e0b, #fbbf24);
-  border-radius: 0 2px 2px 0;
-  box-shadow: 0 0 8px rgba(245, 158, 11, 0.6);
-}
-
-/* ── Page Container ── */
-.duas-page {
+.du {
+  --du-paper: #fbf8f1;
+  --du-card: #ffffff;
+  --du-line: rgba(15, 23, 42, 0.08);
+  --du-ink: #0f172a;
+  --du-muted: #64748b;
+  --du-gold: #c8963e;
+  --du-cream: #f0e3c4;
+  --du-emerald: #13705a;
+  --du-emerald-deep: #0a4a3b;
+  --du-arabic: #10261f;
   min-height: 100vh;
-  background: var(--bg-base);
-  font-family: var(--font-sans);
-  color: var(--text-primary);
+  color: var(--du-ink);
+  background: var(--du-paper);
+  background-image: radial-gradient(circle at 2px 2px, rgba(var(--brand-rgb), 0.05) 1px, transparent 0);
+  background-size: 26px 26px;
+  font-family: 'Figtree', 'Lexend', system-ui, sans-serif;
 }
 
-/* ── Hero Banner ── */
-.duas-hero {
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(135deg, #92400e 0%, #b45309 30%, #d97706 60%, #f59e0b 100%);
-  padding: clamp(2.5rem, 5vw, 4rem) clamp(1.5rem, 4vw, 3rem);
+.dark .du,
+[data-theme='dark'] .du {
+  --du-paper: #0f1714;
+  --du-card: #15201b;
+  --du-line: rgba(255, 255, 255, 0.08);
+  --du-ink: #e8efe9;
+  --du-muted: #93a59b;
+  --du-arabic: #f3eedf;
 }
 
-.duas-hero-pattern {
-  position: absolute;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M40 0L80 40L40 80L0 40L40 0z' fill='none' stroke='%23ffffff' stroke-opacity='0.06' stroke-width='1'/%3E%3C/svg%3E");
-  pointer-events: none;
+.du .font-arabic {
+  font-family: 'UthmanicHafs', 'Amiri', serif;
 }
 
-.duas-hero-glow {
-  position: absolute;
-  right: -80px;
-  top: -80px;
-  width: 400px;
-  height: 400px;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
-  pointer-events: none;
+.du .material-symbols-outlined {
+  line-height: 1;
 }
 
-.duas-hero-content {
-  position: relative;
-  z-index: 1;
-  max-width: 800px;
+.du-wrap {
+  max-width: 1100px;
   margin: 0 auto;
-  text-align: center;
+  padding: 32px 24px 56px;
 }
 
-.duas-hero-badge {
+.du-wrap.narrow {
+  max-width: 900px;
+  padding-top: 20px;
+  scroll-margin-top: 220px;
+}
+
+/* ── Hero ───────────────────────────────────────────────── */
+.du-hero {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  align-items: end;
+  gap: 28px;
+  margin-bottom: 26px;
+}
+
+.du-kicker {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 18px;
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 999px;
+  gap: 10px;
+  margin: 0 0 12px;
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: white;
-  margin-bottom: 28px;
+  color: var(--du-muted);
 }
 
-.duas-hero-arabic {
-  font-size: clamp(1.6rem, 4vw, 2.6rem);
-  line-height: 2;
-  direction: rtl;
-  text-align: center;
-  color: white;
-  margin: 0 0 20px;
-  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.15);
+.du-kicker .font-arabic {
+  font-size: 19px;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--du-gold);
 }
 
-.duas-hero-transliteration {
-  font-size: clamp(0.9rem, 2vw, 1.05rem);
+.du-kicker-sep {
+  width: 18px;
+  height: 1px;
+  background: var(--du-gold);
+}
+
+.du-hero h1 {
+  margin: 0 0 10px;
+  font-family: 'Lora', Georgia, serif;
+  font-size: clamp(30px, 4.4vw, 46px);
+  font-weight: 500;
+  line-height: 1.12;
+}
+
+.du-hero h1 em {
   font-style: italic;
-  color: rgba(255, 255, 255, 0.85);
-  margin: 0 0 12px;
-  line-height: 1.6;
+  color: var(--brand-primary);
 }
 
-.duas-hero-translation {
-  font-size: clamp(0.95rem, 2vw, 1.1rem);
-  color: rgba(255, 255, 255, 0.9);
-  margin: 0 0 20px;
-  line-height: 1.7;
-  max-width: 650px;
-  margin-left: auto;
-  margin-right: auto;
-  border-left: 3px solid rgba(255, 255, 255, 0.3);
-  padding-left: 20px;
-  text-align: left;
+.du-sub {
+  margin: 0 0 18px;
+  max-width: 580px;
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--du-muted);
 }
 
-.duas-hero-ref {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.7);
-  letter-spacing: 0.08em;
-  margin-bottom: 28px;
-}
-
-.duas-hero-actions {
+.du-hero-search {
   display: flex;
-  gap: 12px;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-.duas-hero-btn-copy,
-.duas-hero-btn-share {
-  display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 28px;
-  border-radius: 12px;
-  font-weight: 700;
-  font-size: 14px;
-  cursor: pointer;
-  font-family: inherit;
-  transition: all 0.2s ease;
+  max-width: 620px;
+  height: 54px;
+  padding: 0 6px 0 16px;
+  border-radius: 16px;
+  border: 1px solid var(--du-line);
+  background: var(--du-card);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+}
+
+.du-hero-search:focus-within {
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 4px rgba(var(--brand-rgb), 0.12);
+}
+
+.du-hero-search .material-symbols-outlined {
+  font-size: 22px;
+  color: var(--du-muted);
+}
+
+.du-hero-search input {
+  flex: 1;
+  min-width: 0;
   border: none;
+  outline: none;
+  background: none;
+  font-family: inherit;
+  font-size: 15px;
+  color: var(--du-ink);
 }
 
-.duas-hero-btn-copy {
-  background: white;
-  color: #92400e;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+.du-hero-search button {
+  height: 42px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 12px;
+  background: var(--brand-primary);
+  color: #fff;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
 }
 
-.duas-hero-btn-copy:hover {
+.du-hero-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.du-quick {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid var(--du-line);
+  background: var(--du-card);
+  color: var(--du-ink);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.du-quick:hover {
+  border-color: rgba(var(--brand-rgb), 0.45);
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
 }
 
-.duas-hero-btn-share {
-  background: rgba(255, 255, 255, 0.15);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(8px);
+.du-quick > .material-symbols-outlined {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  font-size: 22px;
+  color: var(--brand-primary);
+  background: rgba(var(--brand-rgb), 0.1);
 }
 
-.duas-hero-btn-share:hover {
-  background: rgba(255, 255, 255, 0.25);
+.du-quick > .material-symbols-outlined.fav {
+  color: #e11d48;
+  background: rgba(225, 29, 72, 0.1);
+  font-variation-settings: 'FILL' 1;
 }
 
-/* ── Main Layout ── */
-.duas-layout {
-  display: grid;
-  grid-template-columns: 320px 1fr;
-  min-height: calc(100vh - 280px);
+.du-quick b {
+  display: block;
+  font-size: 15px;
 }
 
-/* ── Sidebar ── */
-.duas-sidebar {
-  background: var(--bg-surface);
-  border-right: 1px solid var(--border-default);
-  padding: 24px 16px;
-  overflow-y: auto;
-  max-height: calc(100vh - 100px);
-  position: sticky;
-  top: 80px;
-  scrollbar-width: thin;
+.du-quick small {
+  font-size: 12px;
+  color: var(--du-muted);
 }
 
-.duas-sidebar-header {
+/* ── Dua of the day ─────────────────────────────────────── */
+.du-today {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 32px;
+  padding: 24px 28px 20px;
+  border-radius: 24px;
+  color: #fff;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 255, 255, 0.16), transparent 55%),
+    linear-gradient(150deg, var(--du-emerald), var(--du-emerald-deep));
+  box-shadow: 0 18px 40px rgba(10, 74, 59, 0.25);
+}
+
+.du-today::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -90px;
+  width: 360px;
+  height: 260px;
+  border-radius: 180px 180px 0 0;
+  border: 1px solid rgba(240, 227, 196, 0.12);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.du-today-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 20px;
-  padding: 0 8px;
-}
-
-.duas-sidebar-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin: 0;
-}
-
-.duas-sidebar-count {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-muted);
-  background: var(--bg-elevated);
-  padding: 3px 10px;
-  border-radius: 999px;
-  border: 1px solid var(--border-default);
-}
-
-.duas-sidebar-divider {
-  height: 1px;
-  background: var(--border-default);
-  margin: 12px 8px;
-}
-
-.duas-sidebar-loading {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.duas-cat-skeleton {
-  height: 56px;
-  border-radius: 14px;
-  background: linear-gradient(90deg, var(--bg-elevated) 25%, var(--bg-card-hover) 50%, var(--bg-elevated) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s ease-in-out infinite;
-}
-
-/* ── Category Button ── */
-.duas-cat-btn {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  width: 100%;
-  padding: 12px 14px;
-  border: 1px solid transparent;
-  border-radius: 14px;
-  background: transparent;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: inherit;
-  color: var(--text-primary);
-  position: relative;
-  text-align: left;
-  margin-bottom: 4px;
-}
-
-.duas-cat-btn:hover {
-  background: var(--bg-elevated);
-  border-color: var(--border-default);
-}
-
-.duas-cat-btn.active {
-  background: var(--brand-primary-soft);
-  border-color: rgba(245, 158, 11, 0.15);
-  box-shadow: 0 0 0 1px var(--brand-primary-soft);
-}
-
-.duas-cat-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.duas-cat-icon .material-symbols-outlined {
-  font-size: 20px;
-}
-
-.duas-cat-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-  flex: 1;
-}
-
-.duas-cat-name {
-  font-size: 13.5px;
-  font-weight: 600;
-  color: var(--text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.duas-cat-count {
-  font-size: 11px;
-  color: var(--text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.duas-cat-active-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-/* ── Mobile Sidebar Toggle ── */
-.duas-sidebar-toggle {
-  display: none;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 20px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-default);
-  border-radius: 14px;
-  font-weight: 600;
-  font-size: 14px;
-  color: var(--text-primary);
-  cursor: pointer;
-  font-family: inherit;
-  margin: 16px;
-  transition: all 0.2s;
-}
-
-.duas-sidebar-toggle:hover {
-  background: var(--bg-elevated);
-}
-
-/* ── Content Area ── */
-.duas-content {
-  padding: 32px clamp(20px, 3vw, 40px);
-  overflow-y: auto;
-  max-height: calc(100vh - 100px);
-}
-
-/* ── Toolbar ── */
-.duas-toolbar {
-  margin-bottom: 28px;
-}
-
-.duas-search-wrapper {
-  position: relative;
-  margin-bottom: 16px;
-}
-
-.duas-search-icon {
-  position: absolute;
-  left: 18px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-muted);
-  font-size: 22px;
-  pointer-events: none;
-  z-index: 2;
-}
-
-.duas-search-input {
-  width: 100% !important;
-  padding: 16px 50px 16px 56px !important;
-  background: var(--bg-card) !important;
-  border: 1px solid var(--border-default) !important;
-  border-radius: 16px !important;
-  font-size: 15px !important;
-  color: var(--text-primary) !important;
-  font-family: inherit;
-  transition: all 0.2s;
-  box-sizing: border-box;
-  position: relative;
-}
-
-.duas-search-input:focus {
-  border-color: var(--brand-primary);
-  box-shadow: 0 0 0 3px var(--brand-primary-soft);
-  outline: none;
-}
-
-.duas-search-input::placeholder {
-  color: var(--text-muted);
-}
-
-.duas-search-clear {
-  position: absolute;
-  right: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-default);
-  border-radius: 8px;
-  padding: 4px;
-  cursor: pointer;
-  color: var(--text-muted);
-  display: flex;
-  transition: all 0.15s;
-}
-
-.duas-search-clear:hover {
-  color: var(--text-primary);
-  background: var(--bg-card-hover);
-}
-
-.duas-filter-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+  gap: 10px;
   flex-wrap: wrap;
+  margin-bottom: 8px;
 }
 
-.duas-source-filter {
-  display: flex;
-  gap: 6px;
-  padding: 4px;
-  background: var(--bg-card);
-  border-radius: 12px;
-  border: 1px solid var(--border-default);
-}
-
-.duas-source-btn {
-  display: flex;
+.du-today-label {
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 16px;
-  border-radius: 10px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-muted);
-  background: transparent;
-  cursor: pointer;
-  transition: all 0.2s;
-  border: none;
-  font-family: inherit;
-  white-space: nowrap;
-}
-
-.duas-source-btn:hover {
-  color: var(--text-primary);
-  background: var(--interactive-hover);
-}
-
-.duas-source-btn.active {
-  background: var(--brand-primary);
-  color: var(--text-inverse);
-  box-shadow: 0 2px 8px var(--brand-primary-glow);
-}
-
-.duas-fav-toggle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 18px;
-  border-radius: 12px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-muted);
-  background: var(--bg-card);
-  border: 1px solid var(--border-default);
-  cursor: pointer;
-  transition: all 0.2s;
-  font-family: inherit;
-  white-space: nowrap;
-  margin-left: auto;
-}
-
-.duas-fav-toggle:hover {
-  color: #ef4444;
-  border-color: rgba(239, 68, 68, 0.3);
-  background: rgba(239, 68, 68, 0.05);
-}
-
-.duas-fav-toggle.active {
-  color: #ef4444;
-  border-color: rgba(239, 68, 68, 0.3);
-  background: rgba(239, 68, 68, 0.08);
-}
-
-.duas-fav-count {
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 700;
-  padding: 1px 7px;
-  border-radius: 999px;
-  background: rgba(239, 68, 68, 0.15);
-  color: #ef4444;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(240, 227, 196, 0.85);
 }
 
-/* ── Content Header ── */
-.duas-content-header {
+.du-today-label .material-symbols-outlined {
+  font-size: 16px;
+}
+
+.du-today-title {
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.du-today .du-ar {
+  position: relative;
+  text-align: center;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff;
+}
+
+.du-today .du-ar .du-end {
+  color: var(--du-cream);
+  -webkit-text-fill-color: var(--du-cream);
+}
+
+.du-today-tr {
+  position: relative;
+  max-width: 720px;
+  margin: 6px auto 16px;
+  font-family: 'Lora', Georgia, serif;
+  font-size: 16.5px;
+  font-style: italic;
+  line-height: 1.65;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.du-today-foot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  font-size: 12.5px;
+  color: rgba(240, 227, 196, 0.85);
+}
+
+/* ── Category grid ──────────────────────────────────────── */
+.du-section-head {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  padding-bottom: 20px;
-  margin-bottom: 24px;
-  border-bottom: 1px solid var(--border-default);
-}
-
-.duas-content-title {
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin: 0 0 4px;
-}
-
-.duas-content-subtitle {
-  font-size: 13px;
-  color: var(--text-muted);
-  margin: 0;
-}
-
-.duas-clear-filters {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-left: 10px;
-  color: var(--brand-primary);
-  font-weight: 600;
-  font-size: 12px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-family: inherit;
-  transition: all 0.15s;
-}
-
-.duas-clear-filters:hover {
-  opacity: 0.8;
-}
-
-/* ── Loading Skeletons ── */
-.duas-loading-list {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-/* ─── Skeleton Loader ───────────────────────────────────────── */
-.duas-card-skeleton {
-  background: var(--bg-card);
-  padding: 24px;
-  border-radius: 20px;
-  margin-bottom: 20px;
-  border: 1px solid var(--border-subtle);
-  position: relative;
-  overflow: hidden;
-}
-
-.duas-card-skeleton::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(var(--brand-primary-rgb), 0.05), transparent);
-  animation: skeleton-shimmer 1.6s infinite;
-}
-
-@keyframes skeleton-shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
-}
-
-.skel-line {
-  background: rgba(var(--text-primary-rgb), 0.05);
-  border-radius: 4px;
-  margin-bottom: 12px;
-}
-
-.skel-title { width: 40%; height: 20px; margin-bottom: 24px; }
-.skel-arabic { width: 100%; height: 80px; margin: 20px 0; border-radius: 12px; }
-.skel-trans  { width: 90%; height: 16px; opacity: 0.7; }
-.skel-ref    { width: 30%; height: 14px; margin-top: 24px; opacity: 0.5; }
-
-.duas-cat-skeleton {
-  height: 60px;
-  background: rgba(var(--text-primary-rgb), 0.03);
-  border-radius: 12px;
-  margin-bottom: 8px;
-  position: relative;
-  overflow: hidden;
-}
-
-.duas-cat-skeleton::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(var(--text-primary-rgb), 0.03), transparent);
-  animation: skeleton-shimmer 1.6s infinite;
-}
-
-/* ── Empty State ── */
-.duas-empty {
-  text-align: center;
-  padding: 80px 20px;
-}
-
-.duas-empty h3 {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin: 0 0 8px;
-}
-
-.duas-empty p {
-  font-size: 14px;
-  color: var(--text-muted);
-  margin: 0 0 24px;
-}
-
-.duas-empty-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 28px;
-  background: var(--brand-primary);
-  color: var(--text-inverse);
-  border: none;
-  border-radius: 12px;
-  font-weight: 700;
-  font-size: 14px;
-  cursor: pointer;
-  font-family: inherit;
-  transition: all 0.2s;
-}
-
-.duas-empty-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px var(--brand-primary-glow);
-}
-
-/* ── Dua List ── */
-.duas-list {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  padding-bottom: 40px;
-}
-
-/* ── Dua Card ── */
-.duas-card {
-  position: relative;
-  background: var(--bg-card);
-  border: 1px solid var(--border-default);
-  border-radius: 20px;
-  padding: 28px 28px 20px;
-  transition: all 0.25s ease;
-  overflow: hidden;
-  animation: fadeInUp 0.4s ease forwards;
-  opacity: 0;
-}
-
-.duas-card:hover {
-  border-color: var(--border-strong);
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-2px);
-}
-
-.duas-card-accent {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 4px;
-  height: 100%;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.duas-card:hover .duas-card-accent {
-  opacity: 1;
-}
-
-.duas-card.expanded .duas-card-accent {
-  opacity: 1;
-}
-
-/* Card Header */
-.duas-card-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.duas-card-header-left {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  min-width: 0;
-}
-
-.duas-card-number {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
-  font-weight: 700;
-  flex-shrink: 0;
-}
-
-.duas-card-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin: 0 0 4px;
-  line-height: 1.3;
-}
-
-.duas-card-meta {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.duas-card-category {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.duas-card-source {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--text-muted);
-  padding: 2px 8px;
-  border-radius: 4px;
-  background: var(--interactive-hover);
-}
-
-.duas-card-header-right {
-  display: flex;
-  gap: 4px;
-  flex-shrink: 0;
-}
-
-/* Arabic Text */
-.duas-card-arabic-wrapper {
-  padding: 20px 24px;
-  background: var(--bg-surface);
-  border-radius: 16px;
-  border: 1px solid var(--border-subtle);
+  gap: 12px;
   margin-bottom: 16px;
 }
 
-.duas-card-arabic {
-  font-size: clamp(1.4rem, 3vw, 1.8rem);
-  line-height: 2.2;
-  direction: rtl;
-  text-align: right;
-  color: var(--text-arabic);
+.du-kicker-ar {
+  margin: 0 0 2px;
+  font-size: 16px;
+  color: var(--du-gold);
+}
+
+.du-section-head h2 {
   margin: 0;
-  font-weight: 400;
+  font-size: 24px;
+  font-weight: 800;
 }
 
-/* Transliteration */
-.duas-card-transliteration {
-  font-size: 14px;
-  font-style: italic;
-  color: var(--accent-teal);
-  line-height: 1.7;
-  margin: 0 0 8px;
-  padding: 0 4px;
+.du-count-note {
+  font-size: 13px;
+  color: var(--du-muted);
 }
 
-/* Translation */
-.duas-card-translation-wrapper {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.35s ease, opacity 0.3s ease, margin 0.3s ease;
-  opacity: 0;
-  margin-bottom: 0;
-}
-
-.duas-card-translation-wrapper.show {
-  max-height: 300px;
-  opacity: 1;
-  margin-bottom: 8px;
-}
-
-.duas-card-translation {
-  font-size: 14.5px;
-  color: var(--text-secondary);
-  line-height: 1.7;
-  margin: 0;
-  padding: 12px 16px;
-  border-left: 3px solid var(--brand-primary);
-  background: var(--brand-primary-soft);
-  border-radius: 0 12px 12px 0;
-}
-
-/* Card Footer */
-.duas-card-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border-subtle);
-  flex-wrap: wrap;
+.du-cats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
 }
 
-.duas-expand-btn {
+.du-cat {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px 14px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--du-line);
+  background: var(--du-card);
+  color: var(--du-ink);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  animation: du-in 0.45s ease both;
+}
+
+@keyframes du-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+.du-cat:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--c) 45%, transparent);
+  box-shadow: 0 14px 30px color-mix(in srgb, var(--c) 16%, transparent);
+}
+
+.du-cat-img {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 58px;
+  height: 64px;
+  padding-top: 4px;
+  border-radius: 29px 29px 12px 12px;
+  background: color-mix(in srgb, var(--c) 14%, var(--du-card));
+  border: 1px solid color-mix(in srgb, var(--c) 25%, transparent);
+}
+
+.du-cat-img img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  transition: transform 0.3s ease;
+}
+
+.du-cat:hover .du-cat-img img {
+  transform: scale(1.1) rotate(-4deg);
+}
+
+.du-cat-img .material-symbols-outlined {
+  font-size: 26px;
+  color: var(--c);
+}
+
+.du-cat-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.du-cat-text b {
+  font-size: 15.5px;
+  font-weight: 800;
+}
+
+.du-cat-text small {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--du-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.du-cat-count {
+  flex-shrink: 0;
+  min-width: 30px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+  color: var(--c);
+  background: color-mix(in srgb, var(--c) 12%, transparent);
+}
+
+/* ── Sticky bar (list view) ─────────────────────────────── */
+.du-bar {
+  position: sticky;
+  top: var(--qcnav-h, 66px);
+  z-index: 40;
+  padding: 10px 20px 8px;
+  background: color-mix(in srgb, var(--du-card) 90%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--du-line);
+}
+
+.du-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 1100px;
+  margin: 0 auto 8px;
+}
+
+.du-icon {
+  flex-shrink: 0;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  border-radius: 10px;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--text-muted);
-  background: var(--interactive-hover);
-  border: none;
-  cursor: pointer;
-  font-family: inherit;
-  transition: all 0.2s;
-}
-
-.duas-expand-btn:hover {
-  color: var(--brand-primary);
-  background: var(--brand-primary-soft);
-}
-
-.duas-card-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.duas-card-ref {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  padding: 5px 14px;
-  border-radius: 999px;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-/* Icon Buttons */
-.duas-icon-btn {
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
   justify-content: center;
-  border-radius: 10px;
-  background: var(--interactive-hover);
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.duas-icon-btn:hover {
-  background: var(--brand-primary-soft);
-  color: var(--brand-primary);
-}
-
-.duas-icon-btn.fav-active:hover {
-  background: rgba(239, 68, 68, 0.1);
-}
-
-/* ── Responsive ── */
-@media (max-width: 1024px) {
-  .duas-layout {
-    grid-template-columns: 280px 1fr;
-  }
-}
-
-@media (max-width: 768px) {
-  .duas-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .duas-sidebar-toggle {
-    display: flex;
-  }
-
-  .duas-sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    width: 320px;
-    max-width: 85vw;
-    z-index: 1000;
-    transform: translateX(-100%);
-    transition: transform 0.3s ease;
-    max-height: 100vh;
-    box-shadow: none;
-    padding-top: 20px;
-  }
-
-  .duas-sidebar.open {
-    transform: translateX(0);
-    box-shadow: 20px 0 60px rgba(0, 0, 0, 0.5);
-  }
-
-  .duas-content {
-    max-height: none;
-    padding: 20px 16px;
-  }
-
-  .duas-card {
-    padding: 20px 18px 16px;
-    border-radius: 16px;
-  }
-
-  .duas-card-arabic-wrapper {
-    padding: 16px 18px;
-    border-radius: 12px;
-  }
-
-  .duas-card-arabic {
-    font-size: clamp(1.2rem, 5vw, 1.5rem);
-  }
-
-  .duas-hero {
-    padding: 2rem 1.2rem;
-  }
-
-  .duas-hero-translation {
-    border-left: none;
-    padding-left: 0;
-    text-align: center;
-  }
-
-  .duas-card-footer {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .duas-card-actions {
-    justify-content: flex-end;
-  }
-
-  .duas-filter-row {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .duas-fav-toggle {
-    margin-left: 0;
-    justify-content: center;
-  }
-
-  .duas-source-filter {
-    width: 100%;
-    justify-content: center;
-  }
-}
-
-@media (max-width: 480px) {
-  .duas-hero-arabic {
-    font-size: 1.3rem;
-    line-height: 1.8;
-  }
-
-  .duas-hero-actions {
-    flex-direction: column;
-  }
-
-  .duas-hero-btn-copy,
-  .duas-hero-btn-share {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .duas-card-header-left {
-    flex-direction: column;
-    gap: 8px;
-    align-items: flex-start;
-  }
-
-  .duas-card-number {
-    width: 30px;
-    height: 30px;
-    font-size: 12px;
-  }
-}
-
-/* ── Overlay for mobile sidebar ── */
-.duas-sidebar.open::after {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 100%;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.5);
-  pointer-events: auto;
-}
-
-/* ── Premium 3D Icon Container ── */
-.duas-cat-icon-premium {
-  width: 52px;
-  height: 52px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  position: relative;
-}
-
-.duas-cat-img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.duas-cat-btn:hover .duas-cat-img {
-  transform: scale(1.1) translateY(-2px);
-}
-
-/* ── Mobile View Switching ── */
-.duas-mobile-categories {
-  display: none;
-}
-
-@media (max-width: 1024px) {
-  .duas-layout.view-categories .duas-content {
-    display: none;
-  }
-  
-  .duas-layout.view-categories .duas-mobile-categories {
-    display: block;
-    padding: 24px 20px 100px;
-    background: var(--bg-base);
-    min-height: 100vh;
-  }
-
-  .duas-layout.view-duas .duas-mobile-categories {
-    display: none;
-  }
-  
-  .duas-layout.view-duas .duas-content {
-    display: block;
-  }
-}
-
-/* ── Mobile Category Grid ── */
-.duas-mobile-header {
-  margin-bottom: 24px;
-}
-
-.duas-mobile-header h2 {
-  font-size: 28px;
-  font-weight: 800;
-  margin: 0;
-  font-family: var(--font-lexend);
-  color: var(--text-primary);
-}
-
-.duas-mobile-header-actions {
-  display: flex;
-  gap: 12px;
-  margin-top: 12px;
-}
-
-.duas-mobile-header-actions button {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-default);
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-primary);
-  cursor: pointer;
-}
-
-.duas-category-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-}
-
-.duas-category-card {
-  position: relative;
-  aspect-ratio: 1 / 1.1;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-default);
-  border-radius: 20px;
-  overflow: hidden;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-}
-
-.duas-category-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at 50% 120%, var(--cat-color), transparent 70%);
-  opacity: 0.15;
-  transition: opacity 0.3s ease;
-}
-
-.duas-category-card:hover {
-  transform: translateY(-4px);
-  border-color: var(--cat-color);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-}
-
-.duas-category-card:hover::before {
-  opacity: 0.25;
-}
-
-.duas-category-card-content {
-  position: relative;
-  z-index: 1;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.duas-category-card h3 {
-  font-size: 15px;
-  font-weight: 700;
-  margin: 0;
-  line-height: 1.3;
-  color: var(--text-primary);
-}
-
-.duas-category-card-img-wrapper {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex: 1;
-  min-height: 0;
-}
-
-.duas-category-card-img-wrapper img {
-  max-width: 90%;
-  max-height: 90%;
-  object-fit: contain;
-  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.4));
-  transform: translateY(10px);
-  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.duas-category-card:hover img {
-  transform: translateY(0) scale(1.1);
-}
-
-/* ── Browse Again Button ── */
-.duas-browse-again-btn {
-  display: none;
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-default);
-  align-items: center;
-  justify-content: center;
+  border: none;
+  background: none;
+  color: var(--du-muted);
   cursor: pointer;
-  color: var(--text-primary);
-  transition: all 0.2s;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
-@media (max-width: 1024px) {
-  .duas-browse-again-btn {
-    display: flex;
+.du-icon:hover {
+  color: var(--du-ink);
+  background: color-mix(in srgb, var(--du-ink) 6%, transparent);
+}
+
+.du-icon.fav.on {
+  color: #e11d48;
+}
+
+.du-icon.fav.on .material-symbols-outlined {
+  font-variation-settings: 'FILL' 1;
+  animation: du-heart 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes du-heart {
+  40% {
+    transform: scale(1.3);
   }
 }
 
-.duas-browse-again-btn:hover {
-  background: var(--interactive-hover);
-  color: var(--brand-primary);
+.du-search {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 42px;
+  padding: 0 10px;
+  border-radius: 12px;
+  border: 1px solid var(--du-line);
+  background: var(--du-card);
 }
 
-/* ── Expandable Category Search (Mobile) ── */
-.duas-mobile-header {
+.du-search:focus-within {
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 3px rgba(var(--brand-rgb), 0.12);
+}
+
+.du-search .material-symbols-outlined {
+  font-size: 20px;
+  color: var(--du-muted);
+}
+
+.du-search input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: none;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--du-ink);
+}
+
+.du-search button {
+  display: flex;
+  padding: 2px;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.du-seg {
+  display: inline-flex;
+  gap: 2px;
+  height: 42px;
+  padding: 3px;
+  border-radius: 12px;
+  border: 1px solid var(--du-line);
+  background: var(--du-card);
+}
+
+.du-seg button {
+  padding: 0 12px;
+  border: none;
+  border-radius: 9px;
+  background: none;
+  color: var(--du-muted);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.du-seg button.on {
+  color: #fff;
+  background: var(--brand-primary);
+}
+
+/* category chips — swipeable row, scrollbar hidden */
+.du-chips {
+  display: flex;
+  gap: 6px;
+  max-width: 1100px;
+  margin: 0 auto;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 2px 0 4px;
+}
+
+.du-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.du-chip {
+  --c: var(--brand-primary);
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--du-line);
+  background: var(--du-card);
+  color: var(--du-ink);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.du-chip .material-symbols-outlined {
+  font-size: 16px;
+}
+
+.du-chip small {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--du-muted);
+}
+
+.du-chip:hover {
+  border-color: var(--c);
+}
+
+.du-chip.on {
+  color: #fff;
+  border-color: transparent;
+  background: var(--c);
+}
+
+.du-chip.on small {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* ── List ───────────────────────────────────────────────── */
+.du-list-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.du-list-head h2 {
+  margin: 0;
+  font-family: 'Lora', Georgia, serif;
+  font-size: 26px;
+  font-weight: 600;
+}
+
+.du-list-head p {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--du-muted);
+}
+
+.du-display {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.du-display > button,
+.du-size button {
+  height: 32px;
+  padding: 0 11px;
+  border-radius: 999px;
+  border: 1px solid var(--du-line);
+  background: var(--du-card);
+  color: var(--du-muted);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.du-display > button.on {
+  color: var(--brand-primary);
+  border-color: rgba(var(--brand-rgb), 0.45);
+  background: rgba(var(--brand-rgb), 0.08);
+}
+
+.du-size {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.du-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ── Dua card ───────────────────────────────────────────── */
+.du-card {
+  --c: var(--brand-primary);
+  position: relative;
+  padding: 18px 22px 14px;
+  border-radius: 22px;
+  border: 1px solid var(--du-line);
+  background: var(--du-card);
+  scroll-margin-top: 200px;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+  animation: du-in 0.4s ease both;
+}
+
+.du-card:hover {
+  border-color: color-mix(in srgb, var(--c) 35%, transparent);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+}
+
+.du-card-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.du-num {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 40px;
+  padding-top: 3px;
+  border-radius: 18px 18px 8px 8px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--c);
+  background: color-mix(in srgb, var(--c) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c) 28%, transparent);
+}
+
+.du-card-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.du-card-title h3 {
+  margin: 0 0 4px;
+  font-size: 16.5px;
+  font-weight: 800;
+}
+
+.du-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.du-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.du-tag .material-symbols-outlined {
+  font-size: 13px;
+}
+
+.du-tag.cat {
+  color: var(--c);
+  background: color-mix(in srgb, var(--c) 10%, transparent);
+}
+
+.du-tag.src.quran {
+  color: var(--brand-primary);
+  background: rgba(var(--brand-rgb), 0.1);
+}
+
+.du-tag.src.hadith {
+  color: #9a6b1f;
+  background: rgba(200, 150, 62, 0.13);
+}
+
+/* Arabic panel */
+.du-ar-wrap {
+  margin-bottom: 12px;
+  padding: 14px 18px;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--c) 5%, var(--du-paper));
+  border: 1px solid color-mix(in srgb, var(--c) 14%, transparent);
+}
+
+.du-ar {
+  margin: 0;
+  font-family: 'UthmanicHafs', 'Amiri', serif;
+  font-feature-settings: 'liga' 1, 'calt' 1, 'mark' 1, 'mkmk' 1;
+  line-height: 2.05;
+  text-align: right;
+  color: var(--du-arabic) !important;
+  -webkit-text-fill-color: var(--du-arabic);
+}
+
+.du-ar.is-qcf {
+  font-feature-settings: normal;
+}
+
+.du-end {
+  color: var(--brand-primary);
+  -webkit-text-fill-color: var(--brand-primary);
+}
+
+.du-translit {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-style: italic;
+  line-height: 1.7;
+  color: var(--du-muted);
+}
+
+.du-translation {
+  margin: 0;
+  padding-left: 12px;
+  border-left: 2px solid color-mix(in srgb, var(--c) 50%, transparent);
+  font-size: 15.5px;
+  line-height: 1.8;
+  color: color-mix(in srgb, var(--du-ink) 85%, transparent);
+}
+
+.du-card-foot {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 48px;
-  overflow: hidden;
-  position: relative;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--du-line);
 }
 
-.duas-mobile-header.search-active {
-  justify-content: flex-start;
-}
-
-.duas-cat-search-bar {
-  display: flex;
+.du-ref {
+  display: inline-flex;
   align-items: center;
-  width: 100%;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-default);
-  border-radius: 12px;
-  padding: 0 12px;
-  height: 44px;
-  animation: expandSearch 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-decoration: none;
+  color: var(--du-muted);
 }
 
-@keyframes expandSearch {
-  from { width: 44px; opacity: 0; }
-  to { width: 100%; opacity: 1; }
+.du-ref .material-symbols-outlined {
+  font-size: 16px;
+  color: var(--du-gold);
 }
 
-.cat-search-icon {
-  color: var(--text-muted);
-  font-size: 20px;
-  margin-right: 8px;
+a.du-ref:hover {
+  color: var(--brand-primary);
 }
 
-.duas-cat-search-input {
-  flex: 1;
-  background: none !important;
-  border: none !important;
-  outline: none !important;
-  color: var(--text-primary) !important;
-  font-size: 15px !important;
-  padding: 0 !important;
-  height: 100% !important;
+.du-actions {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
 }
 
-.duas-cat-search-close {
-  background: none;
+.du-act,
+.du-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 10px;
   border: none;
-  padding: 4px;
-  color: var(--text-muted);
+  background: none;
+  color: var(--du-muted);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
   cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.du-act .material-symbols-outlined,
+.du-count .material-symbols-outlined {
+  font-size: 17px;
+}
+
+.du-act:hover,
+.du-count:hover {
+  color: var(--c);
+  background: color-mix(in srgb, var(--c) 8%, transparent);
+}
+
+.du-count.on {
+  color: #fff;
+  background: var(--c);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Buttons / empty ────────────────────────────────────── */
+.du-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 12px;
+  border: 1px solid var(--du-line);
+  background: var(--du-card);
+  color: var(--du-ink);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.du-btn .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.du-btn.primary {
+  color: #fff;
+  border-color: transparent;
+  background: var(--brand-primary);
+}
+
+.du-btn.light {
+  height: 36px;
+  color: var(--du-emerald-deep);
+  border-color: transparent;
+  background: var(--du-cream);
+}
+
+.du-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 56px 16px;
+  text-align: center;
+  color: var(--du-muted);
+}
+
+.du-empty .material-symbols-outlined {
+  font-size: 42px;
+  color: var(--du-gold);
+}
+
+.du-empty h3 {
+  margin: 4px 0 0;
+  font-size: 18px;
+  color: var(--du-ink);
+}
+
+.du-empty p {
+  margin: 0 0 10px;
+  font-size: 14px;
+}
+
+/* ── Responsive ─────────────────────────────────────────── */
+@media (max-width: 960px) {
+  .du-hero {
+    grid-template-columns: 1fr;
+  }
+  .du-hero-actions {
+    flex-direction: row;
+  }
+  .du-quick {
+    flex: 1;
+  }
+  .du-cats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .du-wrap {
+    padding: 22px 14px 90px;
+  }
+  .du-cats {
+    grid-template-columns: 1fr;
+  }
+  .du-hero-search {
+    height: auto;
+    flex-wrap: wrap;
+    padding: 8px 8px 8px 14px;
+  }
+  .du-hero-search button {
+    width: 100%;
+  }
+  .du-today {
+    padding: 20px 18px 16px;
+  }
+  .du-bar {
+    padding: 8px 12px 6px;
+  }
+  .du-bar-row {
+    flex-wrap: wrap;
+  }
+  .du-search {
+    flex: 1 1 calc(100% - 50px);
+  }
+  .du-seg {
+    width: 100%;
+  }
+  .du-seg button {
+    flex: 1;
+  }
+  .du-card {
+    padding: 14px 14px 12px;
+  }
+  .du-ar-wrap {
+    padding: 12px 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .du * {
+    animation: none !important;
+  }
 }

@@ -439,13 +439,12 @@ export async function getTafsirContent(tafsirId: number | string, chapterId: num
 }
 
 // Popular translations (alquran.cloud edition identifiers)
+/** `resourceId` is the api.quran.com v4 translation id */
 export const TRANSLATIONS = [
-    { id: 'en.sahih', name: 'Sahih International', language: 'English' },
-    { id: 'en.pickthall', name: 'Pickthall', language: 'English' },
-    { id: 'en.yusufali', name: 'Yusuf Ali', language: 'English' },
-    { id: 'en.asad', name: 'Muhammad Asad', language: 'English' },
-    { id: 'ur.jalandhry', name: 'Fateh Muhammad Jalandhry', language: 'Urdu' },
-    { id: 'ur.ahmedali', name: 'Ahmed Ali', language: 'Urdu' },
-    { id: 'fr.hamidullah', name: 'Muhammad Hamidullah', language: 'French' },
-    { id: 'es.asad', name: 'Muhammad Asad', language: 'Spanish' },
+    { id: 'en.sahih', name: 'Sahih International', language: 'English', resourceId: '20' },
+    { id: 'en.pickthall', name: 'Pickthall', language: 'English', resourceId: '19' },
+    { id: 'en.yusufali', name: 'Yusuf Ali', language: 'English', resourceId: '22' },
+    { id: 'ur.jalandhry', name: 'Fateh Muhammad Jalandhry', language: 'Urdu', resourceId: '234' },
+    { id: 'fr.hamidullah', name: 'Muhammad Hamidullah', language: 'French', resourceId: '31' },
+    { id: 'es.garcia', name: 'Isa García', language: 'Spanish', resourceId: '83' },
 ];

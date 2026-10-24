@@ -1,12 +1,17 @@
-// Memorize Quran Page - Advanced Redesign
-// Mobile-first, Light UI, Focus Mode, Hide/Reveal
+// Memorize Quran — Hifz Studio
+// Home dashboard (progress, reviews, surahs) + a focused session with
+// Listen / Recall / Fill-the-blanks practice, repeat playback and spaced repetition.
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import './styles/memorize-quran.css';
-import SurahCard from './components/SurahCard';
-import BottomPlayer from './components/BottomPlayer';
-import FocusMode from './components/FocusMode';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { qcfFontFamily, qcfPageFontReady } from '@/app/read-quran/lib/qcf';
+import { MushafLoader } from '@/app/read-quran/components/MushafPager';
+import {
+    HifzStore, HifzVerse, HifzWord, Rating,
+    emptyStore, loadStore, saveStore, rate, isMemorized, dueKeys, memorizedCount,
+    startedCount, dueLabel, liveStreak, touchStreak, fetchChapterVerses,
+} from './lib/hifz';
+import './styles/hifz.css';
 
 interface Chapter {
     id: number;
@@ -17,256 +22,213 @@ interface Chapter {
     revelationPlace: string;
 }
 
-interface Verse {
-    id: number;
-    verseKey: string;
-    verseNumber: number;
-    textUthmani: string;
-    textIndopak?: string;    // Indo-Pak Nastaliq script
-    arabicText?: string;     // convenient alias populated by API route
-    translation: string;
-}
-
 interface Reciter {
     id: number;
     name: string;
     style: string;
 }
 
-type ViewMode = 'selection' | 'player';
+type Mode = 'listen' | 'recall' | 'blanks';
+
+const STARTERS = [1, 114, 113, 112, 108, 103, 97, 67];
+const RATINGS: { id: Rating; label: string; hint: string }[] = [
+    { id: 'again', label: 'Again', hint: 'Forgot it' },
+    { id: 'hard', label: 'Hard', hint: 'With effort' },
+    { id: 'good', label: 'Good', hint: 'Recalled it' },
+    { id: 'easy', label: 'Easy', hint: 'Effortless' },
+];
+
+const escapeGlyph = (v: string) => v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+/** Deterministic "random" mask so the same words stay hidden for a verse. */
+const isMasked = (key: string, pos: number, level: number) => {
+    let h = pos * 131;
+    for (const ch of key) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    return h % 10 < level * 3 + 1;
+};
+
+const fmtMinutes = (secs: number) => {
+    const m = Math.round(secs / 60);
+    if (m < 60) return `${m} min`;
+    return `${Math.floor(m / 60)}h ${m % 60}m`;
+};
+
+/** One ayah drawn word-by-word in the Mushaf (QCF) font; hidden words are blurred or shown as blanks. */
+function AyahText({
+    words, hidden, onReveal, style,
+}: {
+    words: HifzWord[];
+    hidden: (w: HifzWord) => boolean;
+    onReveal: (w: HifzWord) => void;
+    style: 'blur' | 'blank';
+}) {
+    return (
+        <p className="hz-ayah" lang="ar" dir="rtl">
+            {words.map((w, i) => {
+                const hide = !w.end && hidden(w);
+                const font = { fontFamily: `${qcfFontFamily(w.page)}, UthmanicHafs, serif` };
+                return (
+                    <span key={w.id ?? i}>
+                        {hide ? (
+                            <button
+                                className={`hz-word is-hidden ${style}`}
+                                onClick={() => onReveal(w)}
+                                title="Tap to reveal"
+                                aria-label="Hidden word — tap to reveal"
+                            >
+                                <span style={font} dangerouslySetInnerHTML={{ __html: escapeGlyph(w.glyph || w.text) }} />
+                            </button>
+                        ) : (
+                            <span
+                                className={`hz-word${w.end ? ' is-end' : ''}`}
+                                style={w.glyph ? font : undefined}
+                                dangerouslySetInnerHTML={{ __html: escapeGlyph(w.glyph || w.text) }}
+                            />
+                        )}
+                        {i < words.length - 1 ? ' ' : ''}
+                    </span>
+                );
+            })}
+        </p>
+    );
+}
 
 export default function MemorizeQuranPage() {
-    // UI State
-    const [viewMode, setViewMode] = useState<ViewMode>('selection');
-    const [searchQuery, setSearchQuery] = useState('');
-    const [typeFilter, setTypeFilter] = useState<'All' | 'Meccan' | 'Medinan'>('All');
-    const [viewStyle, setViewStyle] = useState<'grid' | 'list'>('grid');
-    const [focusModeActive, setFocusModeActive] = useState(false);
-    const [hideModeActive, setHideModeActive] = useState(false);
-    const [revealedVerses, setRevealedVerses] = useState<Set<number>>(new Set());
-    const [showSettings, setShowSettings] = useState(false);
-
-    // Data State
+    // ── Data ──
     const [chapters, setChapters] = useState<Chapter[]>([]);
     const [reciters, setReciters] = useState<Reciter[]>([]);
-    const [verses, setVerses] = useState<Verse[]>([]);
     const [loading, setLoading] = useState(true);
-    const [loadingVerses, setLoadingVerses] = useState(false);
+    const [store, setStore] = useState<HifzStore>(emptyStore);
 
-    // Selection state
-    const [selectedChapter, setSelectedChapter] = useState<number>(1);
-    const [selectedReciter, setSelectedReciter] = useState<number>(7);
-    const [fromVerse, setFromVerse] = useState<number>(1);
-    const [toVerse, setToVerse] = useState<number>(7);
+    // ── Home ──
+    const [view, setView] = useState<'home' | 'session'>('home');
+    const [query, setQuery] = useState('');
+    const [filter, setFilter] = useState<'All' | 'Meccan' | 'Medinan' | 'Started'>('All');
 
-    // Playback state
+    // ── Session ──
+    const [chapterId, setChapterId] = useState(1);
+    const [fromVerse, setFromVerse] = useState(1);
+    const [toVerse, setToVerse] = useState(7);
+    const [allVerses, setAllVerses] = useState<HifzVerse[]>([]);
+    const [versesLoading, setVersesLoading] = useState(false);
+    const [versesError, setVersesError] = useState<string | null>(null);
+    const [mode, setMode] = useState<Mode>('listen');
+    const [blankLevel, setBlankLevel] = useState<1 | 2>(1);
+    const [revealed, setRevealed] = useState<Record<string, Set<number>>>({});
+    const [peeks, setPeeks] = useState(0);
+    const [showTranslation, setShowTranslation] = useState(true);
+    const [planOpen, setPlanOpen] = useState(true);
+    const [focus, setFocus] = useState(false);
+    const [complete, setComplete] = useState<{ ayahs: number; repeats: number } | null>(null);
+    const [toast, setToast] = useState('');
+
+    // ── Playback ──
+    const [selectedReciter, setSelectedReciter] = useState(7);
     const [isPlaying, setIsPlaying] = useState(false);
-    const [currentVerseIndex, setCurrentVerseIndex] = useState<number>(-1);
+    const [currentIndex, setCurrentIndex] = useState(-1);
     const [loopEnabled, setLoopEnabled] = useState(false);
     const [repeatCount, setRepeatCount] = useState(3);
     const [currentRepeat, setCurrentRepeat] = useState(0);
-    const [pauseBetweenVerses, setPauseBetweenVerses] = useState(2);
+    const [pauseBetween, setPauseBetween] = useState(2);
     const [playbackRate, setPlaybackRate] = useState(1);
-    const [verseRatings, setVerseRatings] = useState<Record<string, 'hard' | 'easy' | null>>({});
 
-    // Challenge Mode State
-    const [challengeLevel, setChallengeLevel] = useState<0 | 1 | 2>(0);
-    const [revealedWords, setRevealedWords] = useState<Record<string, Set<number>>>({});
-    const [mistakes, setMistakes] = useState(0);
-
-    // Refs - used inside the async playback loop to always read the latest value
     const audioRef = useRef<HTMLAudioElement | null>(null);
-    const playbackTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
     const isPlayingRef = useRef(false);
-    // Mirror mutable settings as refs so the running loop picks up changes instantly
-    const loopEnabledRef = useRef(loopEnabled);
-    const repeatCountRef = useRef(repeatCount);
-    const pauseBetweenVersesRef = useRef(pauseBetweenVerses);
-    const playbackRateRef = useRef(playbackRate);
-    const versesRef = useRef(verses);
-    // Always keep refs in sync with state
-    useEffect(() => { loopEnabledRef.current = loopEnabled; }, [loopEnabled]);
-    useEffect(() => { repeatCountRef.current = repeatCount; }, [repeatCount]);
-    useEffect(() => { pauseBetweenVersesRef.current = pauseBetweenVerses; }, [pauseBetweenVerses]);
-    useEffect(() => { playbackRateRef.current = playbackRate; }, [playbackRate]);
+    const loopRef = useRef(loopEnabled);
+    const repeatRef = useRef(repeatCount);
+    const pauseRef = useRef(pauseBetween);
+    const rateRef = useRef(playbackRate);
+    const versesRef = useRef<HifzVerse[]>([]);
+    useEffect(() => { loopRef.current = loopEnabled; }, [loopEnabled]);
+    useEffect(() => { repeatRef.current = repeatCount; }, [repeatCount]);
+    useEffect(() => { pauseRef.current = pauseBetween; }, [pauseBetween]);
+    useEffect(() => { rateRef.current = playbackRate; if (audioRef.current) audioRef.current.playbackRate = playbackRate; }, [playbackRate]);
+
+    const chapter = chapters.find(c => c.id === chapterId);
+    const verses = useMemo(
+        () => allVerses.filter(v => v.number >= fromVerse && v.number <= toVerse),
+        [allVerses, fromVerse, toVerse]
+    );
     useEffect(() => { versesRef.current = verses; }, [verses]);
 
-    // Fetch chapters and reciters on mount
-    useEffect(() => {
-        const fetchInitialData = async () => {
-            try {
-                const [chaptersRes, recitersRes] = await Promise.all([
-                    fetch('/api/memorize-quran?action=chapters'),
-                    fetch('/api/memorize-quran?action=reciters')
-                ]);
-
-                const chaptersData = await chaptersRes.json();
-                const recitersData = await recitersRes.json();
-
-                setChapters(chaptersData.chapters || []);
-                setReciters(recitersData.reciters || []);
-
-                if (chaptersData.chapters?.[0]) {
-                    setToVerse(Math.min(7, chaptersData.chapters[0].versesCount));
-                }
-            } catch (error) {
-                console.error('Error fetching initial data:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchInitialData();
-        return () => { stopPlayback(); };
+    const updateStore = useCallback((fn: (s: HifzStore) => HifzStore) => {
+        setStore(prev => {
+            const next = fn(prev);
+            saveStore(next);
+            return next;
+        });
     }, []);
 
-    // Apply playback rate to audio
+    const flash = (msg: string) => {
+        setToast(msg);
+        setTimeout(() => setToast(''), 2200);
+    };
+
+    // Initial data
     useEffect(() => {
-        if (audioRef.current) {
-            audioRef.current.playbackRate = playbackRate;
-        }
-    }, [playbackRate]);
+        setStore(loadStore());
+        Promise.all([
+            fetch('/api/memorize-quran?action=chapters').then(r => r.json()),
+            fetch('/api/memorize-quran?action=reciters').then(r => r.json()),
+        ])
+            .then(([c, r]) => {
+                setChapters(c.chapters || []);
+                setReciters(r.reciters || []);
+            })
+            .catch(err => console.error('Error fetching initial data:', err))
+            .finally(() => setLoading(false));
+        return () => stopPlayback();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
-    // Fetch verses when chapter or range changes
+    // Load the chapter's ayahs (+ Mushaf fonts) when a session opens
     useEffect(() => {
-        if (selectedChapter && viewMode === 'player') {
-            fetchVerses();
-        }
-    }, [selectedChapter, fromVerse, toVerse, viewMode]);
+        if (view !== 'session') return;
+        let cancelled = false;
+        setVersesLoading(true);
+        setVersesError(null);
+        fetchChapterVerses(chapterId)
+            .then(async vs => {
+                const pages = new Set(vs.filter(v => v.number >= fromVerse && v.number <= toVerse).map(v => v.page));
+                await Promise.all([...pages].map(p => qcfPageFontReady(p)));
+                if (cancelled) return;
+                setAllVerses(vs);
+                setVersesLoading(false);
+            })
+            .catch(err => {
+                if (cancelled) return;
+                setVersesError(err instanceof Error ? err.message : 'Could not load ayahs');
+                setVersesLoading(false);
+            });
+        return () => { cancelled = true; };
+    }, [view, chapterId, fromVerse, toVerse]);
 
-    const fetchVerses = async () => {
-        setLoadingVerses(true);
-        try {
-            const res = await fetch(
-                `/api/memorize-quran?action=verses&chapter=${selectedChapter}&from=${fromVerse}&to=${toVerse}`
-            );
-            const data = await res.json();
-            setVerses(data.verses || []);
-            setRevealedVerses(new Set()); // Reset revealed state
-        } catch (error) {
-            console.error('Error fetching verses:', error);
-        } finally {
-            setLoadingVerses(false);
-        }
-    };
+    // Remember the session so "Continue" can resume it
+    useEffect(() => {
+        if (view !== 'session' || !chapter) return;
+        updateStore(s => ({ ...s, last: { chapter: chapter.id, name: chapter.name, from: fromVerse, to: toVerse, at: Date.now() } }));
+    }, [view, chapter, fromVerse, toVerse, updateStore]);
 
-    const handleChapterSelect = (chapterId: number) => {
-        const chapter = chapters.find(c => c.id === chapterId);
-        if (chapter) {
-            setSelectedChapter(chapterId);
-            setFromVerse(1);
-            setToVerse(Math.min(7, chapter.versesCount));
-            setViewMode('player');
-            stopPlayback();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-    };
+    // Count practice time while a session is open and the tab is visible
+    useEffect(() => {
+        if (view !== 'session') return;
+        const t = setInterval(() => {
+            if (document.visibilityState === 'visible') updateStore(s => ({ ...s, seconds: s.seconds + 15 }));
+        }, 15_000);
+        return () => clearInterval(t);
+    }, [view, updateStore]);
 
-    const handleBackToSelection = () => {
-        stopPlayback();
-        setViewMode('selection');
-        setFocusModeActive(false);
-        setHideModeActive(false);
-    };
-
-    const toggleHideMode = () => {
-        setHideModeActive(!hideModeActive);
-        setRevealedVerses(new Set()); // Reset reveals
-    };
-
-    const toggleChallengeMode = () => {
-        setChallengeLevel(prev => (prev === 2 ? 0 : prev + 1) as 0 | 1 | 2);
-        setRevealedWords({}); // Reset revealed words
-        setMistakes(0); // Reset mistakes
-    };
-
-    const handleWordClick = (verseKey: string, wordIndex: number) => {
-        if (challengeLevel === 0) return;
-        setRevealedWords(prev => {
-            const currentSet = prev[verseKey] || new Set();
-            if (currentSet.has(wordIndex)) return prev;
-
-            const newSet = new Set(currentSet);
-            newSet.add(wordIndex);
-
-            // Increment mistakes only if it was actually masked
-            setMistakes(m => m + 1);
-
-            return { ...prev, [verseKey]: newSet };
-        });
-    };
-
-    // Helper to render verse with masked words
-    const renderChallengeVerse = (verse: Verse) => {
-        const displayText = verse.textUthmani ?? verse.arabicText;
-        // Clean up any extra whitespace
-        const cleaned = displayText.replace(/\s{2,}/g, ' ').trim();
-        if (challengeLevel === 0) return <div className="verse-arabic">{cleaned}</div>;
-
-        const words = cleaned.split(' ');
-        return (
-            <div className="verse-arabic challenge-mode">
-                {words.map((word, idx) => {
-                    // Simple deterministic random based on verse id + word index
-                    const isMasked = (verse.id * 7 + idx * 13) % 10 < (challengeLevel * 3);
-                    const isRevealed = revealedWords[verse.verseKey]?.has(idx);
-
-                    if (isMasked && !isRevealed) {
-                        return (
-                            <span
-                                key={idx}
-                                className="word-masked"
-                                onClick={() => handleWordClick(verse.verseKey, idx)}
-                            >
-                                {word.replace(/./g, '?')}
-                            </span>
-                        );
-                    }
-                    return <span key={idx} className="word-visible">{word} </span>;
-                })}
-            </div>
-        );
-    };
-
-    const handleRating = (verseKey: string, rating: 'hard' | 'easy') => {
-        setVerseRatings(prev => ({
-            ...prev,
-            [verseKey]: prev[verseKey] === rating ? null : rating
-        }));
-    };
-
-    const filteredChapters = chapters.filter(chapter => {
-        const matchesSearch =
-            chapter.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            chapter.nameTranslation.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            chapter.nameArabic.includes(searchQuery) ||
-            chapter.id.toString().includes(searchQuery);
-        const place = (chapter.revelationPlace ?? '').toLowerCase();
-        const matchesType =
-            typeFilter === 'All' ||
-            (typeFilter === 'Meccan' && (place === 'makkah' || place === 'mecca')) ||
-            (typeFilter === 'Medinan' && (place === 'madinah' || place === 'medina' || place === 'madinah'));
-        return matchesSearch && matchesType;
-    });
-
-    // Play a single verse audio – returns a promise that resolves when audio ends
-    const playVerseAudio = useCallback(async (verse: Verse): Promise<void> => {
+    // ── Playback engine ──
+    const playVerseAudio = useCallback((verse: HifzVerse): Promise<void> => {
         return new Promise(async (resolve, reject) => {
             try {
-                const res = await fetch(
-                    `/api/memorize-quran?action=audio&reciter=${selectedReciter}&verseKey=${verse.verseKey}`
-                );
+                const res = await fetch(`/api/memorize-quran?action=audio&reciter=${selectedReciter}&verseKey=${verse.key}`);
                 const data = await res.json();
-
                 if (!data.audioUrl) { reject(new Error('No audio URL')); return; }
-
-                if (audioRef.current) {
-                    audioRef.current.pause();
-                    audioRef.current.src = '';
-                }
-
+                if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = ''; }
                 const audio = new Audio(data.audioUrl);
-                audio.playbackRate = playbackRateRef.current;
+                audio.playbackRate = rateRef.current;
                 audioRef.current = audio;
                 audio.onended = () => resolve();
                 audio.onerror = () => reject(new Error('Audio failed'));
@@ -277,49 +239,43 @@ export default function MemorizeQuranPage() {
         });
     }, [selectedReciter]);
 
-    // Core async playback loop – uses refs so it always reads the latest settings
-    const playSequence = useCallback(async (startIndex: number, startRepeat: number) => {
-        const verses = versesRef.current;
-        if (verses.length === 0) return;
-
+    const playSequence = useCallback(async (startIndex: number) => {
+        const list = versesRef.current;
+        if (list.length === 0) return;
         let verseIndex = startIndex;
-        let repeatNum = startRepeat;
+        let repeatNum = 0;
+        let played = 0;
 
         const playNext = async () => {
             if (!isPlayingRef.current) return;
-
-            if (verseIndex >= verses.length) {
-                if (loopEnabledRef.current) {
+            if (verseIndex >= list.length) {
+                if (loopRef.current) {
                     verseIndex = 0;
                     repeatNum = 0;
                 } else {
-                    setIsPlaying(false);
                     isPlayingRef.current = false;
-                    setCurrentVerseIndex(-1);
+                    setIsPlaying(false);
+                    setCurrentIndex(-1);
                     setCurrentRepeat(0);
+                    setComplete({ ayahs: list.length - startIndex, repeats: played });
+                    updateStore(touchStreak);
                     return;
                 }
             }
-
-            const verse = verses[verseIndex];
-            setCurrentVerseIndex(verseIndex);
+            setCurrentIndex(verseIndex);
             setCurrentRepeat(repeatNum + 1);
-
+            document.getElementById(`hz-verse-${list[verseIndex].number}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
             try {
-                await playVerseAudio(verse);
+                await playVerseAudio(list[verseIndex]);
+                played++;
                 if (!isPlayingRef.current) return;
-
-                if (repeatNum < repeatCountRef.current - 1) {
+                if (repeatNum < repeatRef.current - 1) {
                     repeatNum++;
-                    playbackTimeoutRef.current = setTimeout(() => {
-                        if (isPlayingRef.current) playNext();
-                    }, 500);
+                    timeoutRef.current = setTimeout(() => { if (isPlayingRef.current) playNext(); }, 500);
                 } else {
                     verseIndex++;
                     repeatNum = 0;
-                    playbackTimeoutRef.current = setTimeout(() => {
-                        if (isPlayingRef.current) playNext();
-                    }, pauseBetweenVersesRef.current * 1000);
+                    timeoutRef.current = setTimeout(() => { if (isPlayingRef.current) playNext(); }, pauseRef.current * 1000);
                 }
             } catch (error) {
                 console.error('Playback error:', error);
@@ -328,474 +284,600 @@ export default function MemorizeQuranPage() {
                 if (isPlayingRef.current) playNext();
             }
         };
-
         playNext();
-    }, [playVerseAudio]);
+    }, [playVerseAudio, updateStore]);
 
-    const startPlayback = (fromIndex?: number) => {
-        const idx = fromIndex !== undefined ? fromIndex : (currentVerseIndex >= 0 ? currentVerseIndex : 0);
-        setIsPlaying(true);
-        isPlayingRef.current = true;
-        setCurrentRepeat(0);
-        playSequence(idx, 0);
-    };
-
-    const stopPlayback = () => {
+    const haltAudio = () => {
         isPlayingRef.current = false;
+        if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null; }
+        if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = ''; }
+    };
+
+    function stopPlayback() {
+        haltAudio();
         setIsPlaying(false);
-        setCurrentVerseIndex(-1);
+        setCurrentIndex(-1);
         setCurrentRepeat(0);
+    }
 
-        if (playbackTimeoutRef.current) {
-            clearTimeout(playbackTimeoutRef.current);
-            playbackTimeoutRef.current = null;
-        }
-
-        if (audioRef.current) {
-            audioRef.current.pause();
-            audioRef.current.src = '';
-        }
-    };
-
-    const pausePlayback = () => {
-        isPlayingRef.current = false;
-        setIsPlaying(false);
-        if (playbackTimeoutRef.current) clearTimeout(playbackTimeoutRef.current);
-        if (audioRef.current) audioRef.current.pause();
-    };
-
-    const resumePlayback = () => {
-        // Resume from the current verse – start a fresh sequence from current index
-        const idx = currentVerseIndex >= 0 ? currentVerseIndex : 0;
+    const playFrom = (index: number) => {
+        haltAudio();
+        setComplete(null);
+        setCurrentIndex(index);
+        setCurrentRepeat(0);
         setIsPlaying(true);
-        isPlayingRef.current = true;
-        playSequence(idx, 0);
+        setTimeout(() => {
+            isPlayingRef.current = true;
+            playSequence(index);
+        }, 60);
     };
 
     const handlePlayPause = () => {
         if (isPlaying) {
-            pausePlayback();
-        } else if (currentVerseIndex >= 0) {
-            resumePlayback();
+            haltAudio();
+            setIsPlaying(false);
         } else {
-            startPlayback();
+            playFrom(currentIndex >= 0 ? currentIndex : 0);
         }
     };
 
-    const handlePrevVerse = () => {
-        const newIndex = currentVerseIndex > 0 ? currentVerseIndex - 1 : 0;
-        // Stop the current loop, then restart from new index
-        isPlayingRef.current = false;
-        if (playbackTimeoutRef.current) clearTimeout(playbackTimeoutRef.current);
-        if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = ''; }
-        setCurrentVerseIndex(newIndex);
-        setCurrentRepeat(0);
-        if (isPlaying) {
-            // Brief wait then start from new index
-            setTimeout(() => {
-                isPlayingRef.current = true;
-                playSequence(newIndex, 0);
-            }, 100);
+    const step = (delta: number) => {
+        const target = Math.min(Math.max((currentIndex >= 0 ? currentIndex : 0) + delta, 0), verses.length - 1);
+        if (isPlaying) playFrom(target);
+        else {
+            setCurrentIndex(target);
+            document.getElementById(`hz-verse-${verses[target]?.number}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     };
 
-    const handleNextVerse = () => {
-        const newIndex = currentVerseIndex < verses.length - 1 ? currentVerseIndex + 1 : currentVerseIndex;
-        isPlayingRef.current = false;
-        if (playbackTimeoutRef.current) clearTimeout(playbackTimeoutRef.current);
-        if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = ''; }
-        setCurrentVerseIndex(newIndex);
-        setCurrentRepeat(0);
-        if (isPlaying) {
-            setTimeout(() => {
-                isPlayingRef.current = true;
-                playSequence(newIndex, 0);
-            }, 100);
-        }
-    };
-
-    const playSingleVerse = (_verse: Verse, index: number) => {
-        // If same verse is playing, just toggle pause
-        // Otherwise stop current and play clicked verse once
+    // ── Session helpers ──
+    const openSession = (id: number, from?: number, to?: number, startMode: Mode = 'listen') => {
+        const c = chapters.find(x => x.id === id);
+        if (!c) return;
         stopPlayback();
-        setCurrentVerseIndex(index);
-        setIsPlaying(true);
-        isPlayingRef.current = true;
-        playSequence(index, 0);
+        setChapterId(id);
+        setFromVerse(from ?? 1);
+        setToVerse(Math.min(to ?? Math.min(7, c.versesCount), c.versesCount));
+        setMode(startMode);
+        setRevealed({});
+        setPeeks(0);
+        setComplete(null);
+        setPlanOpen(true);
+        setView('session');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    const handleRevealVerse = (index: number) => {
-        setRevealedVerses(prev => new Set([...prev, index]));
+    const backHome = () => {
+        stopPlayback();
+        setFocus(false);
+        setView('home');
     };
 
-
-
-    const revealAllVerses = () => {
-        setRevealedVerses(new Set(verses.map((_, i) => i)));
+    const setRange = (from: number, to: number) => {
+        if (!chapter) return;
+        const f = Math.min(Math.max(1, from), chapter.versesCount);
+        const t = Math.min(Math.max(f, to), chapter.versesCount);
+        stopPlayback();
+        setFromVerse(f);
+        setToVerse(t);
+        setRevealed({});
+        setComplete(null);
     };
 
-    // Keyboard Shortcuts - placed after function definitions
+    const switchMode = (m: Mode) => {
+        setMode(m);
+        setRevealed({});
+        setPeeks(0);
+    };
+
+    const revealWord = (key: string, pos: number) => {
+        setRevealed(prev => {
+            const set = new Set(prev[key] || []);
+            set.add(pos);
+            return { ...prev, [key]: set };
+        });
+        setPeeks(p => p + 1);
+    };
+
+    const revealVerse = (v: HifzVerse) => {
+        setRevealed(prev => ({ ...prev, [v.key]: new Set(v.words.map(w => w.position)) }));
+    };
+
+    const hintVerse = (v: HifzVerse) => {
+        const shown = revealed[v.key] || new Set<number>();
+        const next = v.words.find(w => !w.end && !shown.has(w.position));
+        if (next) revealWord(v.key, next.position);
+    };
+
+    const isHidden = (v: HifzVerse) => (w: HifzWord) => {
+        if (mode === 'listen') return false;
+        if (revealed[v.key]?.has(w.position)) return false;
+        if (mode === 'recall') return true;
+        return isMasked(v.key, w.position, blankLevel);
+    };
+
+    const rateVerse = (key: string, r: Rating) => {
+        updateStore(s => rate(s, key, r));
+        if (r === 'again') flash('We’ll bring this ayah back in 10 minutes');
+    };
+
+    // Keyboard shortcuts
     useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (viewMode !== 'player') return;
-            if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-
+        if (view !== 'session') return;
+        const onKey = (e: KeyboardEvent) => {
+            if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) return;
             switch (e.code) {
-                case 'Space':
-                    e.preventDefault();
-                    handlePlayPause();
-                    break;
-                case 'ArrowLeft':
-                    handlePrevVerse();
-                    break;
-                case 'ArrowRight':
-                    handleNextVerse();
-                    break;
-                case 'KeyH':
-                    toggleHideMode();
-                    break;
-                case 'KeyC':
-                    toggleChallengeMode();
-                    break;
+                case 'Space': e.preventDefault(); handlePlayPause(); break;
+                case 'ArrowLeft': step(-1); break;
+                case 'ArrowRight': step(1); break;
+                case 'KeyL': switchMode('listen'); break;
+                case 'KeyH': case 'KeyR': switchMode('recall'); break;
+                case 'KeyC': case 'KeyB': switchMode('blanks'); break;
+                case 'KeyF': setFocus(f => !f); break;
+                case 'Escape': setFocus(false); break;
             }
         };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    });
 
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }); // No dependencies - re-attaches on every render with latest function references
+    // ── Derived home data ──
+    const due = useMemo(() => dueKeys(store), [store]);
+    const totalMemorized = useMemo(() => memorizedCount(store), [store]);
+    const streak = liveStreak(store);
+    const reviewTarget = useMemo(() => {
+        if (!due.length) return null;
+        const bySurah = new Map<number, number[]>();
+        due.forEach(k => {
+            const [s, a] = k.split(':').map(Number);
+            bySurah.set(s, [...(bySurah.get(s) || []), a]);
+        });
+        const [surah, ayahs] = [...bySurah.entries()].sort((a, b) => b[1].length - a[1].length)[0];
+        return { surah, from: Math.min(...ayahs), to: Math.max(...ayahs), count: ayahs.length };
+    }, [due]);
 
-    const currentChapter = chapters.find(c => c.id === selectedChapter);
-    const progress = verses.length > 0 && currentVerseIndex >= 0
-        ? ((currentVerseIndex + 1) / verses.length) * 100
-        : 0;
-    void progress; // consumed by progress bar rendered in JSX below
+    const filtered = chapters.filter(c => {
+        const q = query.trim().toLowerCase();
+        const matchQ = !q || c.name.toLowerCase().includes(q) || c.nameTranslation.toLowerCase().includes(q) || c.nameArabic.includes(query.trim()) || String(c.id) === q;
+        const place = (c.revelationPlace ?? '').toLowerCase();
+        const matchF =
+            filter === 'All' ||
+            (filter === 'Meccan' && (place === 'makkah' || place === 'mecca')) ||
+            (filter === 'Medinan' && (place === 'madinah' || place === 'medina')) ||
+            (filter === 'Started' && startedCount(store, c.id) > 0);
+        return matchQ && matchF;
+    });
 
     if (loading) {
         return (
-            <main className="memorize-page">
-                <div className="memorize-container">
-                    <div className="loading-container">
-                        <div className="loading-spinner"></div>
-                        <p className="loading-text">Loading Memorize Quran...</p>
-                    </div>
-                </div>
+            <main className="hz">
+                <div className="hz-wrap"><MushafLoader label="Opening your Hifz studio" /></div>
             </main>
         );
     }
 
-    // Focus Mode View
-    if (focusModeActive && currentVerseIndex >= 0 && verses[currentVerseIndex]) {
+    // ════════════════════════ HOME ════════════════════════
+    if (view === 'home') {
+        const last = store.last;
+        const lastChapter = last ? chapters.find(c => c.id === last.chapter) : undefined;
         return (
-            <FocusMode
-                verseText={verses[currentVerseIndex].textUthmani ?? verses[currentVerseIndex].arabicText}
-                verseTranslation={verses[currentVerseIndex].translation}
-                verseNumber={verses[currentVerseIndex].verseNumber}
-                isPlaying={isPlaying}
-                currentRepeat={currentRepeat}
-                repeatCount={repeatCount}
-                onPlayPause={handlePlayPause}
-                onPrev={handlePrevVerse}
-                onNext={handleNextVerse}
-                onClose={() => setFocusModeActive(false)}
-            />
-        );
-    }
-
-    return (
-        <main className="memorize-page">
-            <div className="memorize-container">
-                {/* VIEW: SELECTION */}
-                {viewMode === 'selection' && (
-                    <>
-                        {/* Header */}
-                        <header className="memorize-header">
-                            <h1 className="memorize-title">
-                                Memorize Quran
-                                <span className="memorize-title-arabic">حفظ القرآن</span>
-                            </h1>
-                            <p className="memorize-subtitle">
-                                Master the Quran verse by verse with focused learning
-                            </p>
-                        </header>
-
-                        <section className="memorize-selection">
-                            {/* Filter bar */}
-                            <div className="mq-filter-bar">
-                                <div className="mq-filter-left">
-                                    <h2 className="mq-filter-title">Select Surah</h2>
-                                    <p className="mq-filter-count">{filteredChapters.length} of 114 surahs</p>
-                                </div>
-                                <div className="mq-filter-right">
-                                    {/* Type filter */}
-                                    <div className="mq-type-filter">
-                                        {(['All', 'Meccan', 'Medinan'] as const).map(t => (
-                                            <button
-                                                key={t}
-                                                className={`mq-filter-btn${typeFilter === t ? ' active' : ''}`}
-                                                onClick={() => setTypeFilter(t)}
-                                            >{t}</button>
-                                        ))}
-                                    </div>
-                                    {/* View toggle */}
-                                    <div className="mq-view-toggle">
-                                        <button
-                                            className={`mq-view-btn${viewStyle === 'grid' ? ' active' : ''}`}
-                                            onClick={() => setViewStyle('grid')}
-                                            title="Grid view"
-                                        >
-                                            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>grid_view</span>
-                                        </button>
-                                        <button
-                                            className={`mq-view-btn${viewStyle === 'list' ? ' active' : ''}`}
-                                            onClick={() => setViewStyle('list')}
-                                            title="List view"
-                                        >
-                                            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>view_list</span>
-                                        </button>
-                                    </div>
-                                </div>
+            <main className="hz">
+                <div className="hz-wrap">
+                    <header className="hz-hero">
+                        <div>
+                            <p className="hz-kicker"><span className="font-arabic">حِفْظُ القُرْآن</span><span className="hz-kicker-sep" />Hifz Studio</p>
+                            <h1>Hold the Quran close, <em>one ayah at a time.</em></h1>
+                            <p className="hz-sub">Listen on repeat, test yourself, and let spaced repetition tell you exactly what to review each day.</p>
+                        </div>
+                        <div className="hz-stats">
+                            <div className="hz-stat">
+                                <span className="material-symbols-outlined">verified</span>
+                                <b>{totalMemorized}</b>
+                                <small>ayahs memorized</small>
                             </div>
-                            {/* Search */}
-                            <div className="mq-search-container">
-                                <span className="material-symbols-outlined mq-search-icon">search</span>
-                                <input
-                                    type="text"
-                                    className="mq-search-input"
-                                    placeholder="Search Surah..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                />
+                            <div className="hz-stat fire">
+                                <span className="material-symbols-outlined">local_fire_department</span>
+                                <b>{streak}</b>
+                                <small>day streak</small>
                             </div>
-
-                            <div className={`mq-surah-grid${viewStyle === 'list' ? ' mq-surah-list' : ''}`}>
-                                {filteredChapters.map((chapter) => (
-                                    <SurahCard
-                                        key={chapter.id}
-                                        chapter={chapter}
-                                        onClick={() => handleChapterSelect(chapter.id)}
-                                    />
-                                ))}
+                            <div className={`hz-stat${due.length ? ' due' : ''}`}>
+                                <span className="material-symbols-outlined">event_repeat</span>
+                                <b>{due.length}</b>
+                                <small>due for review</small>
                             </div>
-                        </section>
-                    </>
-                )}
+                        </div>
+                    </header>
 
-                {/* VIEW: PLAYER */}
-                {viewMode === 'player' && currentChapter && (
-                    <div className="memorize-player-view">
-                        {/* Unified Sticky Header */}
-                        <div className="mq-player-header">
-                            <button className="back-btn-icon" onClick={handleBackToSelection}>
-                                <i className="fas fa-chevron-left"></i>
+                    <section className="hz-actions">
+                        {last && lastChapter ? (
+                            <button className="hz-continue" onClick={() => openSession(last.chapter, last.from, last.to)}>
+                                <span className="hz-continue-label"><span className="hz-dot" />Continue memorizing</span>
+                                <span className="hz-continue-main">
+                                    <span>
+                                        <b>{lastChapter.name}</b>
+                                        <small>Ayah {last.from}–{last.to} · {lastChapter.nameTranslation}</small>
+                                    </span>
+                                    <span className="font-arabic hz-continue-ar">{lastChapter.nameArabic}</span>
+                                </span>
+                                <span className="hz-continue-foot">
+                                    <span>{memorizedCount(store, lastChapter.id)} of {lastChapter.versesCount} memorized · {fmtMinutes(store.seconds)} practised</span>
+                                    <span className="hz-cta">Resume <span className="material-symbols-outlined">arrow_forward</span></span>
+                                </span>
                             </button>
+                        ) : (
+                            <button className="hz-continue" onClick={() => openSession(1, 1, 7)}>
+                                <span className="hz-continue-label"><span className="hz-dot" />Start here</span>
+                                <span className="hz-continue-main">
+                                    <span><b>Al-Fatihah</b><small>The Opening · 7 ayahs you already recite daily</small></span>
+                                    <span className="font-arabic hz-continue-ar">الفاتحة</span>
+                                </span>
+                                <span className="hz-continue-foot">
+                                    <span>Listen, repeat, then test yourself</span>
+                                    <span className="hz-cta">Begin <span className="material-symbols-outlined">arrow_forward</span></span>
+                                </span>
+                            </button>
+                        )}
 
-                            <div className="mq-header-info">
-                                <h1 className="mq-surah-title">{currentChapter.name}</h1>
-                                <span className="mq-surah-subtitle">{currentChapter.nameTranslation}</span>
+                        <div className={`hz-review${reviewTarget ? '' : ' empty'}`}>
+                            <span className="hz-review-icon material-symbols-outlined">{reviewTarget ? 'event_repeat' : 'task_alt'}</span>
+                            {reviewTarget ? (
+                                <>
+                                    <b>{due.length} ayah{due.length === 1 ? '' : 's'} to review</b>
+                                    <small>Most are in {chapters.find(c => c.id === reviewTarget.surah)?.name ?? `Surah ${reviewTarget.surah}`} · ayah {reviewTarget.from}–{reviewTarget.to}</small>
+                                    <button className="hz-btn primary" onClick={() => openSession(reviewTarget.surah, reviewTarget.from, reviewTarget.to, 'recall')}>
+                                        <span className="material-symbols-outlined">psychology</span>
+                                        Review now
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <b>All caught up</b>
+                                    <small>Rate ayahs after practising and they’ll appear here when it’s time to review.</small>
+                                </>
+                            )}
+                        </div>
+
+                        <div className="hz-how">
+                            <b>How it works</b>
+                            <ol>
+                                <li><span>1</span>Listen to each ayah on repeat</li>
+                                <li><span>2</span>Test yourself with Recall or Fill-the-blanks</li>
+                                <li><span>3</span>Rate it — we schedule the next review</li>
+                            </ol>
+                        </div>
+                    </section>
+
+                    <section className="hz-starters">
+                        <p className="hz-section-label"><span className="material-symbols-outlined">spa</span>Gentle starts</p>
+                        <div className="hz-chips">
+                            {STARTERS.map(id => {
+                                const c = chapters.find(x => x.id === id);
+                                if (!c) return null;
+                                return (
+                                    <button key={id} className="hz-chip" onClick={() => openSession(id)}>
+                                        <span className="font-arabic">{c.nameArabic}</span>
+                                        {c.name}
+                                        <small>{c.versesCount}</small>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </section>
+
+                    <section>
+                        <div className="hz-list-head">
+                            <div>
+                                <p className="hz-kicker-ar font-arabic">اختر سورة</p>
+                                <h2>Choose a Surah</h2>
+                                <p className="hz-count">{filtered.length} of 114 surahs</p>
                             </div>
-
-                            <div className="mq-header-actions">
-                                {challengeLevel > 0 && (
-                                    <div className="mistake-counter" title="Mistakes / Peeks">
-                                        <span className="mistake-label">Mistakes:</span>
-                                        <span className="mistake-value">{mistakes}</span>
-                                    </div>
-                                )}
-                                <button
-                                    className={`action-btn ${challengeLevel > 0 ? 'active' : ''}`}
-                                    onClick={toggleChallengeMode}
-                                    title="Challenge Mode (Fill Blanks) [Shortcut: C]"
-                                >
-                                    <i className="fas fa-puzzle-piece"></i>
-                                    {challengeLevel === 1 && <span className="badge-mini">1</span>}
-                                    {challengeLevel === 2 && <span className="badge-mini">2</span>}
-                                </button>
-                                <button
-                                    className={`action-btn ${hideModeActive ? 'active' : ''}`}
-                                    onClick={toggleHideMode}
-                                    title="Test Mode (Hide Text)"
-                                >
-                                    <i className={`fas fa-eye${hideModeActive ? '-slash' : ''}`}></i>
-                                </button>
-                                <button
-                                    className="action-btn"
-                                    onClick={revealAllVerses}
-                                    title="Reveal All Verses [Hide Mode]"
-                                    style={{ display: hideModeActive ? undefined : 'none' }}
-                                >
-                                    <i className="fas fa-eye"></i>
-                                </button>
-                                <button
-                                    className={`action-btn ${showSettings ? 'active' : ''}`}
-                                    onClick={() => setShowSettings(!showSettings)}
-                                    title="Settings"
-                                >
-                                    <i className="fas fa-sliders-h"></i>
-                                </button>
+                            <div className="hz-tools">
+                                <label className="hz-search">
+                                    <span className="material-symbols-outlined">search</span>
+                                    <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Name, meaning or number" aria-label="Search surahs" />
+                                </label>
+                                <div className="hz-seg" role="tablist" aria-label="Filter">
+                                    {(['All', 'Meccan', 'Medinan', 'Started'] as const).map(f => (
+                                        <button key={f} role="tab" aria-selected={filter === f} className={filter === f ? 'on' : ''} onClick={() => setFilter(f)}>{f}</button>
+                                    ))}
+                                </div>
                             </div>
                         </div>
 
-                        {/* Collapsible Settings Panel */}
-                        {showSettings && (
-                            <div className="mq-settings-drawer">
-                                <div className="settings-row">
-                                    <div className="setting-group">
-                                        <label>Reciter</label>
-                                        <select
-                                            className="mq-select"
-                                            value={selectedReciter}
-                                            onChange={(e) => setSelectedReciter(parseInt(e.target.value))}
-                                        >
-                                            {reciters.map((reciter) => (
-                                                <option key={reciter.id} value={reciter.id}>
-                                                    {reciter.name}
-                                                </option>
-                                            ))}
-                                        </select>
+                        <div className="hz-grid">
+                            {filtered.map((c, i) => {
+                                const mem = memorizedCount(store, c.id);
+                                const started = startedCount(store, c.id);
+                                const pct = Math.round((mem / c.versesCount) * 100);
+                                return (
+                                    <button key={c.id} className={`hz-card${started ? ' started' : ''}${pct === 100 ? ' done' : ''}`} onClick={() => openSession(c.id)} style={{ animationDelay: `${Math.min(i, 12) * 25}ms` }}>
+                                        <span className="hz-card-num">{c.id}</span>
+                                        <span className="hz-card-main">
+                                            <b>{c.name}</b>
+                                            <small>{c.nameTranslation} · {c.versesCount} ayahs</small>
+                                        </span>
+                                        <span className="hz-card-ar font-arabic">{c.nameArabic}</span>
+                                        <span className="hz-card-progress">
+                                            <span className="hz-bar"><span style={{ width: `${pct}%` }} /></span>
+                                            <small>{pct === 100 ? 'Memorized ✓' : started ? `${mem}/${c.versesCount} memorized` : 'Not started'}</small>
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </section>
+                </div>
+                {toast && <div className="hz-toast" role="status">{toast}</div>}
+            </main>
+        );
+    }
+
+    // ════════════════════════ SESSION ════════════════════════
+    if (!chapter) return null;
+    const current = currentIndex >= 0 ? verses[currentIndex] : undefined;
+    const focusVerse = current ?? verses[0];
+    const reciterName = reciters.find(r => r.id === selectedReciter)?.name ?? 'Reciter';
+    const rangeMemorized = verses.filter(v => isMemorized(store.cards[v.key])).length;
+
+    return (
+        <main className="hz">
+            <div className="hz-session">
+                {/* ── Session bar ── */}
+                <div className="hz-bar-top">
+                    <button className="hz-icon" onClick={backHome} aria-label="Back to Hifz home">
+                        <span className="material-symbols-outlined">arrow_back</span>
+                    </button>
+                    <div className="hz-title">
+                        <b>{chapter.name} <span className="font-arabic">{chapter.nameArabic}</span></b>
+                        <small>Ayah {fromVerse}–{toVerse} · {rangeMemorized}/{verses.length} memorized</small>
+                    </div>
+                    <div className="hz-modes" role="tablist" aria-label="Practice mode">
+                        {([
+                            ['listen', 'headphones', 'Listen'],
+                            ['recall', 'visibility_off', 'Recall'],
+                            ['blanks', 'extension', 'Fill blanks'],
+                        ] as const).map(([id, icon, label]) => (
+                            <button key={id} role="tab" aria-selected={mode === id} className={mode === id ? 'on' : ''} onClick={() => switchMode(id)}>
+                                <span className="material-symbols-outlined">{icon}</span>
+                                <span className="hz-mode-label">{label}</span>
+                            </button>
+                        ))}
+                    </div>
+                    <div className="hz-bar-right">
+                        <button className="hz-icon" onClick={() => setFocus(true)} title="Focus mode (F)">
+                            <span className="material-symbols-outlined">center_focus_strong</span>
+                        </button>
+                        <button className={`hz-icon${planOpen ? ' on' : ''}`} onClick={() => setPlanOpen(o => !o)} title="Session plan">
+                            <span className="material-symbols-outlined">tune</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div className="hz-wrap hz-session-body">
+                    {/* ── Session plan ── */}
+                    {planOpen && (
+                        <section className="hz-plan">
+                            <div className="hz-plan-row">
+                                <div className="hz-field">
+                                    <span className="hz-field-label">Ayahs</span>
+                                    <div className="hz-range">
+                                        <input type="number" min={1} max={chapter.versesCount} value={fromVerse} onChange={e => setRange(Number(e.target.value), toVerse)} aria-label="From ayah" />
+                                        <span>to</span>
+                                        <input type="number" min={1} max={chapter.versesCount} value={toVerse} onChange={e => setRange(fromVerse, Number(e.target.value))} aria-label="To ayah" />
+                                        <small>of {chapter.versesCount}</small>
                                     </div>
-                                    <div className="setting-group">
-                                        <label>Repeat</label>
-                                        <div className="stepper">
-                                            <button onClick={() => setRepeatCount(Math.max(1, repeatCount - 1))}>-</button>
-                                            <span>{repeatCount}x</span>
-                                            <button onClick={() => setRepeatCount(Math.min(10, repeatCount + 1))}>+</button>
-                                        </div>
-                                    </div>
-                                    <div className="setting-group">
-                                        <label>Speed</label>
-                                        <div className="stepper">
-                                            <button onClick={() => setPlaybackRate(Math.max(0.5, playbackRate - 0.25))}>-</button>
-                                            <span>{playbackRate}x</span>
-                                            <button onClick={() => setPlaybackRate(Math.min(2.0, playbackRate + 0.25))}>+</button>
-                                        </div>
-                                    </div>
-                                    <div className="setting-group">
-                                        <label>Pause (s)</label>
-                                        <div className="stepper">
-                                            <button onClick={() => setPauseBetweenVerses(Math.max(0, pauseBetweenVerses - 1))}>-</button>
-                                            <span>{pauseBetweenVerses}s</span>
-                                            <button onClick={() => setPauseBetweenVerses(Math.min(10, pauseBetweenVerses + 1))}>+</button>
-                                        </div>
+                                    <div className="hz-presets">
+                                        <button onClick={() => setRange(1, 5)}>1–5</button>
+                                        <button onClick={() => setRange(1, 10)}>1–10</button>
+                                        {toVerse < chapter.versesCount && <button onClick={() => setRange(toVerse + 1, toVerse + (toVerse - fromVerse + 1))}>Next {toVerse - fromVerse + 1} →</button>}
+                                        <button onClick={() => setRange(1, chapter.versesCount)}>Whole surah</button>
                                     </div>
                                 </div>
-                                <div className="settings-row">
-                                    <div className="setting-group">
-                                        <label>Verse Range</label>
-                                        <div className="range-inputs">
-                                            <input
-                                                type="number"
-                                                className="mq-input-sm"
-                                                value={fromVerse}
-                                                min={1}
-                                                onChange={(e) => setFromVerse(Number(e.target.value))}
-                                            />
-                                            <span>-</span>
-                                            <input
-                                                type="number"
-                                                className="mq-input-sm"
-                                                value={toVerse}
-                                                max={currentChapter.versesCount}
-                                                onChange={(e) => setToVerse(Number(e.target.value))}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="setting-group">
-                                        <label>Loop</label>
-                                        <button
-                                            className={`toggle-pill ${loopEnabled ? 'active' : ''}`}
-                                            onClick={() => setLoopEnabled(!loopEnabled)}
-                                        >
-                                            {loopEnabled ? 'On' : 'Off'}
-                                        </button>
-                                    </div>
+                                <div className="hz-field">
+                                    <label className="hz-field-label" htmlFor="hz-reciter">Reciter</label>
+                                    <select id="hz-reciter" className="hz-select" value={selectedReciter} onChange={e => { stopPlayback(); setSelectedReciter(parseInt(e.target.value)); }}>
+                                        {reciters.map(r => <option key={r.id} value={r.id}>{r.name} · {r.style}</option>)}
+                                    </select>
                                 </div>
                             </div>
-                        )}
+                            <div className="hz-plan-row compact">
+                                {([
+                                    ['Repeat each', `${repeatCount}×`, () => setRepeatCount(Math.max(1, repeatCount - 1)), () => setRepeatCount(Math.min(10, repeatCount + 1))],
+                                    ['Speed', `${playbackRate}×`, () => setPlaybackRate(Math.max(0.5, playbackRate - 0.25)), () => setPlaybackRate(Math.min(2, playbackRate + 0.25))],
+                                    ['Pause', `${pauseBetween}s`, () => setPauseBetween(Math.max(0, pauseBetween - 1)), () => setPauseBetween(Math.min(10, pauseBetween + 1))],
+                                ] as const).map(([label, val, dec, inc]) => (
+                                    <div key={label} className="hz-stepper">
+                                        <span className="hz-field-label">{label}</span>
+                                        <div>
+                                            <button onClick={dec} aria-label={`Less ${label}`}>−</button>
+                                            <b>{val}</b>
+                                            <button onClick={inc} aria-label={`More ${label}`}>+</button>
+                                        </div>
+                                    </div>
+                                ))}
+                                <button className={`hz-toggle${loopEnabled ? ' on' : ''}`} onClick={() => setLoopEnabled(l => !l)} aria-pressed={loopEnabled}>
+                                    <span className="material-symbols-outlined">repeat</span>
+                                    Loop range
+                                </button>
+                                <button className={`hz-toggle${showTranslation ? ' on' : ''}`} onClick={() => setShowTranslation(t => !t)} aria-pressed={showTranslation}>
+                                    <span className="material-symbols-outlined">translate</span>
+                                    Translation
+                                </button>
+                                {mode === 'blanks' && (
+                                    <div className="hz-seg small" role="tablist" aria-label="Blank level">
+                                        <button className={blankLevel === 1 ? 'on' : ''} onClick={() => { setBlankLevel(1); setRevealed({}); }}>Light</button>
+                                        <button className={blankLevel === 2 ? 'on' : ''} onClick={() => { setBlankLevel(2); setRevealed({}); }}>Hard</button>
+                                    </div>
+                                )}
+                            </div>
+                        </section>
+                    )}
 
-                        {/* Verses List - Clean Design */}
-                        <section className="verses-container-clean">
-                            {loadingVerses ? (
-                                <div className="loading-container">
-                                    <div className="loading-spinner"></div>
-                                </div>
-                            ) : (
-                                <div className="verses-scroll">
-                                    {verses.map((verse, index) => (
-                                        <div key={verse.id} className="verse-wrapper">
-                                            <div className={`verse-card ${currentVerseIndex === index ? 'active' : ''} ${hideModeActive ? 'hidden-mode' : ''} ${revealedVerses.has(index) ? 'revealed' : ''}`}>
-                                                <div className="verse-header">
-                                                    <span className="verse-number">{verse.verseNumber}</span>
-                                                    <button className="verse-play-btn" onClick={() => playSingleVerse(verse, index)}>
-                                                        <i className={`fas fa-${isPlaying && currentVerseIndex === index ? 'pause' : 'play'}`}></i>
-                                                    </button>
-                                                </div>
+                    {/* ── Mode hint + ayah map ── */}
+                    <div className="hz-mode-hint">
+                        <span className="material-symbols-outlined">
+                            {mode === 'listen' ? 'hearing' : mode === 'recall' ? 'visibility_off' : 'extension'}
+                        </span>
+                        {mode === 'listen' && 'Listen and follow along. Each ayah repeats before moving on.'}
+                        {mode === 'recall' && 'Recite from memory, then tap a word — or Reveal — to check yourself.'}
+                        {mode === 'blanks' && 'Fill in the missing words in your head, then tap a blank to check.'}
+                        {mode !== 'listen' && <span className="hz-peeks">{peeks} peek{peeks === 1 ? '' : 's'}</span>}
+                    </div>
 
-                                                {/* Challenge Mode Rendering */}
-                                                {renderChallengeVerse(verse)}
+                    {verses.length > 1 && (
+                        <div className="hz-map" aria-label="Ayahs in this session">
+                            {verses.map((v, i) => {
+                                const card = store.cards[v.key];
+                                const state = isMemorized(card) ? 'mem' : card ? 'learn' : '';
+                                return (
+                                    <button
+                                        key={v.key}
+                                        className={`hz-map-dot ${state}${i === currentIndex ? ' now' : ''}`}
+                                        onClick={() => { setCurrentIndex(i); document.getElementById(`hz-verse-${v.number}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }}
+                                        title={`Ayah ${v.number}${state === 'mem' ? ' · memorized' : state === 'learn' ? ' · learning' : ''}`}
+                                    >
+                                        {v.number}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    )}
 
-                                                <p className="verse-translation">{verse.translation}</p>
+                    {complete && (
+                        <section className="hz-complete">
+                            <span className="material-symbols-outlined">celebration</span>
+                            <div>
+                                <b>Session complete — MashaAllah!</b>
+                                <small>{complete.ayahs} ayah{complete.ayahs === 1 ? '' : 's'} · {complete.repeats} recitations heard. Now test yourself while it’s fresh.</small>
+                            </div>
+                            <div className="hz-complete-actions">
+                                <button className="hz-btn primary" onClick={() => { switchMode('recall'); setComplete(null); }}>
+                                    <span className="material-symbols-outlined">psychology</span>Test with Recall
+                                </button>
+                                {toVerse < chapter.versesCount && (
+                                    <button className="hz-btn" onClick={() => setRange(toVerse + 1, toVerse + (toVerse - fromVerse + 1))}>
+                                        Next ayahs<span className="material-symbols-outlined">arrow_forward</span>
+                                    </button>
+                                )}
+                            </div>
+                        </section>
+                    )}
 
-                                                {/* Reveal button for hide mode */}
-                                                {hideModeActive && !revealedVerses.has(index) && (
-                                                    <button
-                                                        className="verse-reveal-btn"
-                                                        onClick={() => handleRevealVerse(index)}
-                                                    >
-                                                        <i className="fas fa-eye"></i> Reveal
-                                                    </button>
+                    {/* ── Ayahs ── */}
+                    {versesError ? (
+                        <div className="hz-error">
+                            <span className="material-symbols-outlined">cloud_off</span>
+                            <p>{versesError}</p>
+                            <button className="hz-btn primary" onClick={() => setRange(fromVerse, toVerse)}>Try again</button>
+                        </div>
+                    ) : versesLoading ? (
+                        <MushafLoader label={`Preparing ${chapter.name} ${fromVerse}–${toVerse}`} />
+                    ) : (
+                        <div className="hz-verses">
+                            {verses.map((v, i) => {
+                                const card = store.cards[v.key];
+                                const playing = i === currentIndex;
+                                const allShown = mode === 'listen' || v.words.every(w => w.end || !isHidden(v)(w));
+                                return (
+                                    <article key={v.key} id={`hz-verse-${v.number}`} className={`hz-verse${playing ? ' is-current' : ''}${playing && isPlaying ? ' is-playing' : ''}`}>
+                                        <div className="hz-verse-top">
+                                            <span className="hz-vnum">{v.number}</span>
+                                            {card && (
+                                                <span className={`hz-status ${isMemorized(card) ? 'mem' : 'learn'}`}>
+                                                    <span className="material-symbols-outlined">{isMemorized(card) ? 'verified' : 'school'}</span>
+                                                    {isMemorized(card) ? 'Memorized' : 'Learning'} · review {dueLabel(card)}
+                                                </span>
+                                            )}
+                                            {playing && isPlaying && (
+                                                <span className="hz-repeats" aria-label={`Repeat ${currentRepeat} of ${repeatCount}`}>
+                                                    {Array.from({ length: repeatCount }, (_, k) => <i key={k} className={k < currentRepeat ? 'on' : ''} />)}
+                                                </span>
+                                            )}
+                                            <div className="hz-verse-actions">
+                                                {mode !== 'listen' && !allShown && (
+                                                    <>
+                                                        <button className="hz-act" onClick={() => hintVerse(v)} title="Show the next word">
+                                                            <span className="material-symbols-outlined">lightbulb</span><span className="hz-act-label">Hint</span>
+                                                        </button>
+                                                        <button className="hz-act" onClick={() => revealVerse(v)} title="Reveal the whole ayah">
+                                                            <span className="material-symbols-outlined">visibility</span><span className="hz-act-label">Reveal</span>
+                                                        </button>
+                                                    </>
                                                 )}
-                                            </div>
-
-                                            <div className="verse-feedback">
-                                                <button
-                                                    className={`feedback-btn easy ${verseRatings[verse.verseKey] === 'easy' ? 'active' : ''}`}
-                                                    onClick={() => handleRating(verse.verseKey, 'easy')}
-                                                >
-                                                    Easy
-                                                </button>
-                                                <button
-                                                    className={`feedback-btn hard ${verseRatings[verse.verseKey] === 'hard' ? 'active' : ''}`}
-                                                    onClick={() => handleRating(verse.verseKey, 'hard')}
-                                                >
-                                                    Hard
+                                                <button className="hz-act play" onClick={() => (playing && isPlaying ? handlePlayPause() : playFrom(i))} title={playing && isPlaying ? 'Pause' : 'Play from here'}>
+                                                    <span className="material-symbols-outlined">{playing && isPlaying ? 'pause' : 'play_arrow'}</span>
                                                 </button>
                                             </div>
                                         </div>
-                                    ))}
-                                    {/* Spacer for bottom player */}
-                                    <div style={{ height: '140px' }}></div>
-                                </div>
-                            )}
-                        </section>
 
-                        {/* Floating Action Button for Focus */}
-                        <button
-                            className="fab-focus"
-                            onClick={() => {
-                                if (currentVerseIndex < 0) setCurrentVerseIndex(0);
-                                setFocusModeActive(true);
-                            }}
-                        >
-                            <i className="fas fa-expand"></i> Focus
-                        </button>
+                                        <AyahText words={v.words} hidden={isHidden(v)} onReveal={w => revealWord(v.key, w.position)} style={mode === 'recall' ? 'blur' : 'blank'} />
 
-                        {/* Simplified Glass Player */}
-                        {verses.length > 0 && (
-                            <BottomPlayer
-                                isPlaying={isPlaying}
-                                currentVerse={currentVerseIndex >= 0 ? currentVerseIndex : 0}
-                                totalVerses={verses.length}
-                                currentRepeat={currentRepeat}
-                                repeatCount={repeatCount}
-                                onPlayPause={handlePlayPause}
-                                onPrev={handlePrevVerse}
-                                onNext={handleNextVerse}
-                                onStop={stopPlayback}
-                            />
-                        )}
-                    </div>
-                )}
+                                        {showTranslation && (mode === 'listen' || allShown) && <p className="hz-translation">{v.translation}</p>}
+
+                                        <div className="hz-rate">
+                                            <span>How well do you know it?</span>
+                                            <div>
+                                                {RATINGS.map(r => (
+                                                    <button key={r.id} className={`hz-rate-btn ${r.id}`} onClick={() => rateVerse(v.key, r.id)} title={r.hint}>
+                                                        {r.label}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </article>
+                                );
+                            })}
+                        </div>
+                    )}
+                    <div style={{ height: 120 }} />
+                </div>
             </div>
+
+            {/* ── Floating player ── */}
+            {verses.length > 0 && !focus && (
+                <div className="hz-player" role="region" aria-label="Recitation player">
+                    <div className="hz-player-info">
+                        <b>{current ? `Ayah ${current.number}` : `Ayah ${fromVerse}–${toVerse}`}<span> · {reciterName}</span></b>
+                        <small>
+                            {current ? `Repeat ${currentRepeat} of ${repeatCount}` : `${verses.length} ayahs · ${repeatCount}× each`}
+                            {loopEnabled && ' · looping'}
+                            {playbackRate !== 1 && ` · ${playbackRate}×`}
+                        </small>
+                        <span className="hz-player-track"><span style={{ width: `${verses.length ? ((Math.max(currentIndex, 0) + (current ? currentRepeat / repeatCount : 0)) / verses.length) * 100 : 0}%` }} /></span>
+                    </div>
+                    <div className="hz-player-ctrls">
+                        <button className="hz-pbtn" onClick={() => step(-1)} disabled={currentIndex <= 0} aria-label="Previous ayah"><span className="material-symbols-outlined">skip_previous</span></button>
+                        <button className="hz-pbtn main" onClick={handlePlayPause} aria-label={isPlaying ? 'Pause' : 'Play'}><span className="material-symbols-outlined">{isPlaying ? 'pause' : 'play_arrow'}</span></button>
+                        <button className="hz-pbtn" onClick={() => step(1)} disabled={currentIndex >= verses.length - 1} aria-label="Next ayah"><span className="material-symbols-outlined">skip_next</span></button>
+                        <button className={`hz-pbtn${loopEnabled ? ' on' : ''}`} onClick={() => setLoopEnabled(l => !l)} aria-label="Loop range" aria-pressed={loopEnabled}><span className="material-symbols-outlined">repeat</span></button>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Focus mode ── */}
+            {focus && focusVerse && (
+                <div className="hz-focus" role="dialog" aria-modal="true" aria-label="Focus mode">
+                    <button className="hz-focus-close" onClick={() => setFocus(false)} aria-label="Close focus mode"><span className="material-symbols-outlined">close</span></button>
+                    <p className="hz-focus-meta">{chapter.name} · Ayah {focusVerse.number}</p>
+                    <div className="hz-focus-ring">
+                        <svg viewBox="0 0 120 120" aria-hidden="true">
+                            <circle cx="60" cy="60" r="54" className="track" />
+                            <circle cx="60" cy="60" r="54" className="fill" strokeDasharray={339.3} strokeDashoffset={339.3 * (1 - (current ? currentRepeat / repeatCount : 0))} transform="rotate(-90 60 60)" />
+                        </svg>
+                        <span>{current ? `${currentRepeat}/${repeatCount}` : '—'}</span>
+                    </div>
+                    <AyahText words={focusVerse.words} hidden={isHidden(focusVerse)} onReveal={w => revealWord(focusVerse.key, w.position)} style={mode === 'recall' ? 'blur' : 'blank'} />
+                    {showTranslation && <p className="hz-focus-tr">{focusVerse.translation}</p>}
+                    <div className="hz-focus-ctrls">
+                        <button className="hz-pbtn" onClick={() => step(-1)} aria-label="Previous ayah"><span className="material-symbols-outlined">skip_previous</span></button>
+                        <button className="hz-pbtn main" onClick={handlePlayPause} aria-label={isPlaying ? 'Pause' : 'Play'}><span className="material-symbols-outlined">{isPlaying ? 'pause' : 'play_arrow'}</span></button>
+                        <button className="hz-pbtn" onClick={() => step(1)} aria-label="Next ayah"><span className="material-symbols-outlined">skip_next</span></button>
+                    </div>
+                    <p className="hz-focus-keys"><kbd>Space</kbd> play · <kbd>←</kbd><kbd>→</kbd> ayah · <kbd>Esc</kbd> close</p>
+                </div>
+            )}
+
+            {toast && <div className="hz-toast" role="status">{toast}</div>}
         </main>
     );
 }

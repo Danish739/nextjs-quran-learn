@@ -44,8 +44,15 @@ const Footer: React.FC = () => {
 
       {/* ── Arabic verse banner ── */}
       <div className="ftr-verse-bar">
+        <span className="ftr-verse-arch" aria-hidden="true" />
+        <span className="ftr-verse-kicker">A verse to carry with you</span>
         <span className="ftr-verse-ar">وَنُنَزِّلُ مِنَ الْقُرْآنِ مَا هُوَ شِفَاءٌ وَرَحْمَةٌ لِّلْمُؤْمِنِينَ</span>
-        <span className="ftr-verse-en">"And We send down of the Quran that which is healing and mercy for the believers." — 17:82</span>
+        <span className="ftr-verse-rule" aria-hidden="true" />
+        <span className="ftr-verse-en">&ldquo;And We send down of the Quran that which is healing and mercy for the believers.&rdquo;</span>
+        <Link href="/read-quran/17" className="ftr-verse-ref">
+          Al-Isra 17:82
+          <span className="material-symbols-outlined">arrow_forward</span>
+        </Link>
       </div>
 
       <div className="ftr-container">

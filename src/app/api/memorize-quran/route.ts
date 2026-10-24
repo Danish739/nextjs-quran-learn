@@ -106,7 +106,7 @@ async function getVerses(params: URLSearchParams): Promise<NextResponse> {
     const chapterId = params.get('chapter');
     const fromVerse = params.get('from') || '1';
     const toVerse = params.get('to');
-    const translationId = params.get('translation') || '131'; // Sahih International
+    const translationId = params.get('translation') || '20'; // Saheeh International
 
     if (!chapterId) {
         return NextResponse.json({ error: 'Chapter ID required' }, { status: 400 });

@@ -8,6 +8,7 @@ import { getOrganizationSchema, getWebsiteSchema } from '@/lib/seoSchemas';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import './globals.css';
 import ClientWrapper from '@/components/ClientWrapper';
+import QuickAccessWidget from '@/components/QuickAccessWidget';
 
 export const metadata: Metadata = {
   title: 'Learn Quran - Learn the Noble Quran | Interactive Quranic Education',
@@ -88,7 +89,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
         <link
-          href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap"
           rel="stylesheet"
         />
         <link
@@ -150,6 +151,7 @@ export default function RootLayout({
             </ClientWrapper>
           </div>
           <Footer />
+          <QuickAccessWidget />
         </ThemeProvider>
       </body>
     </html>

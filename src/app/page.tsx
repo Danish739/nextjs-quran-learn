@@ -3,6 +3,14 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useTheme } from '@/components/ThemeProvider';
 import { trackSurahVisit, getRecentSurahs } from '@/lib/recentSurahs';
+import HeroCarousel from '@/components/HeroCarousel';
+import HadeesOfTheDay from '@/components/HadeesOfTheDay';
+import LearnSteps from '@/components/LearnSteps';
+import TodayPanel from '@/components/TodayPanel';
+import QuickAccessGrid from '@/components/QuickAccessGrid';
+import TasbeehCounter from '@/components/TasbeehCounter';
+import SurahExplorer from '@/components/SurahExplorer';
+import PrayerStrip from '@/components/PrayerStrip';
 
 // ── Prayer Times Types ──
 interface PrayerTimesData {
@@ -224,6 +232,9 @@ const JUZ_DATA = [
   { juz: 30, start: '78:1', surah: "An-Naba'", page: 582 },
 ];
 
+// Search / Quick Start / Navigate bar — hidden for now
+const SHOW_HEADER = false;
+
 export default function HomePage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [query, setQuery] = useState('');
@@ -297,54 +308,106 @@ export default function HomePage() {
   }, []);
 
   // ── Fetch prayer times ──
-  useEffect(() => {
-    const fetchPrayer = async (lat?: number, lng?: number) => {
-      try {
-        let url = 'https://api.aladhan.com/v1/timings';
-        if (lat !== undefined && lng !== undefined) {
-          url += `?latitude=${lat}&longitude=${lng}&method=2`;
-        } else {
-          url += 'ByCity?city=Makkah&country=SA&method=4';
-        }
-        const res = await fetch(url);
-        const json: PrayerApiResponse = await res.json();
-        const t = json.data.timings;
-        setPrayerTimes({ Fajr: t.Fajr, Sunrise: t.Sunrise, Dhuhr: t.Dhuhr, Asr: t.Asr, Maghrib: t.Maghrib, Isha: t.Isha });
-        setHijriDate(json.data.date.hijri);
-        const g = json.data.date.gregorian;
-        setGregorianDate(`${g.day} ${g.month.en} ${g.year}`);
-        setPrayerLoading(false);
+  // Shows cached/IP-based times instantly, then upgrades to precise GPS location when allowed.
+  const [locating, setLocating] = useState(false);
+  const [locationSource, setLocationSource] = useState<'gps' | 'ip' | 'default'>('default');
+  const [locationError, setLocationError] = useState('');
+  const preciseRef = useRef(false);
 
-        // Reverse geocode for location name
-        if (lat !== undefined && lng !== undefined) {
-          try {
-            const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=10`);
-            const geoJson = await geoRes.json();
-            const city = geoJson.address?.city || geoJson.address?.town || geoJson.address?.county || geoJson.address?.state || '';
-            const country = geoJson.address?.country || '';
-            setLocationName(city ? `${city}, ${country}` : country || 'Your Location');
-          } catch {
-            setLocationName('Your Location');
-          }
-        } else {
-          setLocationName('Makkah, Saudi Arabia');
+  const loadPrayer = useCallback(async (lat: number, lng: number, source: 'gps' | 'ip' | 'default', label?: string) => {
+    // A precise fix must never be overwritten by a slower approximate one
+    if (source !== 'gps' && preciseRef.current) return;
+    if (source === 'gps') preciseRef.current = true;
+    try {
+      // No `method` → Aladhan picks the calculation method used in that region
+      const d = new Date();
+      const date = `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
+      const res = await fetch(`https://api.aladhan.com/v1/timings/${date}?latitude=${lat}&longitude=${lng}`);
+      const json: PrayerApiResponse = await res.json();
+      if (source !== 'gps' && preciseRef.current) return;
+      const t = json.data.timings;
+      setPrayerTimes({ Fajr: t.Fajr, Sunrise: t.Sunrise, Dhuhr: t.Dhuhr, Asr: t.Asr, Maghrib: t.Maghrib, Isha: t.Isha });
+      setHijriDate(json.data.date.hijri);
+      const g = json.data.date.gregorian;
+      setGregorianDate(`${g.day} ${g.month.en} ${g.year}`);
+      setLocationSource(source);
+      setPrayerLoading(false);
+
+      let name = label ?? '';
+      if (!name) {
+        try {
+          const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=10`);
+          const geoJson = await geoRes.json();
+          const city = geoJson.address?.city || geoJson.address?.town || geoJson.address?.village || geoJson.address?.county || geoJson.address?.state || '';
+          const country = geoJson.address?.country || '';
+          name = city ? `${city}, ${country}` : country || 'Your Location';
+        } catch {
+          name = 'Your Location';
         }
-      } catch {
-        setPrayerLoading(false);
-        setLocationName('Unable to load');
       }
-    };
-
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => fetchPrayer(pos.coords.latitude, pos.coords.longitude),
-        () => fetchPrayer(), // fallback to Makkah
-        { timeout: 5000 }
-      );
-    } else {
-      fetchPrayer();
+      setLocationName(name);
+      if (source !== 'default') {
+        localStorage.setItem('prayerLocation', JSON.stringify({ lat, lng, name, source }));
+      }
+    } catch {
+      setPrayerLoading(false);
+      if (!preciseRef.current) setLocationName('Unable to load');
     }
   }, []);
+
+  const detectLocation = useCallback((silent = false) => {
+    if (!navigator.geolocation) {
+      if (!silent) setLocationError('Location is not supported on this device');
+      return;
+    }
+    setLocating(true);
+    setLocationError('');
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        await loadPrayer(pos.coords.latitude, pos.coords.longitude, 'gps');
+        setLocating(false);
+      },
+      (err) => {
+        setLocating(false);
+        if (silent) return;
+        setLocationError(
+          err.code === err.PERMISSION_DENIED
+            ? 'Location blocked — allow it from the lock icon in the address bar'
+            : 'Could not detect location, please try again'
+        );
+      },
+      { timeout: 15000, maximumAge: 10 * 60 * 1000 }
+    );
+  }, [loadPrayer]);
+
+  useEffect(() => {
+    // 1. Last known location → instant times
+    let hasCache = false;
+    try {
+      const cached = JSON.parse(localStorage.getItem('prayerLocation') || 'null');
+      if (cached && typeof cached.lat === 'number') {
+        hasCache = true;
+        loadPrayer(cached.lat, cached.lng, cached.source === 'gps' ? 'ip' : cached.source, cached.name);
+      }
+    } catch { /* ignore */ }
+
+    // 2. Approximate location from IP (no permission needed)
+    if (!hasCache) {
+      fetch('https://get.geojs.io/v1/ip/geo.json')
+        .then(r => r.json())
+        .then(ip => {
+          const lat = parseFloat(ip.latitude);
+          const lng = parseFloat(ip.longitude);
+          if (Number.isNaN(lat) || Number.isNaN(lng)) throw new Error('no coords');
+          const name = [ip.city, ip.country].filter(Boolean).join(', ') || undefined;
+          return loadPrayer(lat, lng, 'ip', name);
+        })
+        .catch(() => loadPrayer(21.4225, 39.8262, 'default', 'Makkah, Saudi Arabia'));
+    }
+
+    // 3. Precise GPS location — silently if already allowed, otherwise the browser asks once
+    detectLocation(true);
+  }, [loadPrayer, detectLocation]);
 
   // ── Real-time clock + next prayer update ──
   useEffect(() => {
@@ -373,17 +436,6 @@ export default function HomePage() {
   const navRef = useRef<HTMLDivElement>(null);
   const openNav = () => { setShowNav(true); setNavLoading(true); setTimeout(() => setNavLoading(false), 600); };
 
-  // ── Tasbeeh counter ──
-  const TASBEEH_PRESETS = [
-    { label: 'SubhanAllah', ar: 'سُبْحَانَ ٱللَّٰهِ', color: 'var(--brand-primary)' },
-    { label: 'Alhamdulillah', ar: 'ٱلْحَمْدُ لِلَّٰهِ', color: '#a855f7' },
-    { label: 'Allahu Akbar', ar: 'ٱللَّٰهُ أَكْبَرُ', color: 'var(--brand-primary)' },
-  ];
-  const TARGET = 33;
-  const [tasbeehIdx, setTasbeehIdx] = useState(0);
-  const [tasbeehCount, setTasbeehCount] = useState(0);
-  const [tasbeehTotal, setTasbeehTotal] = useState(0);
-  const [tasbeehFlash, setTasbeehFlash] = useState(false);
 
   useEffect(() => {
     const loadRecent = () => {
@@ -403,9 +455,6 @@ export default function HomePage() {
     // Load cumulative time
     const savedTotal = parseInt(localStorage.getItem('quranTotalTime') || '0', 10);
     setTotalTime(savedTotal);
-    // Load tasbeeh total
-    const savedTasbeehTotal = parseInt(localStorage.getItem('tasbeehTotal') || '0', 10);
-    setTasbeehTotal(savedTasbeehTotal);
 
     // Load reading streak & weekly data
     const savedStreak = parseInt(localStorage.getItem('readingStreak') || '0', 10);
@@ -930,7 +979,7 @@ export default function HomePage() {
 
       <div style={S.shell}>
         {/* Header — outside scroll container so dropdown isn't clipped */}
-        <header style={{ position: 'relative', zIndex: 200, background: 'var(--glass-bg-strong)', backdropFilter: 'blur(12px)', borderBottom: '1px solid var(--border-strong)', flexShrink: 0 }}>
+        {SHOW_HEADER && <header style={{ position: 'relative', zIndex: 200, background: 'var(--glass-bg-strong)', backdropFilter: 'blur(12px)', borderBottom: '1px solid var(--border-strong)', flexShrink: 0 }}>
           <div className="hp-header-inner" style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 12 }}>
             <div ref={searchRef} style={{ flex: 1, position: 'relative' }}>
               <span className="material-symbols-outlined" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: 20, pointerEvents: 'none', zIndex: 1 }}>search</span>
@@ -1026,285 +1075,49 @@ export default function HomePage() {
               <span className="hp-qs-hide">Navigate</span>
             </button>
           </div>
-        </header>
+        </header>}
         {/* MAIN — scrollable content only */}
         <main className="hp-scroll hp-dot" style={{ background: dark ? 'var(--bg-base)' : '#ffffff' }}>
+          {/* ── HERO: greeting + featured slides ── */}
+          <HeroCarousel />
+
+          {/* ── PRAYER TIMES STRIP (full width) ── */}
+          <PrayerStrip
+            times={prayerTimes}
+            next={nextPrayer}
+            hijri={hijriDate}
+            location={locationName}
+            loading={prayerLoading}
+            precise={locationSource === 'gps'}
+            locating={locating}
+            error={locationError}
+            onDetect={() => detectLocation()}
+          />
+
           <div className="hp-content" style={{ maxWidth: 1100, margin: '0 auto' }}>
 
-            {/* ── HERO BANNER ── */}
-            <section style={{
-              position: 'relative', overflow: 'hidden', borderRadius: 20,
-              marginBottom: 24, padding: '32px 28px 24px',
-              background: dark
-                ? 'linear-gradient(135deg, #1a1612 0%, #1f1a12 40%, #241e14 100%)'
-                : 'linear-gradient(135deg, #FFF8E7 0%, #FDECC8 40%, #FDE8B8 100%)',
-              boxShadow: dark ? '0 4px 24px rgba(0,0,0,0.3)' : '0 4px 24px rgba(var(--brand-rgb),0.12)',
-            }}>
-              {/* Decorative orbs */}
-              <div style={{ position: 'absolute', top: -60, right: -40, width: 200, height: 200, borderRadius: '50%', pointerEvents: 'none', background: 'radial-gradient(circle, rgba(var(--brand-rgb),0.15), transparent 70%)' }} />
-              <div style={{ position: 'absolute', bottom: -40, left: -30, width: 150, height: 150, borderRadius: '50%', pointerEvents: 'none', background: 'radial-gradient(circle, rgba(var(--brand-hover-rgb),0.10), transparent 70%)' }} />
+            {/* ── HADEES OF THE DAY ── */}
+            <HadeesOfTheDay />
 
-              <div style={{ position: 'relative', zIndex: 1, display: 'grid', gridTemplateColumns: '1fr', gap: 20 }} className="hp-hero-grid">
-                <div>
-                  {/* Badge */}
-                  <div style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 6,
-                    background: dark ? 'rgba(var(--brand-rgb),0.12)' : 'rgba(var(--brand-rgb),0.15)',
-                    color: 'var(--brand-primary)', padding: '5px 14px', borderRadius: 20,
-                    fontSize: 11, fontWeight: 700, textTransform: 'uppercase' as const,
-                    letterSpacing: '0.1em', marginBottom: 16,
-                    border: '1px solid rgba(var(--brand-rgb),0.2)',
-                  }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 14 }}>auto_stories</span>
-                    YOUR QURAN COMPANION
-                  </div>
-
-                  {/* Heading */}
-                  <h1 style={{
-                    margin: '0 0 12px', fontSize: 'clamp(26px, 4vw, 38px)', fontWeight: 800,
-                    lineHeight: 1.15, color: dark ? '#fde68a' : '#78350f',
-                  }}>
-                    Learn, Read & <span style={{ color: 'var(--brand-primary)' }}>Understand</span> the Noble Quran
-                  </h1>
-
-                  {/* Subtitle */}
-                  <p style={{
-                    margin: '0 0 20px', fontSize: 14.5, lineHeight: 1.6, maxWidth: 520,
-                    color: dark ? '#d4a574' : '#92400e', fontWeight: 400,
-                  }}>
-                    Your complete platform for Quranic learning — read with Tafseer, memorize with
-                    spaced repetition, listen to world-class reciters, and track your daily progress.
-                  </p>
-
-                  {/* Verse quote */}
-                  <div style={{
-                    display: 'flex', alignItems: 'stretch', gap: 14, marginBottom: 20,
-                  }}>
-                    <div style={{ width: 3, borderRadius: 4, background: 'var(--brand-primary)', flexShrink: 0 }} />
-                    <div>
-                      <p className="font-arabic" style={{
-                        margin: '0 0 6px', fontSize: 22, lineHeight: 1.6,
-                        color: dark ? '#fde68a' : '#78350f', direction: 'rtl', textAlign: 'right',
-                      }}>
-                        اقْرَأْ بِاسْمِ رَبِّكَ الَّذِي خَلَقَ
-                      </p>
-                      <p style={{
-                        margin: '0 0 4px', fontSize: 13, fontStyle: 'italic',
-                        color: dark ? '#d4a574' : '#92400e',
-                      }}>
-                        &quot;Read in the name of your Lord who created.&quot;
-                      </p>
-                      <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: 'var(--brand-primary)' }}>
-                        Surah Al-&apos;Alaq 96:1
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* CTA buttons */}
-                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                    <Link href="/read-quran/1" style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 6,
-                      background: 'linear-gradient(135deg, var(--brand-primary), var(--brand-primary-hover))',
-                      color: 'white', padding: '10px 20px', borderRadius: 12,
-                      fontSize: 13.5, fontWeight: 700, textDecoration: 'none',
-                      boxShadow: '0 4px 16px rgba(var(--brand-rgb),0.3)',
-                      transition: 'transform 0.15s, box-shadow 0.15s',
-                    }}>
-                      <span className="material-symbols-outlined" style={{ fontSize: 18 }}>play_circle</span>
-                      Start Reading
-                    </Link>
-                    <Link href="/quran-player" style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 6,
-                      background: dark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.7)',
-                      color: dark ? 'var(--brand-primary-light)' : '#92400e',
-                      padding: '10px 20px', borderRadius: 12,
-                      fontSize: 13.5, fontWeight: 600, textDecoration: 'none',
-                      border: `1px solid ${dark ? 'rgba(var(--brand-rgb),0.15)' : 'rgba(var(--brand-rgb),0.2)'}`,
-                      transition: 'transform 0.15s, background 0.15s',
-                    }}>
-                      <span className="material-symbols-outlined" style={{ fontSize: 18 }}>headphones</span>
-                      Listen Now
-                    </Link>
-                  </div>
-                </div>
-
-                {/* Right — decorative icon (desktop only) */}
-                <div className="hp-hero-icon-box" style={{
-                  display: 'none', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <div style={{
-                    width: 110, height: 110, borderRadius: 24,
-                    background: dark ? 'rgba(var(--brand-rgb),0.08)' : 'rgba(var(--brand-rgb),0.1)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    <span className="material-symbols-outlined" style={{
-                      fontSize: 56, color: 'var(--brand-primary)', opacity: 0.8,
-                    }}>auto_stories</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Featured actions row - Upgraded UI */}
-              <div style={{
-                display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14,
-                marginTop: 26, position: 'relative', zIndex: 1,
-              }} className="hp-hero-actions">
-                {FEATURED_ACTIONS.map(f => (
-                  <Link key={f.label} href={f.href} style={{ textDecoration: 'none' }}>
-                    <div style={{
-                      display: 'flex', alignItems: 'center', gap: 14,
-                      padding: '16px 20px', borderRadius: 20,
-                      background: dark ? 'rgba(24,24,27,0.4)' : 'rgba(255,255,255,0.7)',
-                      backdropFilter: 'blur(12px)',
-                      border: `1px solid ${dark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.8)'}`,
-                      boxShadow: dark ? 'inset 0 1px 1px rgba(255,255,255,0.05), 0 4px 12px rgba(0,0,0,0.2)' : 'inset 0 1px 1px rgba(255,255,255,1), 0 4px 12px rgba(0,0,0,0.04)',
-                      cursor: 'pointer', transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
-                      position: 'relative', overflow: 'hidden'
-                    }}
-                      onMouseEnter={e => {
-                        e.currentTarget.style.transform = 'translateY(-3px)';
-                        e.currentTarget.style.boxShadow = dark ? 'inset 0 1px 1px rgba(255,255,255,0.08), 0 8px 24px rgba(var(--brand-rgb),0.15)' : 'inset 0 1px 1px rgba(255,255,255,1), 0 8px 24px rgba(var(--brand-rgb),0.15)';
-                        e.currentTarget.style.borderColor = dark ? 'rgba(var(--brand-rgb),0.3)' : 'rgba(var(--brand-rgb),0.4)';
-                        const chevron = e.currentTarget.querySelector('.action-chevron') as HTMLElement;
-                        if (chevron) chevron.style.transform = 'translateX(4px)';
-                      }}
-                      onMouseLeave={e => {
-                        e.currentTarget.style.transform = 'none';
-                        e.currentTarget.style.boxShadow = dark ? 'inset 0 1px 1px rgba(255,255,255,0.05), 0 4px 12px rgba(0,0,0,0.2)' : 'inset 0 1px 1px rgba(255,255,255,1), 0 4px 12px rgba(0,0,0,0.04)';
-                        e.currentTarget.style.borderColor = dark ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.8)';
-                        const chevron = e.currentTarget.querySelector('.action-chevron') as HTMLElement;
-                        if (chevron) chevron.style.transform = 'none';
-                      }}
-                    >
-                      {/* Vibrant Gradient Icon Box */}
-                      <div style={{
-                        width: 44, height: 44, borderRadius: 14, flexShrink: 0,
-                        background: 'linear-gradient(135deg, var(--brand-primary), var(--brand-primary-hover))',
-                        boxShadow: '0 4px 12px rgba(var(--brand-rgb),0.3)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center'
-                      }}>
-                        <span className="material-symbols-outlined" style={{ fontSize: 24, color: '#ffffff' }}>{f.icon}</span>
-                      </div>
-
-                      {/* Text */}
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ margin: 0, fontWeight: 800, fontSize: 14.5, color: dark ? '#f8fafc' : '#0f172a', lineHeight: 1.2 }}>{f.label}</p>
-                        <p style={{ margin: '3px 0 0', fontSize: 11.5, color: dark ? '#cbd5e1' : '#64748b', lineHeight: 1.3, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.sub}</p>
-                      </div>
-
-                      {/* Hover Arrow */}
-                      <span className="material-symbols-outlined action-chevron" style={{
-                        fontSize: 20, color: 'var(--brand-primary)', opacity: 0.8,
-                        transition: 'transform 0.25s ease', flexShrink: 0
-                      }}>chevron_right</span>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </section>
+            {/* ── 3 STEPS TO LEARN ── */}
+            <LearnSteps />
 
 
 
-            {/* ── QUICK ACCESS CARDS ── */}
-            <section className="hp-quick" style={{ display: 'grid', gap: 16, marginBottom: 24 }}>
-              {/* Continue Reading */}
-              <div style={{ ...S.card, padding: 18, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: 140 }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                    <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--brand-primary)', textTransform: 'uppercase', letterSpacing: '0.14em' }}>Continue Reading</span>
-                    <span className="material-symbols-outlined" style={{ color: '#cbd5e1', fontSize: 18 }}>bookmark</span>
-                  </div>
-                  <h3 style={{ margin: '0 0 3px', fontWeight: 700, fontSize: 15, ...S.text }}>{recent[0]?.name ?? 'Al-Fatihah'}</h3>
-                  <p style={{ margin: '0 0 14px', fontSize: 12, ...S.muted }}>{recent[0] ? `Surah ${recent[0].num} · ${recent[0].v} verses` : 'Begin your journey'}</p>
-                </div>
-                <Link href={`/read-quran/${recent[0]?.num ?? 1}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'var(--bg-elevated)', borderRadius: 8, padding: '7px 10px', fontWeight: 600, fontSize: 12, color: 'var(--brand-primary)', textDecoration: 'none' }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 14 }}>resume</span>{recent[0] ? 'Resume' : 'Start'}
-                </Link>
-              </div>
-              {/* Session Timer Card */}
-              <div style={{ ...S.card, padding: 18, minHeight: 140, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                    <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--brand-primary)', textTransform: 'uppercase', letterSpacing: '0.14em' }}>Session Timer</span>
-                    <span className="material-symbols-outlined" style={{ color: '#cbd5e1', fontSize: 18 }}>timer</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, marginBottom: 6 }}>
-                    <span style={{ fontSize: 30, fontWeight: 700, color: 'var(--brand-primary)', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{fmtTime(sessionTime)}</span>
-                  </div>
-                  <p style={{ margin: '0 0 10px', fontSize: 11, ...S.muted }}>This session on the app</p>
-                  <div style={{ width: '100%', height: 4, background: 'var(--bg-elevated)', borderRadius: 999, overflow: 'hidden', marginBottom: 8 }}>
-                    <div style={{ width: `${Math.min((sessionTime % 3600) / 36, 100)}%`, height: '100%', background: 'linear-gradient(90deg,var(--brand-primary),var(--brand-primary-hover))', borderRadius: 999, transition: 'width 1s linear' }} />
-                  </div>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 11, ...S.muted }}>All time: <strong style={{ color: 'var(--brand-primary)' }}>{fmtTime(totalTime)}</strong></span>
-                  <button
-                    title="Reset session &amp; all-time counter"
-                    onClick={() => { setSessionTime(0); setTotalTime(0); localStorage.setItem('quranTotalTime', '0'); }}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, display: 'flex', alignItems: 'center', color: '#94a3b8' }}
-                  >
-                    <span className="material-symbols-outlined" style={{ fontSize: 15 }}>restart_alt</span>
-                  </button>
-                </div>
-              </div>
-              {/* Ayah of the Day */}
-              <Link href={todayAyah.href} style={{ textDecoration: 'none', display: 'block' }}>
-                <div style={{ background: 'linear-gradient(135deg,var(--brand-primary),var(--brand-primary-hover))', borderRadius: 16, padding: 18, boxShadow: '0 8px 24px rgba(var(--brand-rgb),0.25)', position: 'relative', overflow: 'hidden', minHeight: 140, cursor: 'pointer', transition: 'transform 0.18s ease, box-shadow 0.18s ease' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-3px)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 12px 32px rgba(var(--brand-rgb),0.35)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = ''; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 8px 24px rgba(var(--brand-rgb),0.25)'; }}
-                >
-                  <span className="material-symbols-outlined" style={{ position: 'absolute', top: -8, right: -14, fontSize: 90, color: 'white', opacity: 0.08, lineHeight: 1 }}>star_half</span>
-                  <div style={{ position: 'relative', zIndex: 1 }}>
-                    <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.18em', color: 'rgba(255,255,255,0.8)' }}>Ayah of the Day</span>
-                    <p className="font-arabic" dir="rtl" style={{ margin: '8px 0 6px', fontSize: 16, lineHeight: 1.9, textAlign: 'right', color: 'white', fontWeight: 700 }}>{todayAyah.ar}</p>
-                    <p style={{ margin: '0 0 4px', fontSize: 11, fontStyle: 'italic', color: 'rgba(255,255,255,0.88)', lineHeight: 1.5 }}>{todayAyah.en}</p>
-                    <p style={{ margin: 0, fontSize: 10, fontWeight: 700, color: 'white' }}>{todayAyah.ref} →</p>
-                  </div>
-                </div>
-              </Link>
-            </section>
+            {/* ── TODAY: continue reading · progress · ayah of the day ── */}
+            <TodayPanel
+              recent={recent}
+              sessionTime={sessionTime}
+              totalTime={totalTime}
+              streak={readingStreak}
+              weekly={weeklyData}
+              ayah={todayAyah}
+              formatTime={fmtTime}
+              onResetTime={() => { setSessionTime(0); setTotalTime(0); localStorage.setItem('quranTotalTime', '0'); }}
+            />
 
-            {/* ── FEATURE SHORTCUTS ── */}
-            <section style={{ marginBottom: 32 }}>
-              <h2 style={{ margin: '0 0 14px', fontWeight: 700, fontSize: 17, ...S.text }}>Quick Access</h2>
-              <div className="hp-features" style={{ display: 'grid', gap: 20 }}>
-                {FEATURES.map(f => {
-                  const isNav = f.href === '#navigate';
-                  const inner = (
-                    <div className="feat-card" style={{
-                      ...S.card,
-                      padding: '20px 16px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      textAlign: 'center',
-                      cursor: 'pointer',
-                      borderRadius: '16px',
-                      background: dark ? '#1a1612' : '#f8fafc',
-                      border: 'none',
-                      boxShadow: dark ? '0 4px 20px rgba(0,0,0,0.6)' : '0 4px 12px rgba(0,0,0,0.05)',
-                    }}>
-                      <div style={{
-                        width: 48, height: 48, borderRadius: '50%',
-                        background: `${f.color}20`,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        marginBottom: 12
-                      }}>
-                        <span className="material-symbols-outlined" style={{ fontSize: 24, color: f.color }}>{f.icon}</span>
-                      </div>
-                      <div>
-                        <p style={{ margin: 0, fontWeight: 700, fontSize: '13px', color: 'var(--text-primary)', lineHeight: 1.2 }}>{f.label}</p>
-                        <p style={{ margin: '4px 0 0', fontSize: '10px', color: 'var(--text-muted)', lineHeight: 1.2 }}>{f.sub}</p>
-                      </div>
-                    </div>
-                  );
-                  if (isNav) return <div key={f.label} onClick={() => openNav()} style={{ textDecoration: 'none', cursor: 'pointer' }}>{inner}</div>;
-                  return <Link key={f.label} href={f.href} style={{ textDecoration: 'none' }}>{inner}</Link>;
-                })}
-              </div>
-            </section>
-
+            {/* ── QUICK ACCESS ── */}
+            <QuickAccessGrid onNavigate={openNav} />
 
             {/* ── SEARCH QURAN ── */}
             <section style={{ marginBottom: 32 }}>
@@ -1396,314 +1209,11 @@ export default function HomePage() {
               )}
             </section>
 
-            {/* ── HADEES OF THE DAY ── */}
-            <section style={{ marginBottom: 32 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-                <h2 style={{ margin: 0, fontWeight: 700, fontSize: 17, ...S.text, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 20, color: 'var(--brand-primary)' }}>format_quote</span>
-                  Hadees of the Day
-                </h2>
-                <Link href="/hadees" style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--brand-primary)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
-                  Browse All
-                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>chevron_right</span>
-                </Link>
-              </div>
-              <Link href="/hadees" style={{ textDecoration: 'none', display: 'block' }}>
-                <div style={{
-                  ...S.card,
-                  padding: '22px 24px',
-                  borderLeft: '4px solid var(--brand-primary)',
-                  cursor: 'pointer',
-                  transition: 'transform 0.18s ease, box-shadow 0.18s ease',
-                  position: 'relative',
-                  overflow: 'hidden',
-                }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 8px 28px rgba(var(--brand-rgb),0.12)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = ''; (e.currentTarget as HTMLDivElement).style.boxShadow = '0 1px 4px rgba(0,0,0,0.06)'; }}
-                >
-                  <span className="material-symbols-outlined" style={{ position: 'absolute', right: 12, top: 8, fontSize: 72, color: 'rgba(var(--brand-rgb),0.07)', lineHeight: 1, pointerEvents: 'none' }}>format_quote</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, position: 'relative', zIndex: 1 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(var(--brand-rgb),0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <span className="material-symbols-outlined" style={{ fontSize: 15, color: 'var(--brand-primary)' }}>format_quote</span>
-                    </div>
-                    <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.14em', color: 'var(--brand-primary)' }}>Nawawi's 40 · Daily Hadith</span>
-                  </div>
-                  <p style={{ margin: '0 0 12px', fontSize: 13.5, lineHeight: 1.85, ...S.text, fontStyle: 'italic', position: 'relative', zIndex: 1 }}>
-                    "On the authority of Umar ibn al-Khattab — Actions are but by intentions, and every person shall have only that which he intended. So whoever's emigration was for Allah and His Messenger, his emigration is for Allah and His Messenger."
-                  </p>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', zIndex: 1 }}>
-                    <span style={{ fontSize: 11, ...S.muted }}>— Sahih al-Bukhari &amp; Muslim</span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11.5, color: 'var(--brand-primary)', fontWeight: 600 }}>
-                      View Collection
-                      <span className="material-symbols-outlined" style={{ fontSize: 14 }}>arrow_forward</span>
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            </section>
-
             {/* ── TASBEEH COUNTER ── */}
-            <section style={{ marginBottom: 32 }}>
-              <h2 style={{ margin: '0 0 14px', fontWeight: 700, fontSize: 17, ...S.text }}>Tasbeeh Counter</h2>
-              <div style={{ ...S.card, padding: 20 }}>
-                {/* Preset tabs */}
-                <div style={{ display: 'flex', gap: 6, marginBottom: 20, flexWrap: 'wrap' }}>
-                  {TASBEEH_PRESETS.map((p, i) => (
-                    <button
-                      key={p.label}
-                      onClick={() => { setTasbeehIdx(i); setTasbeehCount(0); }}
-                      style={{
-                        padding: '6px 14px', borderRadius: 20, border: 'none', cursor: 'pointer',
-                        fontSize: 12, fontWeight: 600,
-                        background: tasbeehIdx === i ? p.color : 'var(--bg-elevated)',
-                        color: tasbeehIdx === i ? 'white' : '#64748b',
-                        transition: 'all 0.15s',
-                      }}
-                    >{p.label}</button>
-                  ))}
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap', justifyContent: typeof window !== 'undefined' && window.innerWidth <= 600 ? 'center' : 'flex-start', width: '100%' }}>
-                  {/* Ring + tap button */}
-                  <div style={{ position: 'relative', flexShrink: 0, width: 140, height: 140 }}>
-                    {/* Circular shadow layer */}
-                    <div style={{
-                      position: 'absolute', inset: 0, borderRadius: '50%', pointerEvents: 'none', zIndex: 0,
-                      boxShadow: '0 8px 24px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.10), inset 0 -4px 10px rgba(0,0,0,0.07)',
-                    }} />
-                    <svg width={140} height={140} style={{ transform: 'rotate(-90deg)', position: 'relative', zIndex: 1 }}>
-                      {/* Track */}
-                      <circle cx={70} cy={70} r={58} fill="none" stroke={'var(--bg-elevated)'} strokeWidth={10} />
-                      {/* Progress */}
-                      <circle
-                        cx={70} cy={70} r={58} fill="none"
-                        stroke={TASBEEH_PRESETS[tasbeehIdx].color}
-                        strokeWidth={10}
-                        strokeLinecap="round"
-                        strokeDasharray={`${2 * Math.PI * 58}`}
-                        strokeDashoffset={`${2 * Math.PI * 58 * (1 - Math.min(tasbeehCount, TARGET) / TARGET)}`}
-                        style={{ transition: 'stroke-dashoffset 0.25s ease' }}
-                      />
-                    </svg>
-                    {/* Count display + tap area */}
-                    <button
-                      className={`tc-btn${tasbeehFlash ? ' tc-flash' : ''}`}
-                      style={{ position: 'absolute', inset: 0, borderRadius: '50%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2, zIndex: 2 }}
-                      onClick={() => {
-                        const next = tasbeehCount + 1;
-                        setTasbeehCount(next);
-                        setTasbeehFlash(true);
-                        setTimeout(() => setTasbeehFlash(false), 220);
-                        const newTotal = tasbeehTotal + 1;
-                        setTasbeehTotal(newTotal);
-                        localStorage.setItem('tasbeehTotal', String(newTotal));
-                        if (navigator.vibrate) navigator.vibrate(18);
-                        if (next === TARGET) setTimeout(() => setTasbeehCount(0), 600);
-                      }}
-                      aria-label={`Count ${TASBEEH_PRESETS[tasbeehIdx].label}`}
-                    >
-                      <span style={{ fontSize: 36, fontWeight: 800, color: TASBEEH_PRESETS[tasbeehIdx].color, lineHeight: 1 }}>
-                        {tasbeehCount}
-                      </span>
-                      <span style={{ fontSize: 10, ...S.muted }}>/ {TARGET}</span>
-                      <span style={{ fontSize: 9, color: TASBEEH_PRESETS[tasbeehIdx].color, fontWeight: 600, marginTop: 2 }}>TAP</span>
-                    </button>
-                  </div>
-
-                  {/* Info panel */}
-                  <div style={{ flex: 1, minWidth: 180 }}>
-                    <p className="font-arabic" dir="rtl" style={{ margin: '0 0 6px', fontSize: 22, fontWeight: 700, color: TASBEEH_PRESETS[tasbeehIdx].color, textAlign: 'right' }}>
-                      {TASBEEH_PRESETS[tasbeehIdx].ar}
-                    </p>
-                    <p style={{ margin: '0 0 16px', fontSize: 13, fontStyle: 'italic', ...S.muted }}>
-                      &ldquo;{TASBEEH_PRESETS[tasbeehIdx].label}&rdquo;
-                    </p>
-                    {/* Stats row */}
-                    <div style={{ display: 'flex', gap: 16, marginBottom: 16, flexWrap: 'wrap' }}>
-                      <div style={{ ...S.card, padding: '10px 16px', textAlign: 'center', borderRadius: 12 }}>
-                        <p style={{ margin: 0, fontSize: 18, fontWeight: 700, color: TASBEEH_PRESETS[tasbeehIdx].color }}>
-                          {Math.floor(tasbeehTotal / TARGET)}
-                        </p>
-                        <p style={{ margin: 0, fontSize: 10, ...S.muted }}>Rounds done</p>
-                      </div>
-                      <div style={{ ...S.card, padding: '10px 16px', textAlign: 'center', borderRadius: 12 }}>
-                        <p style={{ margin: 0, fontSize: 18, fontWeight: 700, ...S.text }}>{tasbeehTotal}</p>
-                        <p style={{ margin: 0, fontSize: 10, ...S.muted }}>Total count</p>
-                      </div>
-                    </div>
-                    {/* Reset */}
-                    <button
-                      onClick={() => { setTasbeehCount(0); setTasbeehTotal(0); localStorage.setItem('tasbeehTotal', '0'); }}
-                      style={{ background: 'none', border: '1px solid var(--border-default)', borderRadius: 8, padding: '6px 14px', fontSize: 12, color: '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}
-                    >
-                      <span className="material-symbols-outlined" style={{ fontSize: 14 }}>restart_alt</span>
-                      Reset all
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            {/* ── RECENTLY VISITED ── */}
-            {recent.length > 0 && (
-              <section style={{ marginBottom: 28 }}>
-                <h2 style={{ margin: '0 0 12px', fontWeight: 700, fontSize: 17, ...S.text }}>Recently Visited</h2>
-                <div className="hp-scroll" style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 6 }}>
-                  {recent.map(s => (
-                    <Link key={s.num} href={`/read-quran/${s.num}`} onClick={() => trackVisit(s)} style={{ textDecoration: 'none', flexShrink: 0 }}>
-                      <div className="surah-card" style={{ ...S.card, padding: '12px 14px', width: 130, cursor: 'pointer', borderTop: '3px solid var(--brand-primary)' }}>
-                        <span className="font-arabic" style={{ fontSize: 18, fontWeight: 700, ...S.text, display: 'block', marginBottom: 6 }}>{s.ar}</span>
-                        <p style={{ margin: '0 0 2px', fontWeight: 600, fontSize: 12, ...S.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.name}</p>
-                        <p style={{ margin: 0, fontSize: 10, ...S.muted }}>{s.v} verses</p>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </section>
-            )}
+            <TasbeehCounter />
 
             {/* ── EXPLORE SURAHS ── */}
-
-            <section>
-              {/* Header row */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
-                <div>
-                  <h2 style={{ margin: '0 0 2px', fontWeight: 700, fontSize: 19, ...S.text }}>Explore Surahs</h2>
-                  <p style={{ margin: 0, fontSize: 13, ...S.muted }}>{filtered.length} of 114 surahs</p>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  {/* Type filter */}
-                  <div style={{ display: 'flex', background: 'var(--bg-surface)', border: `1px solid ${'var(--bg-elevated)'}`, borderRadius: 10, padding: 3, gap: 2 }}>
-                    {(['All', 'Meccan', 'Medinan'] as const).map(t => (
-                      <button key={t} className="filter-btn" onClick={() => setTypeFilter(t)} style={{ background: typeFilter === t ? 'var(--brand-primary)' : 'transparent', color: typeFilter === t ? 'white' : '#94a3b8' }}>{t}</button>
-                    ))}
-                  </div>
-                  {/* View toggle */}
-                  <div style={{ display: 'flex', background: 'var(--bg-surface)', border: `1px solid ${'var(--bg-elevated)'}`, borderRadius: 10, padding: 3, gap: 2 }}>
-                    {(['grid', 'list'] as const).map(m => (
-                      <button key={m} className="filter-btn" onClick={() => setViewMode(m)} style={{ background: viewMode === m ? 'var(--brand-primary)' : 'transparent', color: viewMode === m ? 'white' : '#94a3b8' }}>
-                        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>{m === 'grid' ? 'grid_view' : 'view_list'}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Grid */}
-              {viewMode === 'grid' ? (
-                <div className="hp-surah-grid" style={{ display: 'grid', gap: 16 }}>
-                  {displayed.map(s => (
-                    <Link key={s.num} href={`/read-quran/${s.num}`} onClick={() => trackVisit(s)} style={{ textDecoration: 'none' }}>
-                      <div className="surah-card-better">
-                        <div className="num-box">
-                          <div className="num-poly" />
-                          <span className="num-text">{s.num}</span>
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0, paddingRight: 10 }}>
-                          <h3 style={{ margin: '0 0 4px', fontWeight: 800, fontSize: 15, ...S.text }}>{s.name}</h3>
-                          <p style={{ margin: 0, fontSize: 11, ...S.muted, textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>{s.meaning}</p>
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', flexShrink: 0 }}>
-                          <span className="font-arabic" style={{ fontSize: 24, fontWeight: 700, color: dark ? '#fde68a' : 'var(--brand-primary-active)', lineHeight: 1.2, marginBottom: 4 }}>{s.ar}</span>
-                          <span style={{ fontSize: 11, fontWeight: 700, ...S.muted }}>{s.v} Ayahs</span>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {displayed.map(s => (
-                    <Link key={s.num} href={`/read-quran/${s.num}`} onClick={() => trackVisit(s)} style={{ textDecoration: 'none' }}>
-                      <div className="surah-card" style={{ ...S.card, padding: '12px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14 }}>
-                        <div style={{ width: 36, height: 36, background: 'rgba(var(--brand-rgb),0.10)', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--brand-primary)', fontSize: 13, flexShrink: 0 }}>{s.num}</div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <h3 style={{ margin: '0 0 2px', fontWeight: 700, fontSize: 13.5, ...S.text }}>{s.name}</h3>
-                          <p style={{ margin: 0, fontSize: 11.5, ...S.muted }}>{s.meaning} · {s.v} Verses</p>
-                        </div>
-                        <span style={{ ...S.tag(s.t), flexShrink: 0 }}>{s.t}</span>
-                        <span className="font-arabic" style={{ fontSize: 18, fontWeight: 700, ...S.text, flexShrink: 0 }}>{s.ar}</span>
-                        <span className="material-symbols-outlined" style={{ fontSize: 16, color: '#cbd5e1', flexShrink: 0 }}>chevron_right</span>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
-
-              {/* Show more / less */}
-              <div style={{ marginTop: 24, marginBottom: 48, textAlign: 'center' }}>
-                <button onClick={() => setShowAll(v => !v)} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-default)', padding: '10px 28px', borderRadius: 12, fontWeight: 600, fontSize: 13.5, boxShadow: '0 1px 4px rgba(0,0,0,0.06)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--text-secondary)' }}>
-                  {showAll ? `Show Top 12` : `Show All ${filtered.length} Surahs`}
-                  <span className="material-symbols-outlined" style={{ fontSize: 18, transform: showAll ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>expand_more</span>
-                </button>
-              </div>
-            </section>
-
-            {/* ── GET STARTED SECTION ── */}
-            <section style={{
-              marginBottom: 0,
-              borderRadius: 20,
-              background: dark
-                ? 'linear-gradient(135deg,#1a1612 0%,#0f0d0a 60%,#1a1612 100%)'
-                : 'linear-gradient(135deg,#fffbeb 0%,#fef3c7 60%,#fffbeb 100%)',
-              border: `1px solid ${dark ? 'rgba(var(--brand-rgb),0.15)' : 'rgba(var(--brand-rgb),0.2)'}`,
-              overflow: 'hidden',
-              position: 'relative',
-            }}>
-              {/* Background dot pattern */}
-              <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle at 2px 2px,rgba(var(--brand-rgb),0.06) 1px,transparent 0)', backgroundSize: '24px 24px', pointerEvents: 'none' }} />
-              {/* Decorative orbs */}
-              <div style={{ position: 'absolute', top: -40, right: -40, width: 180, height: 180, borderRadius: '50%', background: 'rgba(var(--brand-rgb),0.06)', pointerEvents: 'none' }} />
-              <div style={{ position: 'absolute', bottom: -30, left: -30, width: 120, height: 120, borderRadius: '50%', background: 'rgba(var(--brand-hover-rgb),0.07)', pointerEvents: 'none' }} />
-
-              <div className="hp-getstarted-inner" style={{ position: 'relative', zIndex: 1, display: 'grid', gap: 0 }}>
-                {/* Left — headline */}
-                <div className="hp-getstarted-left" style={{ padding: '32px 28px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 14, background: 'rgba(var(--brand-rgb),0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: 26, color: 'var(--brand-primary)' }}>auto_stories</span>
-                  </div>
-                  <h2 style={{ margin: '0 0 12px', fontWeight: 800, fontSize: 'clamp(22px,4vw,30px)', lineHeight: 1.2, color: 'var(--text-primary)' }}>
-                    Let&apos;s get{' '}
-                    <span style={{ color: 'var(--brand-primary)' }}>to learning</span>
-                  </h2>
-                  <p style={{ margin: 0, fontSize: 14, lineHeight: 1.7, color: dark ? '#94a3b8' : '#475569', maxWidth: 280 }}>
-                    Explore all the ways Learn Quran can support your spiritual journey — from reading to memorisation.
-                  </p>
-                </div>
-
-                {/* Right — action list */}
-                <div className="hp-getstarted-right" style={{ display: 'flex', flexDirection: 'column' }}>
-                  {[
-                    { icon: 'support_agent', label: 'Contact us', sub: 'Talk to an expert and see how our platform can meet your goals.', href: '/community', color: '#8b5cf6' },
-                    { icon: 'group', label: 'Join the community', sub: 'Learn, share, and connect with people doing work that matters.', href: '/community', color: 'var(--brand-primary)' },
-                    { icon: 'school', label: 'Find a teacher', sub: 'Realize even more value with a certified Quran tutor.', href: '/learn-quran', color: 'var(--brand-primary)' },
-                    { icon: 'view_module', label: 'Explore modules', sub: 'Get hands-on with the Learn Quran platform.', href: '/courses', color: '#0ea5e9' },
-                  ].map((item, i, arr) => (
-                    <Link key={item.label} href={item.href} style={{ textDecoration: 'none', display: 'block' }}>
-                      <div
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: 16,
-                          padding: '18px 24px',
-                          borderTop: i > 0 ? `1px solid ${dark ? 'rgba(36,31,26,0.6)' : 'rgba(var(--brand-rgb),0.1)'}` : 'none',
-                          transition: 'background 0.15s',
-                        }}
-                        onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = dark ? 'rgba(var(--brand-rgb),0.06)' : 'rgba(var(--brand-rgb),0.05)'; }}
-                        onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = 'transparent'; }}
-                      >
-                        <div style={{ width: 44, height: 44, borderRadius: 12, background: `${item.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          <span className="material-symbols-outlined" style={{ fontSize: 22, color: item.color }}>{item.icon}</span>
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <p style={{ margin: '0 0 2px', fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>{item.label}</p>
-                          <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5 }}>{item.sub}</p>
-                        </div>
-                        <span className="material-symbols-outlined" style={{ fontSize: 18, color: dark ? '#334155' : '#cbd5e1', flexShrink: 0 }}>chevron_right</span>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            </section>
+            <SurahExplorer surahs={SURAHS} recentNums={recent.map(r => r.num)} />
 
           </div>
         </main>
