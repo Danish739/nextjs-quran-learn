@@ -14,6 +14,7 @@ import { SurahArt } from "@/components/quran-player/SurahArt";
 import { useLikedTracks } from "@/hooks/useLikedTracks";
 import { useQueue } from "@/hooks/useQueue";
 import { useAudioPlayer } from "@/hooks/useAudioPlayer";
+import { TRANSLATION_LANGS, ARABIC_FOLDER, ayahClipUrl } from "@/data/translation-audio";
 
 import { Sidebar } from "@/components/quran-player/Sidebar";
 import { BottomPlayerBar } from "@/components/quran-player/BottomPlayerBar";
@@ -35,8 +36,19 @@ export default function QuranPlayerPage() {
   const [selectedReciterPlaylist, setSelectedReciterPlaylist] = useState<Reciter | null>(null);
   const [greeting, setGreeting] = useState("Welcome");
 
+  // Translation playback: ayah-by-ayah clips, surah after surah
+  type TrMode = 'both' | 'only';
+  const [tr, setTr] = useState<{ langId: string; mode: TrMode } | null>(null);
+  const [trPos, setTrPos] = useState<{ surah: number; ayah: number; phase: 'ar' | 'tr' } | null>(null);
+  const [pendingMode, setPendingMode] = useState<TrMode>('both');
+  const trRef = useRef(tr);
+  const trPosRef = useRef(trPos);
+
   const mainRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
+
+  trRef.current = tr;
+  trPosRef.current = trPos;
 
   const { likedTracks, isLiked, toggleLike } = useLikedTracks();
   
@@ -82,13 +94,70 @@ export default function QuranPlayerPage() {
     togglePlay, playUrl, setVolume, setIsMuted, setAudioError
   } = useAudioPlayer(audioRef);
 
+  const trFirstPhase = (m: TrMode): 'ar' | 'tr' => (m === 'both' ? 'ar' : 'tr');
+
+  const playTranslationAtRef = useRef<(t: Track, a: number, ph: 'ar' | 'tr') => void>(() => {});
+
   const handlePlayTrack = async (track: Track) => {
     if (currentTrack?.id === track.id && currentTrack?.reciterId === track.reciterId) {
       togglePlay();
       return;
     }
+    if (trRef.current) {
+      playTranslationAtRef.current(track, 1, trFirstPhase(trRef.current.mode));
+      return;
+    }
     setCurrentTrack(track);
     await playUrl(track.audioUrl);
+  };
+
+
+  const playTranslationAt = useCallback((track: Track, ayah: number, phase: 'ar' | 'tr') => {
+    const cfg = trRef.current;
+    const audio = audioRef.current;
+    const lang = cfg && TRANSLATION_LANGS.find(l => l.id === cfg.langId);
+    if (!cfg || !audio || !lang) return;
+    const pos = { surah: track.id, ayah, phase };
+    trPosRef.current = pos;
+    setTrPos(pos);
+    setCurrentTrack(track);
+    audio.src = ayahClipUrl(phase === 'ar' ? ARABIC_FOLDER : lang.folder, track.id, ayah);
+    audio.play().catch(() => {});
+  }, [setCurrentTrack]);
+
+  playTranslationAtRef.current = playTranslationAt;
+
+  const startTranslation = useCallback((langId: string, mode: TrMode, track?: Track | null) => {
+    const next = { langId, mode };
+    trRef.current = next;
+    setTr(next);
+    try { localStorage.setItem('qp-translation', JSON.stringify(next)); } catch { /* ignore */ }
+    const t = track ?? currentTrack ?? tracks[0];
+    if (t) playTranslationAt(t, 1, trFirstPhase(mode));
+  }, [currentTrack, tracks, playTranslationAt]);
+
+  const changeTranslationMode = (mode: TrMode) => {
+    if (!trRef.current) {
+      setTr(null);
+      try { localStorage.setItem('qp-translation-mode', mode); } catch { /* ignore */ }
+      setPendingMode(mode);
+      return;
+    }
+    const next = { ...trRef.current, mode };
+    trRef.current = next;
+    setTr(next);
+    try { localStorage.setItem('qp-translation', JSON.stringify(next)); } catch { /* ignore */ }
+    const pos = trPosRef.current;
+    if (pos && currentTrack) playTranslationAt(currentTrack, pos.ayah, trFirstPhase(mode));
+  };
+
+  const stopTranslation = async () => {
+    trRef.current = null;
+    trPosRef.current = null;
+    setTr(null);
+    setTrPos(null);
+    try { localStorage.removeItem('qp-translation'); } catch { /* ignore */ }
+    if (currentTrack) await playUrl(currentTrack.audioUrl).catch(() => {});
   };
 
   const playNext = useCallback(async () => {
@@ -111,6 +180,16 @@ export default function QuranPlayerPage() {
     const audio = audioRef.current;
     if (!audio) return;
     const onEnded = () => {
+      const cfg = trRef.current;
+      const pos = trPosRef.current;
+      if (cfg && pos && currentTrack) {
+        // ayah → translation of the same ayah → next ayah → next surah (loops through the library)
+        if (cfg.mode === 'both' && pos.phase === 'ar') return playTranslationAt(currentTrack, pos.ayah, 'tr');
+        if (pos.ayah < currentTrack.ayahs) return playTranslationAt(currentTrack, pos.ayah + 1, trFirstPhase(cfg.mode));
+        const nextSurah = isRepeating ? currentTrack : getNextTrack();
+        if (nextSurah) playTranslationAt(nextSurah, 1, trFirstPhase(cfg.mode));
+        return;
+      }
       if (isRepeating) {
         audio.currentTime = 0;
         audio.play();
@@ -120,7 +199,7 @@ export default function QuranPlayerPage() {
     };
     audio.addEventListener("ended", onEnded);
     return () => audio.removeEventListener("ended", onEnded);
-  }, [isRepeating, playNext, audioRef]);
+  }, [isRepeating, playNext, audioRef, currentTrack, getNextTrack, playTranslationAt]);
 
   // Add keyboard shortcuts
   useEffect(() => {
@@ -160,6 +239,15 @@ export default function QuranPlayerPage() {
     setCurrentReciter(reciter);
     if (mainRef.current) mainRef.current.scrollTop = 0;
   };
+
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('qp-translation') || 'null');
+      if (saved && TRANSLATION_LANGS.some(l => l.id === saved.langId)) setPendingMode(saved.mode === 'only' ? 'only' : 'both');
+      const m = localStorage.getItem('qp-translation-mode');
+      if (m === 'only' || m === 'both') setPendingMode(m);
+    } catch { /* ignore */ }
+  }, []);
 
   // The player is dark-only: hold the document in dark mode while it's open,
   // then hand back to the user's saved theme when leaving.
@@ -211,6 +299,11 @@ export default function QuranPlayerPage() {
 
   const isTrackPlaying = (trackId: number) => currentTrack?.id === trackId && isPlaying;
 
+  const trLang = tr ? TRANSLATION_LANGS.find(l => l.id === tr.langId) : undefined;
+  const displayTrack: Track | null = currentTrack && tr && trLang && trPos
+    ? { ...currentTrack, reciter: `${trLang.name} · ${trPos.phase === 'ar' ? 'Arabic' : 'Translation'} · Ayah ${trPos.ayah}/${currentTrack.ayahs}` }
+    : currentTrack;
+
   return (
     <div className="quranfy-player-page">
       <audio ref={audioRef} preload="auto" />
@@ -253,6 +346,14 @@ export default function QuranPlayerPage() {
           currentReciter={currentReciter} currentTrack={currentTrack}
           openReciterPlaylist={openReciterPlaylist} playTrack={handlePlayTrack}
           mainRef={mainRef} tracks={tracks} likedTracksData={likedTracksData}
+          translation={tr} pendingMode={pendingMode}
+          onSelectTranslation={(langId) => startTranslation(langId, tr?.mode ?? pendingMode)}
+          onTranslationMode={changeTranslationMode}
+          onStopTranslation={stopTranslation}
+          onPlayTranslationSurah={(t) => {
+            if (trRef.current) handlePlayTrack(t);
+            else startTranslation(TRANSLATION_LANGS[0].id, pendingMode, t);
+          }}
         />
 
         <main className="sp-main" ref={mainRef}>
@@ -450,7 +551,7 @@ export default function QuranPlayerPage() {
             <>
               {/* Hero Player */}
               <SoundCloudHeroPlayer 
-                currentTrack={currentTrack || tracks[0]} 
+                currentTrack={displayTrack || tracks[0]} 
                 audioRef={audioRef} 
                 isPlaying={isPlaying} 
                 togglePlay={() => (currentTrack ? togglePlay() : tracks[0] && handlePlayTrack(tracks[0]))} 
@@ -535,7 +636,7 @@ export default function QuranPlayerPage() {
 
         <BottomPlayerBar 
           audioRef={audioRef}
-          currentTrack={currentTrack}
+          currentTrack={displayTrack}
           isPlaying={isPlaying} togglePlay={togglePlay} playNext={playNext} playPrev={playPrev}
           isShuffled={isShuffled} setIsShuffled={setIsShuffled}
           isRepeating={isRepeating} setIsRepeating={setIsRepeating}
@@ -549,7 +650,7 @@ export default function QuranPlayerPage() {
 
         <MobilePlayer 
           audioRef={audioRef}
-          currentTrack={currentTrack}
+          currentTrack={displayTrack}
           isPlaying={isPlaying} togglePlay={togglePlay} playNext={playNext} playPrev={playPrev}
           isShuffled={isShuffled} setIsShuffled={setIsShuffled}
           isRepeating={isRepeating} setIsRepeating={setIsRepeating}

@@ -3,33 +3,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { surahList } from '../audio-quran/surahList';
 import { loadQcfFontsForPages, qcfFontFamily } from '../read-quran/lib/qcf';
+import { TRANSLATION_LANGS as LANGS, ARABIC_FOLDER, ayahClipUrl, type TranslationLang as Lang } from '@/data/translation-audio';
 
-const EVERYAYAH = 'https://everyayah.com/data';
 const QURAN_API = 'https://api.quran.com/api/v4';
-const ARABIC_FOLDER = 'Alafasy_128kbps';
-
-interface Lang {
-  id: string;
-  name: string;
-  native: string;
-  dir: 'ltr' | 'rtl';
-  /** everyayah.com sub-folder holding the verse-by-verse translation audio */
-  folder: string;
-  reciter: string;
-  /** api.quran.com translation id used for the on-screen text */
-  textId: number;
-  textBy: string;
-  /** true when the on-screen translator is the same person as the audio */
-  sameSource: boolean;
-}
-
-const LANGS: Lang[] = [
-  { id: 'en', name: 'English', native: 'English', dir: 'ltr', folder: 'English/Sahih_Intnl_Ibrahim_Walk_192kbps', reciter: 'Ibrahim Walk', textId: 20, textBy: 'Saheeh International', sameSource: true },
-  { id: 'ur', name: 'Urdu', native: 'اردو', dir: 'rtl', folder: 'translations/urdu_shamshad_ali_khan_46kbps', reciter: 'Shamshad Ali Khan', textId: 234, textBy: 'Fateh Muhammad Jalandhari', sameSource: false },
-  { id: 'fa', name: 'Persian', native: 'فارسی', dir: 'rtl', folder: 'translations/Makarem_Kabiri_16Kbps', reciter: 'Kabiri (Makarem)', textId: 29, textBy: 'Hussein Taji Kal Dari', sameSource: false },
-  { id: 'az', name: 'Azerbaijani', native: 'Azərbaycanca', dir: 'ltr', folder: 'translations/azerbaijani/balayev', reciter: 'Balayev', textId: 75, textBy: 'Alikhan Musayev', sameSource: false },
-  { id: 'bs', name: 'Bosnian', native: 'Bosanski', dir: 'ltr', folder: 'translations/besim_korkut_ajet_po_ajet', reciter: 'Besim Korkut', textId: 126, textBy: 'Besim Korkut', sameSource: true },
-];
 
 type Mode = 'translation' | 'both';
 const SPEEDS = [0.75, 1, 1.25, 1.5];
@@ -52,8 +28,6 @@ interface Ayah {
 
 const escapeGlyph = (v: string) => v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-const pad = (n: number, w = 3) => String(n).padStart(w, '0');
-const fileName = (s: number, a: number) => `${pad(s)}${pad(a)}.mp3`;
 const stripTags = (t: string) => t.replace(/<sup[\s\S]*?<\/sup>/gi, '').replace(/<[^>]+>/g, '').trim();
 
 async function loadAyahs(surah: number, textId: number): Promise<Ayah[]> {
@@ -124,7 +98,7 @@ export default function TranslationAudioClient() {
 
   /* ---- audio ---- */
   const srcFor = useCallback((s: number, a: number, ph: 'ar' | 'tr', l: Lang) =>
-    `${EVERYAYAH}/${ph === 'ar' ? ARABIC_FOLDER : l.folder}/${fileName(s, a)}`, []);
+    ayahClipUrl(ph === 'ar' ? ARABIC_FOLDER : l.folder, s, a), []);
 
   const playAt = useCallback((a: number, ph: 'ar' | 'tr') => {
     const { lang: l, surah: s, speed: sp } = live.current;

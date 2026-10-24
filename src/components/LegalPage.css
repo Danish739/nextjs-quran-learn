@@ -1,0 +1,39 @@
+/* Legal pages: one calm column, no decoration */
+.lg {
+  --lg-ink: var(--text-primary, #12261f);
+  --lg-text: var(--text-secondary, #3b4a45);
+  --lg-muted: var(--text-muted, #6b7a75);
+  --lg-line: var(--border-default, #e3ebe7);
+  --lg-accent: var(--brand-primary, #0f7a5c);
+  padding: 110px 20px 90px;
+  color: var(--lg-text);
+}
+.lg-wrap { max-width: 700px; margin: 0 auto; }
+
+.lg-head { padding-bottom: 28px; border-bottom: 1px solid var(--lg-line); }
+.lg-updated { margin: 0 0 10px; font-size: 0.8rem; letter-spacing: 0.04em; color: var(--lg-muted); }
+.lg-head h1 { margin: 0 0 14px; font-size: clamp(1.9rem, 4vw, 2.5rem); line-height: 1.15; font-weight: 800; color: var(--lg-ink); letter-spacing: -0.01em; }
+.lg-intro { margin: 0; font-size: 1.05rem; line-height: 1.7; }
+
+.lg-toc { display: flex; flex-wrap: wrap; gap: 6px 18px; padding: 18px 0 6px; font-size: 0.85rem; }
+.lg-toc a { color: var(--lg-muted); text-decoration: none; transition: color 0.15s ease; }
+.lg-toc a span { margin-right: 6px; font-variant-numeric: tabular-nums; opacity: 0.6; }
+.lg-toc a:hover { color: var(--lg-accent); }
+
+.lg-section { padding: 28px 0 4px; scroll-margin-top: 90px; }
+.lg-section h2 { display: flex; align-items: baseline; gap: 12px; margin: 0 0 12px; font-size: 1.15rem; font-weight: 700; color: var(--lg-ink); }
+.lg-section h2 span { font-size: 0.78rem; font-weight: 600; color: var(--lg-accent); font-variant-numeric: tabular-nums; }
+.lg-section p { margin: 0 0 12px; line-height: 1.75; }
+.lg-section ul { margin: 0 0 12px; padding-left: 1.2em; }
+.lg-section li { margin-bottom: 8px; line-height: 1.7; }
+.lg-section li::marker { color: var(--lg-accent); }
+.lg-section strong { color: var(--lg-ink); font-weight: 600; }
+.lg-section a, .lg-foot a { color: var(--lg-accent); text-underline-offset: 3px; }
+
+.lg-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 44px; padding-top: 22px; border-top: 1px solid var(--lg-line); font-size: 0.92rem; }
+.lg-foot p { margin: 0; }
+
+@media (max-width: 600px) {
+  .lg { padding-top: 92px; }
+  .lg-toc { display: none; }
+}
