@@ -31,6 +31,7 @@ const TILES: Tile[] = [
   { key: 'tafseer', label: 'Tafseer', sub: 'Ayah Explanations', ar: 'تفسير', icon: 'local_library', href: '/tafseer', from: '#a78bfa', to: '#5b21b6', anim: 'float' },
   { key: 'dua', label: 'Duas', sub: 'Daily Supplications', ar: 'دعاء', icon: 'volunteer_activism', href: '/dua', from: '#f472b6', to: '#be185d', anim: 'raise' },
   { key: 'tra', label: 'Translation Audio', sub: 'Hear the Quran ayah by ayah in your language', ar: 'ترجمة', icon: 'record_voice_over', href: '/translation-audio', from: '#2dd4bf', to: '#0f766e', anim: 'pulse', wide: true, chips: ['English', 'اردو', 'فارسی', 'Azərbaycanca', 'Bosanski'] },
+  { key: 'namaz', label: 'Namaz Tracker', sub: 'Log your five daily prayers and keep count of qaza', ar: 'صلاة', icon: 'event_available', href: '/namaz-tracker', from: '#34d399', to: '#047857', anim: 'pulse', wide: true, chips: ['Today', 'Month', 'Qaza'] },
 ];
 
 /** Tracks the cursor for the 3D tilt + spotlight, without re-rendering React */

@@ -16,6 +16,7 @@ const TILES = [
   { icon: 'volunteer_activism', label: 'Duas', href: '/dua', color: '#ec4899' },
   { icon: 'history_edu', label: 'Hadith', href: '/hadees', color: '#eab308' },
   { icon: 'radio', label: 'Radio', href: '/radio', color: '#ef4444' },
+  { icon: 'event_available', label: 'Namaz', href: '/namaz-tracker', color: '#10b981' },
   { icon: 'home', label: 'Home', href: '/', color: '#64748b' },
 ];
 
