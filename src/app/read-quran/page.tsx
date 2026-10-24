@@ -2,17 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { getChapters, Chapter } from './lib/api';
 import { getLastRead, getProgressPercentage, getProgress, LastReadPosition } from './lib/progress';
 import SurahExplorer, { SurahInfo } from '@/components/SurahExplorer';
+import PageExplorer from '@/components/PageExplorer';
 import './styles/library.css';
 
 const MODES = [
-  { icon: 'translate', title: 'Translation', text: 'Arabic with English meaning', href: '/read-quran/1' },
-  { icon: 'text_fields', title: 'Word by Word', text: 'Understand every word', href: '/read-quran/1?mode=word-by-word' },
-  { icon: 'auto_stories', title: 'Mushaf', text: 'Page by page, 604 pages', href: '/quran-pages' },
-  { icon: 'headphones', title: 'Listen', text: 'Recitation with audio', href: '/quran-player' },
+  { icon: 'translate', title: 'Translation', text: 'Arabic with English meaning', href: '/read-quran/1', anim: 'flip', from: '#34d399', to: '#059669' },
+  { icon: 'text_fields', title: 'Word by Word', text: 'Understand every word', href: '/read-quran/1?mode=word-by-word', anim: 'grow', from: '#22d3ee', to: '#0e7490' },
+  { icon: 'auto_stories', title: 'Mushaf', text: 'Page by page, 604 pages', href: '/quran-pages', anim: 'page', from: '#fbbf24', to: '#b45309' },
+  { icon: 'headphones', title: 'Listen', text: 'Recitation with audio', href: '/quran-player', anim: 'beat', from: '#a78bfa', to: '#6d28d9' },
 ];
 
 const RING_R = 30;
@@ -21,7 +21,6 @@ const RING_C = 2 * Math.PI * RING_R;
 type Tab = 'surah' | 'page';
 
 export default function ReadQuranPage() {
-  const router = useRouter();
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
@@ -29,7 +28,6 @@ export default function ReadQuranPage() {
   const [progress, setProgress] = useState(0);
   const [totalRead, setTotalRead] = useState(0);
   const [tab, setTab] = useState<Tab>('surah');
-  const [pageNo, setPageNo] = useState('');
 
   useEffect(() => {
     setLastRead(getLastRead());
@@ -54,7 +52,6 @@ export default function ReadQuranPage() {
   }));
 
   const lastChapter = lastRead ? chapters.find(c => c.id === lastRead.surahId) : undefined;
-  const pageValid = Number(pageNo) >= 1 && Number(pageNo) <= 604;
 
   return (
     <div className="lib">
@@ -114,8 +111,10 @@ export default function ReadQuranPage() {
       {/* ── Reading modes ── */}
       <nav className="lib-modes" aria-label="Reading modes">
         {MODES.map(m => (
-          <Link key={m.title} href={m.href} className="lib-mode">
-            <span className="lib-mode-icon material-symbols-outlined">{m.icon}</span>
+          <Link key={m.title} href={m.href} className="lib-mode" style={{ ['--from' as string]: m.from, ['--to' as string]: m.to }}>
+            <span className={`lib-mode-icon lib-mi-${m.anim}`} aria-hidden="true">
+              <span className="material-symbols-outlined">{m.icon}</span>
+            </span>
             <span>
               <b>{m.title}</b>
               <small>{m.text}</small>
@@ -153,46 +152,7 @@ export default function ReadQuranPage() {
         )
       )}
 
-      {tab === 'page' && (
-        <section className="lib-page" aria-label="Go to page">
-          <div className="lib-page-card">
-            <span className="lib-page-icon material-symbols-outlined">auto_stories</span>
-            <h2>Open the Mushaf at any page</h2>
-            <p>The Madani Mushaf has 604 pages. Enter a page number to jump straight there.</p>
-            <form
-              className="lib-page-form"
-              onSubmit={e => {
-                e.preventDefault();
-                if (pageValid) router.push(`/page/${Number(pageNo)}`);
-              }}
-            >
-              <input
-                type="number"
-                min={1}
-                max={604}
-                inputMode="numeric"
-                placeholder="1 – 604"
-                value={pageNo}
-                onChange={e => setPageNo(e.target.value)}
-                aria-label="Page number"
-              />
-              <button type="submit" disabled={!pageValid}>
-                Open page
-                <span className="material-symbols-outlined">arrow_forward</span>
-              </button>
-            </form>
-            <div className="lib-page-quick">
-              {[1, 2, 50, 106, 293, 582, 604].map(p => (
-                <Link key={p} href={`/page/${p}`}>p. {p}</Link>
-              ))}
-            </div>
-            <Link href="/quran-pages" className="lib-page-link">
-              Or browse the full Mushaf reader
-              <span className="material-symbols-outlined">arrow_forward</span>
-            </Link>
-          </div>
-        </section>
-      )}
+      {tab === 'page' && <PageExplorer chapters={chapters} loading={loading} />}
     </div>
   );
 }
