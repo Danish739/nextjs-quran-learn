@@ -80,7 +80,8 @@ function wrapEven(ctx: Ctx, text: string): string[] {
 
 /** Biggest size whose wrapped text fits; very long narrations are cut to an excerpt at the minimum size */
 function fitQuote(ctx: Ctx, text: string) {
-  const quoted = `“${smartQuotes(text.trim())}”`;
+  // the whole narration sits in “…”, so quotes inside it step down to ‘…’
+  const quoted = `“${smartQuotes(text.trim().replace(/"/g, "'"))}”`;
   for (let size = MAX_SIZE; size >= MIN_SIZE; size -= 2) {
     const { lh } = setType(ctx, size);
     const lines = wrapEven(ctx, quoted);

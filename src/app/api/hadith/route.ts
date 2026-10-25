@@ -12,6 +12,21 @@ const VALID_COLLECTIONS = new Set<string>([...BOOKS, 'all']);
 const normAr = (t: string) => t.replace(/[ؐ-ًؚ-ٰٟۖ-ۭـ]/g, '').replace(/[أإآٱ]/g, 'ا');
 const HAS_ARABIC = /[؀-ۿ]/;
 
+/**
+ * The source edition drops each narration's final punctuation, so most end mid-quote:
+ * `…a sign of hypocrisy` instead of `…a sign of hypocrisy."`. Restore the full stop and
+ * close a double quote left open. Single quotes are left alone: the translation also uses
+ * ' for the letter ʿayn in names ('Umar, 'Aisha), so they can't be counted reliably.
+ */
+function tidyEnglish(raw: string) {
+  const t = raw.replace(/\s+/g, ' ').trim();
+  if (!t) return t;
+  // already finished (possibly followed by closing quotes/brackets): don't add another stop
+  let end = /[.!?…]['"’”)\]]*$/.test(t) ? '' : '.';
+  if ((t.match(/"/g) ?? []).length % 2 === 1) end += '"';
+  return t + end;
+}
+
 const cache = new Map<string, { 
   metadata: any;
   hadiths: { number: number; english: string; arabic: string; chapter: string; sectionId: string }[] 
@@ -43,7 +58,7 @@ async function loadBook(book: string) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const merged = (engData.hadiths as any[]).map((h: any) => ({
     number:  Number(h.hadithnumber),
-    english: String(h.text ?? '').trim(),
+    english: tidyEnglish(String(h.text ?? '')),
     arabic:  araMap.get(Number(h.hadithnumber)) ?? '',
     chapter: String(h.reference?.book ?? '').trim(),
     sectionId: String(h.reference?.book ?? '0'),

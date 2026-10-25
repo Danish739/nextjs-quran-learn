@@ -93,8 +93,8 @@ function HadithCard({
   // English only by default; the Arabic appears when asked for
   const [showArabic, setShowArabic] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  // English is always shown in full; only a long Arabic text (once shown) is folded
   const longAr = !!h.arabic && h.arabic.length > 320;
-  const longEn = h.english.length > 700;
 
   return (
     <article className="hd-card" style={{ ['--hue' as string]: col.hue, animationDelay: `${Math.min(index, 10) * 35}ms` }}>
@@ -113,7 +113,7 @@ function HadithCard({
         </div>
       )}
 
-      <p className={`hd-en${longEn && !expanded ? ' clamp' : ''}`}>{highlight(h.english, query)}</p>
+      <p className="hd-en">{highlight(h.english, query)}</p>
 
       <footer className="hd-card-foot">
         <span className="hd-ref">
@@ -121,7 +121,7 @@ function HadithCard({
           {col.name} {h.number}
         </span>
         <div className="hd-actions">
-          {(longAr || longEn) && (
+          {showArabic && longAr && (
             <button className="hd-act" onClick={() => setExpanded(e => !e)}>
               <span className="material-symbols-outlined">{expanded ? 'unfold_less' : 'unfold_more'}</span>
               {expanded ? 'Less' : 'Read all'}
