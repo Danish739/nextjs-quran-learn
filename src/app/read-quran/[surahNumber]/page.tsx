@@ -667,6 +667,7 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
     }, [surahNumber]);
 
     const playVerse = useCallback((verseNumber: number, forcePlay = false) => {
+        if (!readAlongRef.current) return; // 'Read with audio' is off: nothing plays
         if (!audioEnabled && !forcePlay) return;
         const myPlaybackId = ++playbackIdRef.current;
         if (!isMountedRef.current) return;
@@ -678,7 +679,7 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
 
         // ── Word-timed path: one surah-long file, seek to the ayah, follow every word ──
         const vt = timings?.verses.get(verseNumber);
-        if (readAlongRef.current && timings && vt) {
+        if (timings && vt) {
             let audio = audioRef.current;
             if (!audio || audio.src !== timings.audioUrl) {
                 audio?.pause();
@@ -841,10 +842,13 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
         readAlongRef.current = on;
         setReadAlong(on);
         try { localStorage.setItem('reader-read-along', on ? '1' : '0'); } catch { /* ignore */ }
-        if (!on) setCurrentWord(null);
-        // switching on starts the recitation; either way a playing ayah restarts in the new mode
-        if (on && !isPlaying) startListening();
-        else if (isPlaying && currentVerse) playVerse(currentVerse, true);
+        if (on) {
+            startListening();
+        } else {
+            // off: stop the recitation and close the player
+            stopAudio();
+            setAudioEnabled(false);
+        }
     };
 
     const hero = (
@@ -876,10 +880,12 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
             </div>
             <div className="rr-hero-right">
                 <span className="rr-hero-ar font-arabic" lang="ar">{chapter.name_arabic}</span>
-                <button className="rr-hero-play" onClick={startListening}>
-                    <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
-                    Listen
-                </button>
+                {readAlong && (
+                    <button className="rr-hero-play" onClick={startListening}>
+                        <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
+                        Listen
+                    </button>
+                )}
             </div>
         </section>
     );
@@ -943,14 +949,16 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
                     </div>
 
                     <div className="rr-bar-right">
-                        <button
-                            className={`rr-icon-btn${isPlaying ? ' on' : ''}`}
-                            onClick={() => (isPlaying ? stopAudio() : startListening())}
-                            title={isPlaying ? 'Stop recitation' : 'Listen with word highlighting'}
-                        >
-                            <span className="material-symbols-outlined">{isPlaying ? 'stop_circle' : 'headphones'}</span>
-                            <span className="rr-btn-label">{isPlaying ? 'Stop' : 'Listen'}</span>
-                        </button>
+                        {readAlong && (
+                            <button
+                                className={`rr-icon-btn${isPlaying ? ' on' : ''}`}
+                                onClick={() => (isPlaying ? stopAudio() : startListening())}
+                                title={isPlaying ? 'Stop recitation' : 'Listen'}
+                            >
+                                <span className="material-symbols-outlined">{isPlaying ? 'stop_circle' : 'headphones'}</span>
+                                <span className="rr-btn-label">{isPlaying ? 'Stop' : 'Listen'}</span>
+                            </button>
+                        )}
                         {readingMode !== 'reading' && (
                             <button
                                 className={`rr-icon-btn${showVersePicker ? ' on' : ''}`}
@@ -977,19 +985,18 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
                     <div className="rr-sync-text">
                         <b>Read with audio</b>
                         <small>
-                            {!hasWordTimings(selectedReciter)
-                                ? `Word highlighting isn't available for ${reciterName}`
-                                : readAlong ? 'The word being recited is highlighted' : 'Turn on to highlight each word as it is recited'}
+                            {!readAlong
+                                ? 'Turn on to listen and follow each word'
+                                : hasWordTimings(selectedReciter) ? 'Each word is highlighted as it is recited' : `Ayah highlight only for ${reciterName}`}
                         </small>
                     </div>
                     <button
                         type="button"
                         role="switch"
                         aria-checked={readAlong}
-                        aria-label="Read with audio: word-by-word highlighting"
+                        aria-label="Read with audio"
                         className={`rr-sync-switch${readAlong ? ' on' : ''}`}
                         onClick={toggleReadAlong}
-                        disabled={!hasWordTimings(selectedReciter)}
                     >
                         <span />
                     </button>
@@ -998,7 +1005,7 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
                 {/* ── Reading area ── */}
                 <div
                     ref={scrollRef}
-                    className="rr-scroll"
+                    className={`rr-scroll${audioEnabled && readAlong ? ' has-player' : ''}`}
                     onScroll={e => {
                         const el = e.currentTarget;
                         const max = el.scrollHeight - el.clientHeight;
@@ -1014,7 +1021,7 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
                                 pages={chapter.pages}
                                 reciting={isPlaying && currentVerse ? { verse: currentVerse, word: currentWord } : null}
                                 followPage={isPlaying && autoScroll && currentVerse ? verses.find(v => v.verse_number === currentVerse)?.page_number : undefined}
-                                onPlayVerse={n => { setAudioEnabled(true); playVerse(n, true); }}
+                                onPlayVerse={readAlong ? (n => { setAudioEnabled(true); playVerse(n, true); }) : undefined}
                             />
                         </div>
                     ) : readingMode === 'word-by-word' ? (
@@ -1027,10 +1034,12 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
                                     <div className="rr-verse-top">
                                         <span className="rr-vnum">{verse.verse_number}</span>
                                         <div className="rr-actions">
-                                            <button className="rr-act rr-act-play" onClick={() => { setAudioEnabled(true); playVerse(verse.verse_number, true); }} title="Play ayah">
-                                                <span className="material-symbols-outlined">play_arrow</span>
-                                                <span className="rr-act-label">Play</span>
-                                            </button>
+                                            {readAlong && (
+                                                <button className="rr-act rr-act-play" onClick={() => { setAudioEnabled(true); playVerse(verse.verse_number, true); }} title="Play ayah">
+                                                    <span className="material-symbols-outlined">play_arrow</span>
+                                                    <span className="rr-act-label">Play</span>
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="rr-wbw-words">
@@ -1094,17 +1103,19 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
                                                 <button className="rr-act" onClick={() => shareVerse(verse)} title="Share">
                                                     <span className="material-symbols-outlined">ios_share</span>
                                                 </button>
-                                                <button
-                                                    className="rr-act rr-act-play"
-                                                    onClick={() => { if (playing && isPlaying) stopAudio(); else { setAudioEnabled(true); playVerse(verse.verse_number, true); } }}
-                                                    title={playing && isPlaying ? 'Stop' : 'Play ayah'}
-                                                >
-                                                    <span className="material-symbols-outlined">{playing && isPlaying ? 'stop' : 'play_arrow'}</span>
-                                                    <span className="rr-act-label">{playing && isPlaying ? 'Stop' : 'Play'}</span>
-                                                </button>
+                                                {readAlong && (
+                                                    <button
+                                                        className="rr-act rr-act-play"
+                                                        onClick={() => { if (playing && isPlaying) stopAudio(); else { setAudioEnabled(true); playVerse(verse.verse_number, true); } }}
+                                                        title={playing && isPlaying ? 'Stop' : 'Play ayah'}
+                                                    >
+                                                        <span className="material-symbols-outlined">{playing && isPlaying ? 'stop' : 'play_arrow'}</span>
+                                                        <span className="rr-act-label">{playing && isPlaying ? 'Stop' : 'Play'}</span>
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
-                                        <p className={`rr-arabic${glyphWords.length ? ' is-qcf' : ' font-arabic'}`} lang="ar" style={{ ['--ar' as string]: `${fontSize}px` }} onClick={() => { setAudioEnabled(true); playVerse(verse.verse_number, true); }}>
+                                        <p className={`rr-arabic${glyphWords.length ? ' is-qcf' : ' font-arabic'}`} lang="ar" style={{ ['--ar' as string]: `${fontSize}px` }} onClick={readAlong ? () => { setAudioEnabled(true); playVerse(verse.verse_number, true); } : undefined}>
                                             {glyphWords.length ? (
                                                 <QcfAyah words={glyphWords} active={playing ? currentWord : null} />
                                             ) : (
@@ -1126,12 +1137,12 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
                 </div>
 
                 {/* ── Floating player ── */}
-                {audioEnabled && (
+                {audioEnabled && readAlong && (
                     <div className="rr-player" role="region" aria-label="Audio player">
                         <span className="rr-player-art" aria-hidden="true">{chapter.name_arabic}</span>
                         <div className="rr-player-info">
                             <b>{chapter.name_simple}{currentVerse ? ` · Ayah ${currentVerse}` : ''}</b>
-                            <small>{reciterName}{readAlong && hasWordTimings(selectedReciter) ? '' : ' · ayah highlight only'}</small>
+                            <small>{reciterName}{hasWordTimings(selectedReciter) ? '' : ' · ayah highlight only'}</small>
                             <div className="rr-player-bar">
                                 <span>{audioCurrentTimeLabel}</span>
                                 <div className="rr-player-track"><span style={{ width: `${audioProgress}%` }} /></div>

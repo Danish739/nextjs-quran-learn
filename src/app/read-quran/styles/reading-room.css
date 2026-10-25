@@ -1958,3 +1958,55 @@ html.rr-dark .uth-qcf .uth-ar-footer {
     padding: 6px 14px;
   }
 }
+
+/* ── Player on phones: title + controls on top, full-width progress bar below ── */
+/* room at the end of the page so the last ayah is not hidden behind the player */
+.rr-scroll.has-player {
+  padding-bottom: 110px;
+}
+
+@media (max-width: 720px) {
+  .rr-player {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "title ctrls"
+      "sub ctrls"
+      "bar bar";
+    column-gap: 8px;
+    row-gap: 0;
+    padding: 10px 10px 12px 16px;
+    bottom: max(8px, env(safe-area-inset-bottom));
+  }
+  .rr-player-info {
+    display: contents;
+  }
+  .rr-player-info b {
+    grid-area: title;
+    align-self: end;
+    font-size: 14px;
+  }
+  .rr-player-info small {
+    grid-area: sub;
+    align-self: start;
+  }
+  .rr-player-bar {
+    grid-area: bar;
+    margin-top: 8px;
+    font-size: 11px;
+  }
+  .rr-player-track {
+    height: 5px;
+  }
+  .rr-player-ctrls {
+    grid-area: ctrls;
+    gap: 2px;
+  }
+  .rr-pbtn {
+    width: 40px;
+    height: 40px;
+  }
+  .rr-pbtn.main {
+    width: 48px;
+    height: 48px;
+  }
+}
