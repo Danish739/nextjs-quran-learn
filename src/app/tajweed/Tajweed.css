@@ -440,36 +440,53 @@
 /* Try any ayah */
 .tj-try-sec { background: linear-gradient(180deg, #fff, #f1f6f4); }
 .tj-try { max-width: 820px; margin: 0 auto; }
-.tj-try-form {
+/* surah / ayah picker */
+.tj-pick {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
   justify-content: center;
+  gap: 12px;
 }
-.tj-try-form label { font-weight: 600; color: var(--tj-ink); }
-.tj-try-form input {
-  width: 140px;
-  padding: 12px 16px;
+.tj-pick-field { display: flex; flex-direction: column; gap: 4px; }
+.tj-pick-field > span { font-size: 0.78rem; font-weight: 700; color: var(--tj-muted, #5a6760); padding-inline: 4px; }
+.tj-pick-surah { flex: 1 1 280px; max-width: 420px; min-width: 0; }
+.tj-pick-ayah { flex: 0 0 110px; }
+@media (max-width: 600px) {
+  /* surah and ayah side by side on phones */
+  .tj-pick { flex-wrap: nowrap; }
+  .tj-pick-surah { flex: 1 1 0; max-width: none; }
+  .tj-pick-ayah { flex: 0 0 92px; }
+  .tj-pick select { padding-inline: 10px; text-overflow: ellipsis; }
+}
+.tj-pick select {
+  width: 100%;
+  padding: 12px 14px;
   border-radius: 12px;
   border: 1.5px solid var(--tj-line);
   background: #fff;
   font: inherit;
-  text-align: center;
   color: var(--tj-ink);
-}
-.tj-try-form input:focus { outline: none; border-color: var(--tj-green); box-shadow: 0 0 0 4px rgba(13, 92, 75, 0.12); }
-.tj-try-form input[aria-invalid="true"] { border-color: #d6453d; }
-.tj-try-form button {
-  padding: 12px 22px;
-  border-radius: 12px;
-  border: 0;
-  background: var(--tj-green);
-  color: #fff;
-  font-weight: 600;
   cursor: pointer;
 }
-.tj-try-err { text-align: center; color: #c0392b; font-size: 0.9rem; margin: 10px 0 0; }
+.tj-pick select:focus { outline: none; border-color: var(--tj-green); box-shadow: 0 0 0 4px rgba(13, 92, 75, 0.12); }
+.tj-ayah-nav { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.tj-ayah-nav > span { font-weight: 700; color: var(--tj-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tj-ayah-nav small { font-weight: 500; color: #6b7a76; }
+.tj-ayah-nav button {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1.5px solid var(--tj-line);
+  background: #fff;
+  color: var(--tj-ink);
+  cursor: pointer;
+}
+.tj-ayah-nav button:hover:not(:disabled) { border-color: var(--tj-green); color: var(--tj-green); }
+.tj-ayah-nav button:disabled { opacity: 0.35; cursor: default; }
 .tj-try-out {
   margin-top: 24px;
   padding: 22px 26px;

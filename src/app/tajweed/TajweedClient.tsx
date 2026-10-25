@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { surahList } from '@/app/audio-quran/surahList';
 
 const QURAN_API = 'https://api.quran.com/api/v4';
 const AUDIO_BASE = 'https://verses.quran.com/Alafasy/mp3';
@@ -207,9 +208,14 @@ const LEVELS = [
   { n: 4, title: 'Mastery', text: 'Refine and recite beautifully.', items: ['Advanced madd', 'Letter-specific rules', 'Melody & qiraat intro'] },
 ];
 
-/** Quran.com returns only <tajweed> and <span class=end>; drop anything else before rendering. */
+/**
+ * Quran.com returns only <tajweed> and <span class=end>; drop anything else before rendering.
+ * It also spells the small alif of words like السماوات with U+0672 (alef with wavy hamza), which the
+ * Uthmani Hafs font draws as a dotted circle with a dot. Read Quran uses the standard dagger alif
+ * U+0670 for the same sound, so use that here too.
+ */
 function sanitize(html: string): string {
-  return html.replace(/<(?!\/?(tajweed|span)\b)[^>]*>/gi, '');
+  return html.replace(/<(?!\/?(tajweed|span)\b)[^>]*>/gi, '').replace(/ٲ/g, 'ٰ');
 }
 
 const cache = new Map<string, string>();
@@ -272,7 +278,12 @@ function useAudio() {
     a.play().then(() => setPlaying(key)).catch(() => setPlaying(null));
   }, [playing]);
 
-  return { playing, toggle };
+  const stop = useCallback(() => {
+    ref.current?.pause();
+    setPlaying(null);
+  }, []);
+
+  return { playing, toggle, stop };
 }
 
 function Verse({ html, error, retry, focus }: { html: string | null; error: boolean; retry: () => void; focus?: string }) {
@@ -397,34 +408,68 @@ function RuleExplorer() {
 }
 
 function TryAnyAyah() {
-  const [input, setInput] = useState('2:255');
-  const [key, setKey] = useState('2:255');
-  const [invalid, setInvalid] = useState(false);
+  // opens on Ayat al-Kursi
+  const [surah, setSurah] = useState(2);
+  const [ayah, setAyah] = useState(255);
   const audio = useAudio();
+  const key = `${surah}:${ayah}`;
   const { html, error, retry } = useVerse(key);
+  const meta = surahList[surah - 1];
+  const count = meta.ayahs ?? 1;
 
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const m = input.trim().match(/^(\d{1,3})\s*[:.\-/ ]\s*(\d{1,3})$/);
-    if (!m || +m[1] < 1 || +m[1] > 114 || +m[2] < 1) {
-      setInvalid(true);
-      return;
+  // moving to another ayah stops the recitation of the previous one
+  const stopAudio = audio.stop;
+  useEffect(() => stopAudio(), [key, stopAudio]);
+
+  const pickSurah = (n: number) => {
+    setSurah(n);
+    setAyah(1);
+  };
+
+  /** step through the Quran ayah by ayah, rolling over into the neighbouring surah */
+  const step = (d: 1 | -1) => {
+    if (d === 1) {
+      if (ayah < count) setAyah(ayah + 1);
+      else if (surah < 114) pickSurah(surah + 1);
+    } else if (ayah > 1) {
+      setAyah(ayah - 1);
+    } else if (surah > 1) {
+      setSurah(surah - 1);
+      setAyah(surahList[surah - 2].ayahs ?? 1);
     }
-    setInvalid(false);
-    setKey(`${+m[1]}:${+m[2]}`);
   };
 
   return (
     <div className="tj-try">
-      <form onSubmit={submit} className="tj-try-form">
-        <label htmlFor="tj-ayah">Surah : Ayah</label>
-        <input id="tj-ayah" value={input} onChange={(e) => setInput(e.target.value)} placeholder="e.g. 2:255" inputMode="text" aria-invalid={invalid} />
-        <button type="submit">Show tajweed</button>
-      </form>
-      {invalid && <p className="tj-try-err">Enter a surah (1–114) and ayah like 36:1.</p>}
+      <div className="tj-pick">
+        <label className="tj-pick-field tj-pick-surah">
+          <span>Surah</span>
+          <select value={surah} onChange={(e) => pickSurah(+e.target.value)}>
+            {surahList.map((s) => (
+              <option key={s.number} value={s.number}>{s.number}. {s.name} · {s.englishNameTranslation}</option>
+            ))}
+          </select>
+        </label>
+        <label className="tj-pick-field tj-pick-ayah">
+          <span>Ayah</span>
+          <select value={ayah} onChange={(e) => setAyah(+e.target.value)}>
+            {Array.from({ length: count }, (_, i) => (
+              <option key={i + 1} value={i + 1}>{i + 1}</option>
+            ))}
+          </select>
+        </label>
+      </div>
       <div className="tj-try-out">
         <div className="tj-example-top">
-          <span>Ayah {key}</span>
+          <div className="tj-ayah-nav">
+            <button type="button" onClick={() => step(-1)} disabled={surah === 1 && ayah === 1} aria-label="Previous ayah">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+            </button>
+            <span>Ayah {ayah} <small>of {count}</small></span>
+            <button type="button" onClick={() => step(1)} disabled={surah === 114 && ayah === count} aria-label="Next ayah">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+            </button>
+          </div>
           <PlayButton verseKey={key} audio={audio} />
         </div>
         <Verse html={html} error={error} retry={retry} />
@@ -498,7 +543,7 @@ export default function TajweedClient() {
           <div className="tj-head">
             <span className="tj-kicker">Try it</span>
             <h2>Any ayah, in tajweed colors</h2>
-            <p>Type a surah and ayah number to see its rules colored and hear Mishary Alafasy recite it.</p>
+            <p>Choose a surah and ayah to see its rules colored and hear Mishary Alafasy recite it.</p>
           </div>
           <TryAnyAyah />
         </div>
