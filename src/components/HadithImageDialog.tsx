@@ -85,14 +85,38 @@ function fitQuote(ctx: Ctx, text: string) {
   for (let size = MAX_SIZE; size >= MIN_SIZE; size -= 2) {
     const { lh } = setType(ctx, size);
     const lines = wrapEven(ctx, quoted);
-    if ((lines.length - 1) * lh + size <= QUOTE_ROOM) return { size, lh, lines, excerpt: false };
+    if ((lines.length - 1) * lh + size > QUOTE_ROOM) continue;
+    // long (small) text reads better justified on the full measure; big type justified opens
+    // wide gaps, so larger quotes stay ragged-left with an even rag
+    const justify = size <= 32;
+    return { size, lh, lines: justify ? wrap(ctx, quoted, TEXT_W) : lines, excerpt: false, justify };
   }
   const size = MIN_SIZE;
   const { lh } = setType(ctx, size);
   const max = Math.floor((QUOTE_ROOM - size) / lh) + 1;
   const lines = wrap(ctx, quoted, TEXT_W).slice(0, max);
   lines[max - 1] = `${lines[max - 1].replace(/[\s,.;:”’]+$/, '')}…”`;
-  return { size, lh, lines, excerpt: true };
+  return { size, lh, lines, excerpt: true, justify: true };
+}
+
+/**
+ * Draws one line stretched to `width` by widening the word gaps. Only a degenerate line
+ * (one or two words, or gaps over 4× a space) is left ragged, so a block never breaks mid-way.
+ */
+function fillJustified(ctx: Ctx, line: string, x: number, y: number, width: number) {
+  const words = line.split(' ');
+  const space = ctx.measureText(' ').width;
+  const wordsW = words.reduce((a, w) => a + ctx.measureText(w).width, 0);
+  const gap = words.length > 1 ? (width - wordsW) / (words.length - 1) : 0;
+  if (words.length < 3 || gap > space * 4 || gap < 0) {
+    ctx.fillText(line, x, y);
+    return;
+  }
+  let cx = x;
+  for (const w of words) {
+    ctx.fillText(w, cx, y);
+    cx += ctx.measureText(w).width + gap;
+  }
 }
 
 function drawGraphic(canvas: HTMLCanvasElement, h: HadithImage, themeKey: ThemeKey) {
@@ -118,7 +142,7 @@ function drawGraphic(canvas: HTMLCanvasElement, h: HadithImage, themeKey: ThemeK
   if ('letterSpacing' in ctx) ctx.letterSpacing = '3px';
   ctx.fillText('HADITH', x, PAD + 40);
 
-  const { size, lh, lines, excerpt } = fitQuote(ctx, h.text);
+  const { size, lh, lines, excerpt, justify } = fitQuote(ctx, h.text);
   const reference = excerpt ? `${h.reference} (excerpt)` : h.reference;
   const ascent = ctx.measureText('Hd').actualBoundingBoxAscent || size * 0.72;
 
@@ -133,7 +157,12 @@ function drawGraphic(canvas: HTMLCanvasElement, h: HadithImage, themeKey: ThemeK
   // hang the opening quote in the margin so every line starts on the same edge
   const hang = ctx.measureText('“').width;
   ctx.fillStyle = t.text;
-  lines.forEach((l, i) => ctx.fillText(l, i === 0 && l.startsWith('“') ? x - hang : x, y + i * lh));
+  lines.forEach((l, i) => {
+    const left = i === 0 && l.startsWith('“') ? x - hang : x;
+    // justified lines run to the right margin; the last line stays ragged, as in print
+    if (justify && i < lines.length - 1) fillJustified(ctx, l, left, y + i * lh, x + TEXT_W - left);
+    else ctx.fillText(l, left, y + i * lh);
+  });
   y += (lines.length - 1) * lh + 56;
 
   ctx.fillStyle = t.accent;

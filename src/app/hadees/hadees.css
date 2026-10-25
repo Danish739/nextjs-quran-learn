@@ -657,11 +657,11 @@
   white-space: pre-line;
 }
 
-.hd-en.clamp {
-  display: -webkit-box;
-  -webkit-line-clamp: 8;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+/* long narrations read as a justified block; hyphenation keeps word gaps even on narrow screens */
+.hd-en.is-long {
+  text-align: justify;
+  hyphens: auto;
+  -webkit-hyphens: auto;
 }
 
 .hd-en mark {

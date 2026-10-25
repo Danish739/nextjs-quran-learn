@@ -113,7 +113,7 @@ function HadithCard({
         </div>
       )}
 
-      <p className="hd-en">{highlight(h.english, query)}</p>
+      <p className={`hd-en${h.english.length > 300 ? ' is-long' : ''}`} lang="en">{highlight(h.english, query)}</p>
 
       <footer className="hd-card-foot">
         <span className="hd-ref">
