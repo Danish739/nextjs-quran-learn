@@ -20,6 +20,7 @@ import TafseerModal from '../components/TafseerModal';
 import MushafPager, { MushafLoader } from '../components/MushafPager';
 import { PageBar, PageNav, readPageParam, writePageParam } from '../components/PageControls';
 import { usePageVerses } from '../lib/usePageVerses';
+import { loadChapterTimings, locate, hasWordTimings, type ChapterTimings } from '../lib/wordTimings';
 import '../styles/reader.css';
 import '../styles/tafseer-modal.css';
 import '../styles/reading-room.css';
@@ -108,13 +109,16 @@ AyahEnding.displayName = 'AyahEnding';
 
 const escapeGlyph = (v: string) => v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-/** Renders an ayah with the QCF v2 page fonts, including the Mushaf's own ayah-number glyph. */
-const QcfAyah = memo(({ words }: { words: any[] }) => (
+/**
+ * Renders an ayah with the QCF v2 page fonts, including the Mushaf's own ayah-number glyph.
+ * `active` is the position of the word being recited (lit while the ayah plays).
+ */
+const QcfAyah = memo(({ words, active = null }: { words: any[]; active?: number | null }) => (
     <>
         {words.map((w, i) => (
             <span key={w.id ?? i}>
                 <span
-                    className={`rr-qcf-word${w.char_type_name === 'end' ? ' is-end' : ''}`}
+                    className={`rr-qcf-word${w.char_type_name === 'end' ? ' is-end' : ''}${active !== null && w.position === active && w.char_type_name !== 'end' ? ' is-reciting' : ''}`}
                     style={{ fontFamily: `${qcfFontFamily(w.page_number)}, UthmanicHafs, serif` }}
                     dangerouslySetInnerHTML={{ __html: escapeGlyph(w.code_v2) }}
                 />
@@ -284,6 +288,10 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const playbackIdRef = useRef(0);
     const isMountedRef = useRef(true);
+    // word-by-word highlighting: per-word timings for this surah + reciter (null if the reciter has none)
+    const [timings, setTimings] = useState<ChapterTimings | null>(null);
+    const [currentWord, setCurrentWord] = useState<number | null>(null);
+    const rafRef = useRef(0);
 
     const [, setShowVerseNav] = useState(false);
     const [showSurahPicker, setShowSurahPicker] = useState(false);
@@ -557,9 +565,18 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
         isMountedRef.current = true;
         return () => {
             isMountedRef.current = false;
+            cancelAnimationFrame(rafRef.current);
             if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
         };
     }, []);
+
+    // Word timings for the selected reciter (reciters without them fall back to per-ayah audio)
+    useEffect(() => {
+        let cancelled = false;
+        setTimings(null);
+        loadChapterTimings(selectedReciter, surahNumber).then(t => { if (!cancelled) setTimings(t); });
+        return () => { cancelled = true; };
+    }, [selectedReciter, surahNumber]);
 
     // Auto-scroll
     useEffect(() => {
@@ -645,6 +662,59 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
         if (!isMountedRef.current) return;
         const verse = verses.find(v => v.verse_number === verseNumber);
         if (!verse) return;
+        cancelAnimationFrame(rafRef.current);
+        setCurrentWord(null);
+        const alive = () => isMountedRef.current && myPlaybackId === playbackIdRef.current;
+
+        // ── Word-timed path: one surah-long file, seek to the ayah, follow every word ──
+        const vt = timings?.verses.get(verseNumber);
+        if (timings && vt) {
+            let audio = audioRef.current;
+            if (!audio || audio.src !== timings.audioUrl) {
+                audio?.pause();
+                audio = new Audio(timings.audioUrl);
+                audio.preload = 'auto';
+                audioRef.current = audio;
+            }
+            const el = audio;
+            setCurrentVerse(verseNumber);
+            setAudioProgress(0);
+            setAudioCurrentTime(0);
+            setAudioDuration((vt.to - vt.from) / 1000);
+            // the page re-renders only when the word, ayah, whole second or whole percent changes
+            let lastSec = -1, lastPct = -1;
+            const tick = () => {
+                if (!alive()) return;
+                const ms = el.currentTime * 1000;
+                const loc = locate(timings, ms);
+                if (loc) {
+                    setCurrentVerse(v => (v === loc.verse ? v : loc.verse));
+                    setCurrentWord(w => (w === loc.word ? w : loc.word));
+                    const cur = timings.verses.get(loc.verse)!;
+                    const sec = Math.floor((ms - cur.from) / 1000);
+                    const pct = Math.round(((ms - cur.from) / (cur.to - cur.from)) * 100);
+                    if (sec !== lastSec) { lastSec = sec; setAudioCurrentTime(Math.max(sec, 0)); setAudioDuration((cur.to - cur.from) / 1000); }
+                    if (pct !== lastPct) { lastPct = pct; setAudioProgress(Math.min(Math.max(pct, 0), 100)); }
+                }
+                if (!el.paused && !el.ended) rafRef.current = requestAnimationFrame(tick);
+            };
+            el.onplay = () => { if (alive()) setIsPlaying(true); };
+            el.onplaying = () => { if (alive()) { cancelAnimationFrame(rafRef.current); rafRef.current = requestAnimationFrame(tick); } };
+            el.onloadedmetadata = null;
+            el.ontimeupdate = null;
+            el.onended = () => { if (alive()) { setIsPlaying(false); setCurrentVerse(null); setCurrentWord(null); } };
+            el.onerror = () => { if (alive()) { setIsPlaying(false); showToast('Audio failed to load', 'warning'); } };
+            const start = () => {
+                if (!alive()) return;
+                el.currentTime = vt.from / 1000;
+                el.play().catch(() => showToast('Could not play audio', 'warning'));
+            };
+            if (el.readyState >= 1) start();
+            else el.addEventListener('loadedmetadata', start, { once: true });
+            return;
+        }
+
+        // ── Per-ayah path (reciters without word timings) ──
         const reciter = POPULAR_RECITERS.find(r => r.id === selectedReciter);
         const folder = reciter?.folder || 'Alafasy_128kbps';
         const surahPadded = surahNumber.toString().padStart(3, '0');
@@ -672,13 +742,15 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
         };
         audio.onerror = () => { if (isMountedRef.current && myPlaybackId === playbackIdRef.current) { setIsPlaying(false); showToast('Audio failed to load', 'warning'); } };
         audio.play().catch(() => showToast('Could not play audio', 'warning'));
-    }, [surahNumber, verses, selectedReciter, audioEnabled]);
+    }, [surahNumber, verses, selectedReciter, audioEnabled, timings]);
 
     const stopAudio = useCallback(() => {
         playbackIdRef.current++;
+        cancelAnimationFrame(rafRef.current);
         if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
         setIsPlaying(false);
         setCurrentVerse(null);
+        setCurrentWord(null);
     }, []);
 
 
@@ -851,6 +923,14 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
                     </div>
 
                     <div className="rr-bar-right">
+                        <button
+                            className={`rr-icon-btn${isPlaying ? ' on' : ''}`}
+                            onClick={() => (isPlaying ? stopAudio() : startListening())}
+                            title={isPlaying ? 'Stop recitation' : 'Listen with word highlighting'}
+                        >
+                            <span className="material-symbols-outlined">{isPlaying ? 'stop_circle' : 'headphones'}</span>
+                            <span className="rr-btn-label">{isPlaying ? 'Stop' : 'Listen'}</span>
+                        </button>
                         {readingMode !== 'reading' && (
                             <button
                                 className={`rr-icon-btn${showVersePicker ? ' on' : ''}`}
@@ -889,6 +969,9 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
                                 surahName={chapter.name_simple}
                                 surahArabic={chapter.name_arabic}
                                 pages={chapter.pages}
+                                reciting={isPlaying && currentVerse ? { verse: currentVerse, word: currentWord } : null}
+                                followPage={isPlaying && autoScroll && currentVerse ? verses.find(v => v.verse_number === currentVerse)?.page_number : undefined}
+                                onPlayVerse={n => { setAudioEnabled(true); playVerse(n, true); }}
                             />
                         </div>
                     ) : readingMode === 'word-by-word' ? (
@@ -914,7 +997,7 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
                                                 return (
                                                     <button
                                                         key={word.id || idx}
-                                                        className={`rr-word${selectedWord?.location === location ? ' on' : ''}`}
+                                                        className={`rr-word${selectedWord?.location === location ? ' on' : ''}${currentVerse === verse.verse_number && currentWord === word.position ? ' is-reciting' : ''}`}
                                                         onClick={() => openWordDetail(word, verse.verse_key, verse.words || [])}
                                                     >
                                                         {word.code_v2 ? (
@@ -980,7 +1063,7 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
                                         </div>
                                         <p className={`rr-arabic${glyphWords.length ? ' is-qcf' : ' font-arabic'}`} lang="ar" style={{ ['--ar' as string]: `${fontSize}px` }} onClick={() => { setAudioEnabled(true); playVerse(verse.verse_number, true); }}>
                                             {glyphWords.length ? (
-                                                <QcfAyah words={glyphWords} />
+                                                <QcfAyah words={glyphWords} active={playing ? currentWord : null} />
                                             ) : (
                                                 <>
                                                     {verseArabic(verse)}{' '}
@@ -1005,7 +1088,7 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
                         <span className="rr-player-art" aria-hidden="true">{chapter.name_arabic}</span>
                         <div className="rr-player-info">
                             <b>{chapter.name_simple}{currentVerse ? ` · Ayah ${currentVerse}` : ''}</b>
-                            <small>{reciterName}</small>
+                            <small>{reciterName}{hasWordTimings(selectedReciter) ? '' : ' · ayah highlight only'}</small>
                             <div className="rr-player-bar">
                                 <span>{audioCurrentTimeLabel}</span>
                                 <div className="rr-player-track"><span style={{ width: `${audioProgress}%` }} /></div>

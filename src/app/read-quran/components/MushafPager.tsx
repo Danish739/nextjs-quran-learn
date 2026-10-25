@@ -22,6 +22,8 @@ interface PageWord {
   key: string;
   glyph: string;
   stop: boolean;
+  /** the ayah-number marker, not a recited word */
+  end: boolean;
   position: number;
   verseNumber: number;
   line: number;
@@ -82,6 +84,7 @@ function loadPage(surah: number, page: number): Promise<PageData> {
               key: `${v.verse_key}:${w.position}`,
               glyph: w.code_v2 || w.text_uthmani,
               stop: Array.from(String(w.text_uthmani || '')).some(ch => STOP_CHARS.has(ch)),
+              end: w.char_type_name === 'end',
               position: w.position,
               verseNumber: v.verse_number,
               line,
@@ -138,9 +141,17 @@ interface Props {
   /** Mushaf page range of this surah, e.g. [2, 49] */
   pages: number[];
   linkQuery?: string;
+  /** ayah + word being recited: the ayah is tinted, the word lit */
+  reciting?: { verse: number; word: number | null } | null;
+  /** Mushaf page of the ayah being recited; the pager turns to it */
+  followPage?: number;
+  /** tapping a word starts the recitation from its ayah */
+  onPlayVerse?: (verse: number) => void;
 }
 
-export default function MushafPager({ surahNumber, surahName, surahArabic, pages, linkQuery = 'mode=reading' }: Props) {
+export default function MushafPager({
+  surahNumber, surahName, surahArabic, pages, linkQuery = 'mode=reading', reciting = null, followPage, onPlayVerse,
+}: Props) {
   const first = pages[0] ?? 1;
   const last = pages[pages.length - 1] ?? first;
   const total = last - first + 1;
@@ -196,6 +207,11 @@ export default function MushafPager({ surahNumber, surahName, surahArabic, pages
   }, [surahNumber, index, first, last, retry]);
 
   const go = useCallback((i: number) => setIndex(Math.min(Math.max(i, 0), total - 1)), [total]);
+
+  // turn the page when the recitation moves onto the next one
+  useEffect(() => {
+    if (followPage && followPage >= first && followPage <= last) setIndex(followPage - first);
+  }, [followPage, first, last]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -288,15 +304,20 @@ export default function MushafPager({ surahNumber, surahName, surahArabic, pages
                   {data.lines.map(l => (
                     <div key={l.line} className="uth-ar-line">
                       <div className={`uth-ar-words${isCenterLine(mushafPage, l.line) ? ' is-center' : ' is-spread'}`} lang="ar">
-                        {l.words.map(w => (
-                          <span
-                            key={w.key}
-                            id={w.position === 1 ? `verse-${w.verseNumber}` : undefined}
-                            className={`uth-ar-word${w.stop ? ' stop' : ''}`}
-                            style={{ fontFamily: `p${mushafPage}-v2, UthmanicHafs, serif` }}
-                            dangerouslySetInnerHTML={{ __html: escapeGlyph(w.glyph) }}
-                          />
-                        ))}
+                        {l.words.map(w => {
+                          const inAyah = reciting?.verse === w.verseNumber;
+                          const lit = inAyah && !w.end && reciting?.word === w.position;
+                          return (
+                            <span
+                              key={w.key}
+                              id={w.position === 1 ? `verse-${w.verseNumber}` : undefined}
+                              className={`uth-ar-word${w.stop ? ' stop' : ''}${inAyah ? ' is-ayah' : ''}${lit ? ' is-reciting' : ''}${onPlayVerse ? ' is-tappable' : ''}`}
+                              style={{ fontFamily: `p${mushafPage}-v2, UthmanicHafs, serif` }}
+                              onClick={onPlayVerse ? () => onPlayVerse(w.verseNumber) : undefined}
+                              dangerouslySetInnerHTML={{ __html: escapeGlyph(w.glyph) }}
+                            />
+                          );
+                        })}
                       </div>
                     </div>
                   ))}

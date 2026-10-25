@@ -548,3 +548,15 @@ html.rr-dark .mp-loader-page {
     white-space: nowrap;
   }
 }
+
+/* ── Recitation highlight: the ayah being recited is tinted, the current word lit ── */
+.mp .mp-page .uth-ar-word.is-ayah {
+  background: rgba(var(--brand-rgb), 0.08);
+}
+.mp .mp-page .uth-ar-word.is-reciting {
+  border-radius: 6px;
+  background: rgba(var(--brand-rgb), 0.24);
+  box-shadow: 0 0 0 2px rgba(var(--brand-rgb), 0.24);
+  color: var(--brand-primary);
+  transition: background 0.12s ease, color 0.12s ease;
+}

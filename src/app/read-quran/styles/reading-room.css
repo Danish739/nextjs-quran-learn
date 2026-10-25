@@ -1861,3 +1861,22 @@ html.rr-dark .uth-qcf .uth-ar-footer {
 .rr-theme-btn:hover .material-symbols-outlined {
   transform: rotate(-25deg);
 }
+
+/* ── Recitation highlight: the word being recited ── */
+.rr-qcf-word.is-reciting {
+  border-radius: 6px;
+  background: rgba(var(--brand-rgb), 0.2);
+  box-shadow: 0 0 0 3px rgba(var(--brand-rgb), 0.2);
+  color: var(--brand-primary);
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.rr-word.is-reciting {
+  border-color: var(--brand-primary);
+  background: rgba(var(--brand-rgb), 0.16);
+  transform: translateY(-2px);
+}
+
+.rr-word.is-reciting .rr-word-ar {
+  color: var(--brand-primary);
+}
