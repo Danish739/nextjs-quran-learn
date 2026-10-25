@@ -292,6 +292,16 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
     const [timings, setTimings] = useState<ChapterTimings | null>(null);
     const [currentWord, setCurrentWord] = useState<number | null>(null);
     const rafRef = useRef(0);
+    // 'Read with audio' switch: word highlighting only runs when this is on (remembered per browser)
+    const [readAlong, setReadAlong] = useState(false);
+    const readAlongRef = useRef(false);
+    useEffect(() => {
+        try {
+            const on = localStorage.getItem('reader-read-along') === '1';
+            readAlongRef.current = on;
+            setReadAlong(on);
+        } catch { /* ignore */ }
+    }, []);
 
     const [, setShowVerseNav] = useState(false);
     const [showSurahPicker, setShowSurahPicker] = useState(false);
@@ -668,7 +678,7 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
 
         // ── Word-timed path: one surah-long file, seek to the ayah, follow every word ──
         const vt = timings?.verses.get(verseNumber);
-        if (timings && vt) {
+        if (readAlongRef.current && timings && vt) {
             let audio = audioRef.current;
             if (!audio || audio.src !== timings.audioUrl) {
                 audio?.pause();
@@ -826,6 +836,16 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
         setAudioEnabled(true);
         playVerse(currentVerse || 1, true);
     };
+    const toggleReadAlong = () => {
+        const on = !readAlongRef.current;
+        readAlongRef.current = on;
+        setReadAlong(on);
+        try { localStorage.setItem('reader-read-along', on ? '1' : '0'); } catch { /* ignore */ }
+        if (!on) setCurrentWord(null);
+        // switching on starts the recitation; either way a playing ayah restarts in the new mode
+        if (on && !isPlaying) startListening();
+        else if (isPlaying && currentVerse) playVerse(currentVerse, true);
+    };
 
     const hero = (
         <section className="rr-hero">
@@ -951,6 +971,29 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
 
                     <span ref={progressRef} className="rr-progress" style={{ width: '0%' }} aria-hidden="true" />
                 </header>
+
+                {/* ── Read with audio switch ── */}
+                <div className="rr-sync">
+                    <div className="rr-sync-text">
+                        <b>Read with audio</b>
+                        <small>
+                            {!hasWordTimings(selectedReciter)
+                                ? `Word highlighting isn't available for ${reciterName}`
+                                : readAlong ? 'The word being recited is highlighted' : 'Turn on to highlight each word as it is recited'}
+                        </small>
+                    </div>
+                    <button
+                        type="button"
+                        role="switch"
+                        aria-checked={readAlong}
+                        aria-label="Read with audio: word-by-word highlighting"
+                        className={`rr-sync-switch${readAlong ? ' on' : ''}`}
+                        onClick={toggleReadAlong}
+                        disabled={!hasWordTimings(selectedReciter)}
+                    >
+                        <span />
+                    </button>
+                </div>
 
                 {/* ── Reading area ── */}
                 <div
@@ -1088,7 +1131,7 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
                         <span className="rr-player-art" aria-hidden="true">{chapter.name_arabic}</span>
                         <div className="rr-player-info">
                             <b>{chapter.name_simple}{currentVerse ? ` · Ayah ${currentVerse}` : ''}</b>
-                            <small>{reciterName}{hasWordTimings(selectedReciter) ? '' : ' · ayah highlight only'}</small>
+                            <small>{reciterName}{readAlong && hasWordTimings(selectedReciter) ? '' : ' · ayah highlight only'}</small>
                             <div className="rr-player-bar">
                                 <span>{audioCurrentTimeLabel}</span>
                                 <div className="rr-player-track"><span style={{ width: `${audioProgress}%` }} /></div>
