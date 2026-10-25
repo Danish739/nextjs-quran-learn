@@ -292,6 +292,9 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
     const [timings, setTimings] = useState<ChapterTimings | null>(null);
     const [currentWord, setCurrentWord] = useState<number | null>(null);
     const rafRef = useRef(0);
+    // Mushaf page currently shown in Reading mode (reported by the pager)
+    const readingPageRef = useRef<number | null>(null);
+    const onReadingPage = useCallback((p: number) => { readingPageRef.current = p; }, []);
     // 'Read with audio' switch: word highlighting only runs when this is on (remembered per browser)
     const [readAlong, setReadAlong] = useState(false);
     const readAlongRef = useRef(false);
@@ -833,9 +836,18 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
         setSelectedWord(null);
         if (wordAudioRef.current) { wordAudioRef.current.pause(); wordAudioRef.current = null; setWordAudioPlaying(false); }
     };
+    /** First ayah on the page the reader is looking at, so audio starts where they are, not at ayah 1 */
+    const visibleStartVerse = () => {
+        if (readingMode === 'reading') {
+            const pg = readingPageRef.current;
+            const v = pg ? verses.find(x => x.page_number === pg) : undefined;
+            return v?.verse_number ?? 1;
+        }
+        return pageVerses.find(v => !isBismillahVerse(v.verse_number, v.text_uthmani))?.verse_number ?? pageVerses[0]?.verse_number ?? 1;
+    };
     const startListening = () => {
         setAudioEnabled(true);
-        playVerse(currentVerse || 1, true);
+        playVerse(currentVerse || visibleStartVerse(), true);
     };
     const toggleReadAlong = () => {
         const on = !readAlongRef.current;
@@ -1021,6 +1033,7 @@ export default function SurahReadingPage({ params }: SurahPageProps) {
                                 pages={chapter.pages}
                                 reciting={isPlaying && currentVerse ? { verse: currentVerse, word: currentWord } : null}
                                 followPage={isPlaying && autoScroll && currentVerse ? verses.find(v => v.verse_number === currentVerse)?.page_number : undefined}
+                                onPage={onReadingPage}
                                 onPlayVerse={readAlong ? (n => { setAudioEnabled(true); playVerse(n, true); }) : undefined}
                             />
                         </div>

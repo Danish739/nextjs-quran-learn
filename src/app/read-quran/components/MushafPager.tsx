@@ -147,10 +147,12 @@ interface Props {
   followPage?: number;
   /** tapping a word starts the recitation from its ayah */
   onPlayVerse?: (verse: number) => void;
+  /** reports the Mushaf page being shown, so audio can start from it */
+  onPage?: (mushafPage: number) => void;
 }
 
 export default function MushafPager({
-  surahNumber, surahName, surahArabic, pages, linkQuery = 'mode=reading', reciting = null, followPage, onPlayVerse,
+  surahNumber, surahName, surahArabic, pages, linkQuery = 'mode=reading', reciting = null, followPage, onPlayVerse, onPage,
 }: Props) {
   const first = pages[0] ?? 1;
   const last = pages[pages.length - 1] ?? first;
@@ -171,6 +173,8 @@ export default function MushafPager({
   const dragX = useRef<number | null>(null);
 
   const mushafPage = first + index;
+
+  useEffect(() => { onPage?.(mushafPage); }, [mushafPage, onPage]);
 
   // Load the current page (data + its font), then quietly prefetch the next one
   useEffect(() => {
