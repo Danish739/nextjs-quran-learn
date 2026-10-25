@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import HadeesOfTheDay from '@/components/HadeesOfTheDay';
+import HadithImageDialog, { type HadithImage } from '@/components/HadithImageDialog';
 import { MushafLoader } from '@/app/read-quran/components/MushafPager';
 import './hadees.css';
 
@@ -69,6 +70,12 @@ function highlight(text: string, q: string) {
   );
 }
 
+/** "Narrated Abu Huraira: Allah's Messenger said …" → narrator line + the narration itself */
+function splitNarrator(english: string): { text: string; narrator?: string } {
+  const m = english.match(/^\s*Narrated\s+([^:]{2,60}):\s*([\s\S]+)$/i);
+  return m ? { narrator: m[1].trim(), text: m[2].trim() } : { text: english.trim() };
+}
+
 /* ─── Hadith card ────────────────────────────────────────────── */
 function HadithCard({
   h, col, saved, onSave, query, index, onCopy, onShare, copied,
@@ -83,7 +90,8 @@ function HadithCard({
   onShare: () => void;
   copied: boolean;
 }) {
-  const [showArabic, setShowArabic] = useState(true);
+  // English only by default; the Arabic appears when asked for
+  const [showArabic, setShowArabic] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const longAr = !!h.arabic && h.arabic.length > 320;
   const longEn = h.english.length > 700;
@@ -120,9 +128,9 @@ function HadithCard({
             </button>
           )}
           {h.arabic && (
-            <button className="hd-act" onClick={() => setShowArabic(s => !s)} title="Show / hide Arabic">
+            <button className={`hd-act${showArabic ? ' on' : ''}`} onClick={() => setShowArabic(s => !s)} aria-pressed={showArabic}>
               <span className="material-symbols-outlined">translate</span>
-              {showArabic ? 'Hide Arabic' : 'Arabic'}
+              {showArabic ? 'Hide Arabic' : 'Show Arabic'}
             </button>
           )}
           <button className="hd-act" onClick={onCopy}>
@@ -130,8 +138,8 @@ function HadithCard({
             {copied ? 'Copied' : 'Copy'}
           </button>
           <button className="hd-act" onClick={onShare}>
-            <span className="material-symbols-outlined">ios_share</span>
-            Share
+            <span className="material-symbols-outlined">image</span>
+            Share image
           </button>
         </div>
       </footer>
@@ -155,6 +163,7 @@ export default function HadeesPage() {
   const [search, setSearch] = useState('');
   const [saved, setSaved] = useState<SavedHadith[]>([]);
   const [copied, setCopied] = useState<string | null>(null);
+  const [image, setImage] = useState<HadithImage | null>(null);
   const [booksOpen, setBooksOpen] = useState(false);
   const [bookFilter, setBookFilter] = useState('');
   const [homeQuery, setHomeQuery] = useState('');
@@ -313,7 +322,7 @@ export default function HadeesPage() {
   };
 
   const textOf = (c: Collection, h: Hadith | SavedHadith) =>
-    `${h.arabic ? h.arabic + '\n\n' : ''}${h.english}\n\n— ${c.name} ${h.number}\nlearnquran.app`;
+    `${h.english}\n\n— ${c.name} ${h.number}\nlearnquran.app`;
 
   const copy = useCallback((c: Collection, h: Hadith | SavedHadith) => {
     navigator.clipboard.writeText(textOf(c, h)).catch(() => {});
@@ -322,10 +331,9 @@ export default function HadeesPage() {
   }, []);
 
   const share = useCallback((c: Collection, h: Hadith | SavedHadith) => {
-    const text = textOf(c, h);
-    if (navigator.share) navigator.share({ title: `${c.name} ${h.number}`, text }).catch(() => {});
-    else copy(c, h);
-  }, [copy]);
+    setImage({ ...splitNarrator(h.english), reference: `${c.name} ${h.number}` });
+  }, []);
+  const closeImage = useCallback(() => setImage(null), []);
 
   const sectionList = useMemo(
     () => Object.entries(sections).filter(([, n]) => n && (!bookFilter || n.toLowerCase().includes(bookFilter.toLowerCase()))),
@@ -338,9 +346,9 @@ export default function HadeesPage() {
       <main className="hd">
         <div className="hd-wrap">
           <header className="hd-hero">
-            <p className="hd-kicker"><span className="font-arabic">الحديث النبوي</span><span className="hd-kicker-sep" />The Sunnah</p>
+            <p className="hd-kicker">The Sunnah</p>
             <h1>The words of the Prophet <span className="hd-saw">ﷺ</span>, <em>within reach.</em></h1>
-            <p className="hd-sub">Read and search the six major collections in Arabic and English, and keep the narrations that move you.</p>
+            <p className="hd-sub">Read and search the six major collections, and keep the narrations that move you.</p>
             <form className="hd-hero-search" onSubmit={e => { e.preventDefault(); searchAll(homeQuery); }}>
               <span className="material-symbols-outlined">search</span>
               <input value={homeQuery} onChange={e => setHomeQuery(e.target.value)} placeholder="Search all six collections, e.g. intention, mercy, prayer" aria-label="Search hadith" />
@@ -353,7 +361,6 @@ export default function HadeesPage() {
           <section>
             <div className="hd-section-head">
               <div>
-                <p className="hd-kicker-ar font-arabic">الكتب الستة</p>
                 <h2>The Six Collections</h2>
               </div>
               <button className="hd-saved-link" onClick={() => setView({ kind: 'saved' })}>
@@ -365,10 +372,9 @@ export default function HadeesPage() {
               {COLLECTIONS.map((c, i) => (
                 <button key={c.id} className="hd-col" style={{ ['--hue' as string]: c.hue, animationDelay: `${i * 50}ms` }} onClick={() => openCollection(c.id)}>
                   <span className="hd-col-arch" aria-hidden="true">
-                    <span className="font-arabic">{c.ar.split(' ').slice(-1)[0]}</span>
+                    <span className="material-symbols-outlined">menu_book</span>
                   </span>
                   <span className="hd-col-text">
-                    <span className="hd-col-ar font-arabic">{c.ar}</span>
                     <b>{c.name}</b>
                     <small>{c.compiler} · {c.died}</small>
                     <span className="hd-col-blurb">{c.blurb}</span>
@@ -379,6 +385,7 @@ export default function HadeesPage() {
             </div>
           </section>
         </div>
+        <HadithImageDialog hadith={image} onClose={closeImage} />
       </main>
     );
   }
@@ -463,6 +470,7 @@ export default function HadeesPage() {
             </nav>
           )}
         </div>
+        <HadithImageDialog hadith={image} onClose={closeImage} />
       </main>
     );
   }
@@ -495,6 +503,7 @@ export default function HadeesPage() {
             </div>
           )}
         </div>
+        <HadithImageDialog hadith={image} onClose={closeImage} />
       </main>
     );
   }
@@ -510,7 +519,7 @@ export default function HadeesPage() {
       <div className="hd-bar">
         <button className="hd-icon" onClick={goHome} aria-label="Back to collections"><span className="material-symbols-outlined">arrow_back</span></button>
         <div className="hd-bar-title">
-          <b>{col.name} <span className="font-arabic">{col.ar}</span></b>
+          <b>{col.name}</b>
           <small>{col.compiler} · {col.died}</small>
         </div>
         <div className="hd-switch" role="tablist" aria-label="Collection">
@@ -622,6 +631,7 @@ export default function HadeesPage() {
           </aside>
         </>
       )}
+      <HadithImageDialog hadith={image} onClose={closeImage} />
     </main>
   );
 }

@@ -277,9 +277,8 @@
   box-shadow: 0 8px 18px color-mix(in srgb, var(--hue) 30%, transparent);
 }
 
-.hd-col-arch .font-arabic {
-  font-size: 18px;
-  line-height: 1.2;
+.hd-col-arch .material-symbols-outlined {
+  font-size: 24px;
 }
 
 .hd-col-text {
@@ -722,6 +721,10 @@
 
 .hd-act .material-symbols-outlined {
   font-size: 17px;
+}
+
+.hd-act.on {
+  color: var(--hue);
 }
 
 .hd-act:hover {
