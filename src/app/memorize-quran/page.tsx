@@ -48,12 +48,6 @@ const isMasked = (key: string, pos: number, level: number) => {
     return h % 10 < level * 3 + 1;
 };
 
-const fmtMinutes = (secs: number) => {
-    const m = Math.round(secs / 60);
-    if (m < 60) return `${m} min`;
-    return `${Math.floor(m / 60)}h ${m % 60}m`;
-};
-
 /** One ayah drawn word-by-word in the Mushaf (QCF) font; hidden words are blurred or shown as blanks. */
 function AyahText({
     words, hidden, onReveal, style,
@@ -504,84 +498,51 @@ export default function MemorizeQuranPage() {
         return (
             <main className="hz">
                 <div className="hz-wrap">
-                    <header className="hz-hero">
-                        <div>
-                            <p className="hz-kicker"><span className="font-arabic">حِفْظُ القُرْآن</span><span className="hz-kicker-sep" />Hifz Studio</p>
-                            <h1>Hold the Quran close, <em>one ayah at a time.</em></h1>
-                            <p className="hz-sub">Listen on repeat, test yourself, and let spaced repetition tell you exactly what to review each day.</p>
-                        </div>
-                        <div className="hz-stats">
-                            <div className="hz-stat">
-                                <span className="material-symbols-outlined">verified</span>
-                                <b>{totalMemorized}</b>
-                                <small>ayahs memorized</small>
-                            </div>
-                            <div className="hz-stat fire">
-                                <span className="material-symbols-outlined">local_fire_department</span>
-                                <b>{streak}</b>
-                                <small>day streak</small>
-                            </div>
-                            <div className={`hz-stat${due.length ? ' due' : ''}`}>
-                                <span className="material-symbols-outlined">event_repeat</span>
-                                <b>{due.length}</b>
-                                <small>due for review</small>
-                            </div>
+                    <header className="hz-top">
+                        <h1>Hifz</h1>
+                        <div className="hz-nums">
+                            <div><b>{totalMemorized}</b><span>memorized</span></div>
+                            <div><b>{streak}</b><span>day streak</span></div>
+                            <div><b>{due.length}</b><span>to review</span></div>
                         </div>
                     </header>
 
-                    <section className="hz-actions">
-                        {last && lastChapter ? (
-                            <button className="hz-continue" onClick={() => openSession(last.chapter, last.from, last.to)}>
-                                <span className="hz-continue-label"><span className="hz-dot" />Continue memorizing</span>
-                                <span className="hz-continue-main">
-                                    <span>
-                                        <b>{lastChapter.name}</b>
-                                        <small>Ayah {last.from}–{last.to} · {lastChapter.nameTranslation}</small>
-                                    </span>
-                                    <span className="font-arabic hz-continue-ar">{lastChapter.nameArabic}</span>
-                                </span>
-                                <span className="hz-continue-foot">
-                                    <span>{memorizedCount(store, lastChapter.id)} of {lastChapter.versesCount} memorized · {fmtMinutes(store.seconds)} practised</span>
-                                    <span className="hz-cta">Resume <span className="material-symbols-outlined">arrow_forward</span></span>
-                                </span>
-                            </button>
-                        ) : (
-                            <button className="hz-continue" onClick={() => openSession(1, 1, 7)}>
-                                <span className="hz-continue-label"><span className="hz-dot" />Start here</span>
-                                <span className="hz-continue-main">
-                                    <span><b>Al-Fatihah</b><small>The Opening · 7 ayahs you already recite daily</small></span>
-                                    <span className="font-arabic hz-continue-ar">الفاتحة</span>
-                                </span>
-                                <span className="hz-continue-foot">
-                                    <span>Listen, repeat, then test yourself</span>
-                                    <span className="hz-cta">Begin <span className="material-symbols-outlined">arrow_forward</span></span>
-                                </span>
-                            </button>
-                        )}
-
-                        <div className={`hz-review${reviewTarget ? '' : ' empty'}`}>
-                            <span className="hz-review-icon material-symbols-outlined">{reviewTarget ? 'event_repeat' : 'task_alt'}</span>
-                            {reviewTarget ? (
+                    <section className="hz-rows">
+                        <div className="hz-row">
+                            {last && lastChapter ? (
                                 <>
-                                    <b>{due.length} ayah{due.length === 1 ? '' : 's'} to review</b>
-                                    <small>Most are in {chapters.find(c => c.id === reviewTarget.surah)?.name ?? `Surah ${reviewTarget.surah}`} · ayah {reviewTarget.from}–{reviewTarget.to}</small>
-                                    <button className="hz-btn primary" onClick={() => openSession(reviewTarget.surah, reviewTarget.from, reviewTarget.to, 'recall')}>
-                                        <span className="material-symbols-outlined">psychology</span>
-                                        Review now
-                                    </button>
+                                    <div className="hz-row-text">
+                                        <small>Continue</small>
+                                        <b>{lastChapter.name}</b>
+                                        <span>Ayah {last.from}–{last.to}</span>
+                                    </div>
+                                    <button className="hz-btn primary" onClick={() => openSession(last.chapter, last.from, last.to)}>Resume</button>
                                 </>
                             ) : (
                                 <>
-                                    <b>All caught up</b>
-                                    <small>Rate ayahs after practising and they’ll appear here when it’s time to review.</small>
+                                    <div className="hz-row-text">
+                                        <small>Start with</small>
+                                        <b>Al-Fatihah</b>
+                                        <span>7 ayahs</span>
+                                    </div>
+                                    <button className="hz-btn primary" onClick={() => openSession(1, 1, 7)}>Begin</button>
                                 </>
                             )}
                         </div>
 
-                        <div className="hz-goal">
-                            <div>
+                        {reviewTarget && (
+                            <div className="hz-row">
+                                <div className="hz-row-text">
+                                    <small>Review</small>
+                                    <b>{due.length} ayah{due.length === 1 ? '' : 's'} due</b>
+                                </div>
+                                <button className="hz-btn" onClick={() => openSession(reviewTarget.surah, reviewTarget.from, reviewTarget.to, 'recall')}>Review now</button>
+                            </div>
+                        )}
+
+                        <div className="hz-row">
+                            <div className="hz-row-text">
                                 <b>Daily new ayahs</b>
-                                <small>{(store.settings?.newPerDay ?? 20) > 0 ? `${newTodayCount(store)} of ${store.settings?.newPerDay ?? 20} started today` : `${newTodayCount(store)} started today`}</small>
                             </div>
                             <div className="hz-goal-opts" role="group" aria-label="Daily new ayah goal">
                                 {[10, 20, 30, 0].map(n => (
@@ -590,15 +551,6 @@ export default function MemorizeQuranPage() {
                                     </button>
                                 ))}
                             </div>
-                        </div>
-
-                        <div className="hz-how">
-                            <b>How it works</b>
-                            <ol>
-                                <li><span>1</span>Listen to each ayah on repeat</li>
-                                <li><span>2</span>Test yourself with Recall or Fill-the-blanks</li>
-                                <li><span>3</span>Rate it once it’s due, and we schedule the next review</li>
-                            </ol>
                         </div>
                     </section>
 
